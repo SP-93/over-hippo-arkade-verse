@@ -135,41 +135,125 @@ export const UltraSnake2025 = ({ onScoreChange, onGameEnd, onGameStart }: UltraS
   }, []);
 
   const drawGlowingSnake = useCallback((ctx: CanvasRenderingContext2D, cellSize: number) => {
+    const time = Date.now() * 0.003;
+    
     snake.forEach((segment, index) => {
       const x = segment.x * cellSize;
       const y = segment.y * cellSize;
       const isHead = index === 0;
+      const segmentAge = (snake.length - index) / snake.length;
       
-      // Main body with gradient
-      const gradient = ctx.createRadialGradient(
-        x + cellSize/2, y + cellSize/2, 0,
-        x + cellSize/2, y + cellSize/2, cellSize/2
-      );
-      
-      if (isHead) {
-        gradient.addColorStop(0, `hsl(${currentHue}, 100%, 80%)`);
-        gradient.addColorStop(0.7, `hsl(${currentHue}, 100%, 50%)`);
-        gradient.addColorStop(1, `hsl(${currentHue}, 100%, 20%)`);
-      } else {
-        const alpha = 1 - (index / snake.length) * 0.5;
-        gradient.addColorStop(0, `hsla(${currentHue}, 100%, 60%, ${alpha})`);
-        gradient.addColorStop(1, `hsla(${currentHue}, 100%, 30%, ${alpha})`);
+      // 3D depth effect with multiple layers
+      for (let layer = 3; layer >= 0; layer--) {
+        const layerOffset = layer * 2;
+        const layerAlpha = (4 - layer) / 4;
+        
+        // Create 3D gradient for depth
+        const gradient = ctx.createRadialGradient(
+          x + cellSize/2 - layerOffset, y + cellSize/2 - layerOffset, 0,
+          x + cellSize/2, y + cellSize/2, cellSize/2 + layerOffset
+        );
+        
+        if (isHead) {
+          // Animated head with pulsing colors
+          const pulse = 1 + Math.sin(time * 4) * 0.3;
+          gradient.addColorStop(0, `hsla(${currentHue + Math.sin(time * 2) * 20}, 100%, ${80 * pulse}%, ${layerAlpha})`);
+          gradient.addColorStop(0.3, `hsla(${currentHue}, 100%, 70%, ${layerAlpha})`);
+          gradient.addColorStop(0.7, `hsla(${currentHue}, 100%, 50%, ${layerAlpha})`);
+          gradient.addColorStop(1, `hsla(${currentHue}, 100%, 20%, ${layerAlpha * 0.5})`);
+        } else {
+          // Body segments with 3D depth
+          const bodyHue = currentHue + (index * 10);
+          const bodyAlpha = segmentAge * layerAlpha;
+          gradient.addColorStop(0, `hsla(${bodyHue}, 100%, 60%, ${bodyAlpha})`);
+          gradient.addColorStop(0.5, `hsla(${bodyHue}, 100%, 40%, ${bodyAlpha})`);
+          gradient.addColorStop(1, `hsla(${bodyHue}, 100%, 20%, ${bodyAlpha * 0.3})`);
+        }
+        
+        // Shadow for 3D depth
+        ctx.shadowColor = `hsla(${currentHue}, 100%, 30%, ${layerAlpha * 0.8})`;
+        ctx.shadowBlur = 10 + layer * 5;
+        ctx.shadowOffsetX = layer * 2;
+        ctx.shadowOffsetY = layer * 2;
+        
+        ctx.fillStyle = gradient;
+        ctx.fillRect(
+          x + 1 - layerOffset/2, 
+          y + 1 - layerOffset/2, 
+          cellSize - 2 + layerOffset, 
+          cellSize - 2 + layerOffset
+        );
       }
       
-      // Outer glow
-      ctx.shadowColor = `hsl(${currentHue}, 100%, 50%)`;
-      ctx.shadowBlur = isHead ? 25 : 15;
-      ctx.fillStyle = gradient;
-      ctx.fillRect(x + 2, y + 2, cellSize - 4, cellSize - 4);
+      // Reset shadows
+      ctx.shadowBlur = 0;
+      ctx.shadowOffsetX = 0;
+      ctx.shadowOffsetY = 0;
       
-      // Inner highlight for head
+      // Head details with 3D eyes
       if (isHead) {
+        // Eyes with 3D effect
+        const eyeSize = cellSize * 0.15;
+        const eyeOffsetX = cellSize * 0.25;
+        const eyeOffsetY = cellSize * 0.25;
+        
+        // Eye glow
+        ctx.shadowColor = 'rgba(255, 255, 255, 0.8)';
+        ctx.shadowBlur = 8;
+        
+        // Left eye
+        const leftEyeGradient = ctx.createRadialGradient(
+          x + eyeOffsetX, y + eyeOffsetY, 0,
+          x + eyeOffsetX, y + eyeOffsetY, eyeSize
+        );
+        leftEyeGradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
+        leftEyeGradient.addColorStop(0.7, 'rgba(200, 200, 255, 0.8)');
+        leftEyeGradient.addColorStop(1, 'rgba(100, 100, 200, 0.3)');
+        
+        ctx.fillStyle = leftEyeGradient;
+        ctx.beginPath();
+        ctx.arc(x + eyeOffsetX, y + eyeOffsetY, eyeSize, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Right eye
+        const rightEyeGradient = ctx.createRadialGradient(
+          x + cellSize - eyeOffsetX, y + eyeOffsetY, 0,
+          x + cellSize - eyeOffsetX, y + eyeOffsetY, eyeSize
+        );
+        rightEyeGradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
+        rightEyeGradient.addColorStop(0.7, 'rgba(200, 200, 255, 0.8)');
+        rightEyeGradient.addColorStop(1, 'rgba(100, 100, 200, 0.3)');
+        
+        ctx.fillStyle = rightEyeGradient;
+        ctx.beginPath();
+        ctx.arc(x + cellSize - eyeOffsetX, y + eyeOffsetY, eyeSize, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Eye pupils
         ctx.shadowBlur = 0;
-        ctx.fillStyle = `hsla(${currentHue}, 100%, 90%, 0.8)`;
-        ctx.fillRect(x + cellSize/3, y + cellSize/3, cellSize/3, cellSize/3);
+        ctx.fillStyle = 'rgba(50, 50, 50, 0.8)';
+        ctx.beginPath();
+        ctx.arc(x + eyeOffsetX, y + eyeOffsetY, eyeSize * 0.4, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.beginPath();
+        ctx.arc(x + cellSize - eyeOffsetX, y + eyeOffsetY, eyeSize * 0.4, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Scales texture on body segments
+      } else if (index % 2 === 0) {
+        // Add scale pattern
+        ctx.strokeStyle = `hsla(${currentHue}, 100%, 80%, 0.3)`;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.arc(x + cellSize/2, y + cellSize/2, cellSize * 0.3, 0, Math.PI * 2);
+        ctx.stroke();
+        
+        ctx.beginPath();
+        ctx.arc(x + cellSize/2, y + cellSize/2, cellSize * 0.15, 0, Math.PI * 2);
+        ctx.stroke();
       }
     });
-    ctx.shadowBlur = 0;
   }, [snake, currentHue]);
 
   const drawPulsatingFood = useCallback((ctx: CanvasRenderingContext2D, cellSize: number) => {

@@ -706,29 +706,29 @@ export const UltraTetris2025 = ({ onScoreChange, onGameEnd, onGameStart }: Ultra
 
   return (
     <div className="space-y-4">
-      <Card className="p-6 bg-gradient-card border-neon-blue">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl font-bold text-neon-blue font-orbitron">ULTRA TETRIS 2025</h2>
-          <div className="flex gap-4 text-sm font-orbitron">
-            <div className="text-arcade-gold">SCORE: {score.toString().padStart(8, '0')}</div>
-            <div className="text-neon-green">LEVEL: {level}</div>
-            <div className="text-neon-pink">LINES: {lines}</div>
-            <div className="text-red-500">LIVES: {currentLives}</div>
+      <Card className="p-4 bg-gradient-card border-neon-electric">
+        <div className="flex justify-between items-center mb-3">
+          <h2 className="text-xl font-bold text-neon-electric font-orbitron">ULTRA TETRIS 2025</h2>
+          <div className="flex items-center gap-3">
+            <div className="text-sm font-bold text-arcade-gold font-orbitron">SCORE: {score.toString().padStart(7, '0')}</div>
+            <div className="text-sm font-bold text-neon-electric font-orbitron">LEVEL: {level}</div>
+            <div className="text-sm font-bold text-neon-cyber font-orbitron">LINES: {lines}</div>
+            <div className="text-sm font-bold text-red-500 font-orbitron">LIVES: {currentLives}</div>
           </div>
         </div>
         
-        <div className="flex gap-2 mb-4">
+        <div className="flex gap-2 mb-3">
           <Button
             onClick={startGame}
             variant="arcade"
             disabled={isPlaying && !gameOver}
-            className="font-orbitron"
+            className="font-orbitron text-sm"
           >
-            {gameOver ? 'RESTART' : 'START GAME'}
+            {gameOver ? 'RESTART' : 'START'}
           </Button>
           
           {isPlaying && !gameOver && (
-            <Button onClick={pauseGame} variant="secondary" className="font-orbitron">
+            <Button onClick={pauseGame} variant="secondary" className="font-orbitron text-sm">
               {isPaused ? 'RESUME' : 'PAUSE'}
             </Button>
           )}
@@ -738,26 +738,26 @@ export const UltraTetris2025 = ({ onScoreChange, onGameEnd, onGameStart }: Ultra
           <div className="relative inline-block">
             <canvas
               ref={canvasRef}
-              width={400}
-              height={500}
-              className="bg-black rounded-lg border-4 border-neon-blue shadow-[0_0_40px_rgba(68,68,255,0.6)]"
+              width={900}
+              height={750}
+              className="bg-black rounded-lg border-4 border-neon-electric shadow-[0_0_40px_rgba(0,255,255,0.6)]"
               style={{
                 imageRendering: 'pixelated',
                 filter: 'contrast(1.3) brightness(1.2) saturate(1.4)',
-                background: 'linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%)'
+                background: 'linear-gradient(135deg, #0a0a0a 0%, #0a1a2a 50%, #1a2a4d 100%)'
               }}
             />
-            <div className="absolute -top-2 -left-2 -right-2 -bottom-2 bg-gradient-to-r from-neon-blue via-neon-pink to-neon-blue rounded-lg opacity-30 animate-pulse-border"></div>
-            <div className="absolute top-2 left-2 text-xs font-orbitron text-neon-blue/70">128-BIT ENGINE</div>
+            <div className="absolute -top-2 -left-2 -right-2 -bottom-2 bg-gradient-to-r from-neon-electric via-neon-cyber to-neon-electric rounded-lg opacity-30 animate-pulse-border"></div>
+            <div className="absolute top-2 left-2 text-xs font-orbitron text-neon-electric/70">128-BIT ENGINE</div>
           </div>
         </div>
         
-        <div className="mt-4 text-sm text-muted-foreground text-center font-orbitron">
-          WASD or ARROW KEYS • W/↑ to ROTATE • SPACE to PAUSE • CLEAR LINES FOR COMBOS
+        <div className="mt-3 text-center text-xs text-muted-foreground font-exo2">
+          🎮 Arrow Keys to Move • UP/SPACE to Rotate • P to Pause
         </div>
         
         <div className="mt-2 text-center">
-          <div className="inline-flex items-center gap-4 text-xs text-neon-blue/70 font-orbitron">
+          <div className="inline-flex items-center gap-4 text-xs text-neon-electric/70 font-orbitron">
             <span>SPEED: {Math.round((600-dropTime)/5)}%</span>
             <span>COMBO: {combo}x</span>
             <span>PARTICLES: {particles.length}</span>

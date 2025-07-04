@@ -292,12 +292,12 @@ export const PacMan2D = ({ onScoreChange, onGameEnd, onGameStart }: PacMan2DProp
     return () => clearInterval(mouthTimer);
   }, [isPlaying, isPaused]);
 
-  // Ghost AI movement
+  // Enhanced Ghost AI movement - explores entire maze
   const moveGhosts = useCallback(() => {
     if (!isPlaying || isPaused || gameOver) return;
     
     setGhosts(currentGhosts => 
-      currentGhosts.map(ghost => {
+      currentGhosts.map((ghost, index) => {
         let newX = ghost.x;
         let newY = ghost.y;
         let newDx = ghost.dx;
@@ -305,25 +305,18 @@ export const PacMan2D = ({ onScoreChange, onGameEnd, onGameStart }: PacMan2DProp
         
         if (powerMode) {
           // Run away from Pac-Man when in power mode
-          if (pacmanPosition.x > ghost.x) newDx = -1;
-          else if (pacmanPosition.x < ghost.x) newDx = 1;
-          else newDx = 0;
+          const distanceFromPacman = Math.abs(pacmanPosition.x - ghost.x) + Math.abs(pacmanPosition.y - ghost.y);
           
-          if (pacmanPosition.y > ghost.y) newDy = -1;
-          else if (pacmanPosition.y < ghost.y) newDy = 1;
-          else newDy = 0;
-        } else {
-          // Chase Pac-Man
-          if (Math.random() < 0.7) { // 70% chance to move toward Pac-Man
-            if (pacmanPosition.x > ghost.x) newDx = 1;
-            else if (pacmanPosition.x < ghost.x) newDx = -1;
-            else newDx = 0;
+          if (distanceFromPacman < 8) { // Run away if close
+            if (pacmanPosition.x > ghost.x) newDx = -1;
+            else if (pacmanPosition.x < ghost.x) newDx = 1;
+            else newDx = Math.random() < 0.5 ? -1 : 1;
             
-            if (pacmanPosition.y > ghost.y) newDy = 1;
-            else if (pacmanPosition.y < ghost.y) newDy = -1;
-            else newDy = 0;
+            if (pacmanPosition.y > ghost.y) newDy = -1;
+            else if (pacmanPosition.y < ghost.y) newDy = 1;
+            else newDy = Math.random() < 0.5 ? -1 : 1;
           } else {
-            // Random movement 30% of the time
+            // Random movement when far from Pac-Man
             const directions = [
               { x: 0, y: -1 }, { x: 0, y: 1 }, 
               { x: -1, y: 0 }, { x: 1, y: 0 }
@@ -332,40 +325,129 @@ export const PacMan2D = ({ onScoreChange, onGameEnd, onGameStart }: PacMan2DProp
             newDx = randomDir.x;
             newDy = randomDir.y;
           }
+        } else {
+          // Each ghost has different behavior pattern
+          const distanceFromPacman = Math.abs(pacmanPosition.x - ghost.x) + Math.abs(pacmanPosition.y - ghost.y);
+          
+          switch (index) {
+            case 0: // Red ghost - aggressive chaser
+              if (Math.random() < 0.8) {
+                if (pacmanPosition.x > ghost.x) newDx = 1;
+                else if (pacmanPosition.x < ghost.x) newDx = -1;
+                else newDx = 0;
+                
+                if (pacmanPosition.y > ghost.y) newDy = 1;
+                else if (pacmanPosition.y < ghost.y) newDy = -1;
+                else newDy = 0;
+              }
+              break;
+              
+            case 1: // Pink ghost - tries to ambush ahead of Pac-Man
+              const targetX = pacmanPosition.x + (direction.x * 4);
+              const targetY = pacmanPosition.y + (direction.y * 4);
+              
+              if (Math.random() < 0.6) {
+                if (targetX > ghost.x) newDx = 1;
+                else if (targetX < ghost.x) newDx = -1;
+                else newDx = 0;
+                
+                if (targetY > ghost.y) newDy = 1;
+                else if (targetY < ghost.y) newDy = -1;
+                else newDy = 0;
+              }
+              break;
+              
+            case 2: // Cyan ghost - patrol corners and edges
+              if (distanceFromPacman > 8 || Math.random() < 0.3) {
+                // Patrol behavior - move toward maze edges
+                if (ghost.x < GRID_SIZE/4) newDx = 1;
+                else if (ghost.x > 3*GRID_SIZE/4) newDx = -1;
+                else newDx = Math.random() < 0.5 ? -1 : 1;
+                
+                if (ghost.y < GRID_SIZE/4) newDy = 1;
+                else if (ghost.y > 3*GRID_SIZE/4) newDy = -1;
+                else newDy = Math.random() < 0.5 ? -1 : 1;
+              } else {
+                // Chase when close
+                if (pacmanPosition.x > ghost.x) newDx = 1;
+                else if (pacmanPosition.x < ghost.x) newDx = -1;
+                else newDx = 0;
+                
+                if (pacmanPosition.y > ghost.y) newDy = 1;
+                else if (pacmanPosition.y < ghost.y) newDy = -1;
+                else newDy = 0;
+              }
+              break;
+              
+            case 3: // Orange ghost - shy, keeps distance
+              if (distanceFromPacman < 8) {
+                // Move away when too close
+                if (pacmanPosition.x > ghost.x) newDx = -1;
+                else if (pacmanPosition.x < ghost.x) newDx = 1;
+                else newDx = Math.random() < 0.5 ? -1 : 1;
+                
+                if (pacmanPosition.y > ghost.y) newDy = -1;
+                else if (pacmanPosition.y < ghost.y) newDy = 1;
+                else newDy = Math.random() < 0.5 ? -1 : 1;
+              } else {
+                // Random exploration when far
+                const directions = [
+                  { x: 0, y: -1 }, { x: 0, y: 1 }, 
+                  { x: -1, y: 0 }, { x: 1, y: 0 }
+                ];
+                const randomDir = directions[Math.floor(Math.random() * directions.length)];
+                newDx = randomDir.x;
+                newDy = randomDir.y;
+              }
+              break;
+          }
         }
         
-        newX = ghost.x + newDx;
-        newY = ghost.y + newDy;
+        // Apply movement with preference for current direction
+        const testX = ghost.x + newDx;
+        const testY = ghost.y + newDy;
         
-        // Check boundaries and walls
-        if (newX < 0 || newX >= GRID_SIZE || newY < 0 || newY >= GRID_SIZE || maze[newY][newX] === 1) {
-          // Try different direction
+        // Check if movement is valid
+        if (testX >= 0 && testX < GRID_SIZE && testY >= 0 && testY < GRID_SIZE && maze[testY][testX] !== 1) {
+          newX = testX;
+          newY = testY;
+        } else {
+          // Find alternative valid directions
           const directions = [
             { x: 0, y: -1 }, { x: 0, y: 1 }, 
             { x: -1, y: 0 }, { x: 1, y: 0 }
           ];
+          
+          // Prefer continuing in same direction
+          const currentDir = { x: ghost.dx, y: ghost.dy };
           const validDirs = directions.filter(dir => {
             const testX = ghost.x + dir.x;
-            const testY = ghost.y + dir.y; 
+            const testY = ghost.y + dir.y;
             return testX >= 0 && testX < GRID_SIZE && testY >= 0 && testY < GRID_SIZE && maze[testY][testX] !== 1;
           });
           
           if (validDirs.length > 0) {
-            const randomDir = validDirs[Math.floor(Math.random() * validDirs.length)];
-            newX = ghost.x + randomDir.x;
-            newY = ghost.y + randomDir.y;
-            newDx = randomDir.x;
-            newDy = randomDir.y;
+            // Prefer current direction if valid
+            const currentDirValid = validDirs.find(dir => dir.x === currentDir.x && dir.y === currentDir.y);
+            const chosenDir = currentDirValid && Math.random() < 0.7 ? currentDirValid : validDirs[Math.floor(Math.random() * validDirs.length)];
+            
+            newX = ghost.x + chosenDir.x;
+            newY = ghost.y + chosenDir.y;
+            newDx = chosenDir.x;
+            newDy = chosenDir.y;
           } else {
+            // Stay in place if no valid moves
             newX = ghost.x;
             newY = ghost.y;
+            newDx = 0;
+            newDy = 0;
           }
         }
         
         return { ...ghost, x: newX, y: newY, dx: newDx, dy: newDy };
       })
     );
-  }, [isPlaying, isPaused, gameOver, pacmanPosition, powerMode, maze]);
+  }, [isPlaying, isPaused, gameOver, pacmanPosition, powerMode, maze, direction]);
 
   const movePacman = useCallback(() => {
     if (!isPlaying || isPaused || gameOver || (direction.x === 0 && direction.y === 0)) return;
