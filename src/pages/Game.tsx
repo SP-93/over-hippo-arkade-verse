@@ -9,6 +9,7 @@ import { SnakeGame } from "@/components/games/SnakeGame";
 import { PacManGame } from "@/components/games/PacManGame";
 import { BreakoutGame } from "@/components/games/BreakoutGame";
 import { AsteroidsGame } from "@/components/games/AsteroidsGame";
+import { FlipperGame } from "@/components/games/FlipperGame";
 import { GameTemplate } from "@/components/GameTemplate";
 import { ChipManager } from "@/components/ChipManager";
 import { toast } from "sonner";
@@ -176,7 +177,14 @@ export const Game = () => {
               onGameStart={handleGameStart}
             />
           )}
-          {!['tetris', 'snake', 'pacman', 'breakout', 'asteroids'].includes(gameId || '') && (
+          {gameId === 'flipper' && (
+            <FlipperGame 
+              onScoreChange={setCurrentScore}
+              onGameEnd={endGame}
+              onGameStart={handleGameStart}
+            />
+          )}
+          {!['tetris', 'snake', 'pacman', 'breakout', 'asteroids', 'flipper'].includes(gameId || '') && (
             <>
               {/* Coming Soon Games */}
               {gameId === 'mario' && (
@@ -194,24 +202,6 @@ export const Game = () => {
                     "Secret areas and bonus levels",
                     "Retro pixel art graphics",
                     "Classic soundtrack"
-                  ]}
-                />
-              )}
-              {gameId === 'flipper' && (
-                <GameTemplate 
-                  gameId="flipper"
-                  title="Flipper Pinball"
-                  description="Retro pinball arcade action with realistic physics and multiple tables"
-                  comingSoonDate="Q3 2025"
-                  difficulty="Hard"
-                  genre="Arcade Pinball"
-                  features={[
-                    "Multiple themed pinball tables",
-                    "Realistic ball physics",
-                    "Special combo scoring",
-                    "Multiball modes",
-                    "Visual effects and animations",
-                    "Tournament leaderboards"
                   ]}
                 />
               )}
@@ -252,7 +242,7 @@ export const Game = () => {
                 />
               )}
               {/* Unknown game fallback */}
-              {!['mario', 'flipper', 'kingkong', 'frogger'].includes(gameId || '') && (
+              {!['mario', 'kingkong', 'frogger'].includes(gameId || '') && (
                 <Card className="p-8 bg-gradient-card border-primary min-h-96">
                   <div className="text-center space-y-6">
                     <h3 className="text-2xl font-bold text-primary mb-2">
