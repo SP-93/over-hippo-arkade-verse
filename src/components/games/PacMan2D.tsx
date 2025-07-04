@@ -64,12 +64,12 @@ export const PacMan2D = ({ onScoreChange, onGameEnd, onGameStart }: PacMan2DProp
     handleGameStart: gameStart 
   } = useGameManager();
 
-  // Ghost positions (simple AI)
+  // Ghost positions with AI
   const [ghosts, setGhosts] = useState([
-    { x: 9, y: 9, color: "#ff4444", dx: 1, dy: 0 },
-    { x: 10, y: 9, color: "#ff88ff", dx: -1, dy: 0 },
-    { x: 11, y: 9, color: "#44ffff", dx: 0, dy: 1 },
-    { x: 12, y: 9, color: "#ffaa44", dx: 0, dy: -1 }
+    { x: 9, y: 9, color: "#ff4444", dx: 1, dy: 0, mode: 'chase' },
+    { x: 10, y: 9, color: "#ff88ff", dx: -1, dy: 0, mode: 'chase' },
+    { x: 11, y: 9, color: "#44ffff", dx: 0, dy: 1, mode: 'chase' },
+    { x: 12, y: 9, color: "#ffaa44", dx: 0, dy: -1, mode: 'chase' }
   ]);
 
   const drawJungleBackground = useCallback((ctx: CanvasRenderingContext2D, width: number, height: number) => {
@@ -292,6 +292,81 @@ export const PacMan2D = ({ onScoreChange, onGameEnd, onGameStart }: PacMan2DProp
     return () => clearInterval(mouthTimer);
   }, [isPlaying, isPaused]);
 
+  // Ghost AI movement
+  const moveGhosts = useCallback(() => {
+    if (!isPlaying || isPaused || gameOver) return;
+    
+    setGhosts(currentGhosts => 
+      currentGhosts.map(ghost => {
+        let newX = ghost.x;
+        let newY = ghost.y;
+        let newDx = ghost.dx;
+        let newDy = ghost.dy;
+        
+        if (powerMode) {
+          // Run away from Pac-Man when in power mode
+          if (pacmanPosition.x > ghost.x) newDx = -1;
+          else if (pacmanPosition.x < ghost.x) newDx = 1;
+          else newDx = 0;
+          
+          if (pacmanPosition.y > ghost.y) newDy = -1;
+          else if (pacmanPosition.y < ghost.y) newDy = 1;
+          else newDy = 0;
+        } else {
+          // Chase Pac-Man
+          if (Math.random() < 0.7) { // 70% chance to move toward Pac-Man
+            if (pacmanPosition.x > ghost.x) newDx = 1;
+            else if (pacmanPosition.x < ghost.x) newDx = -1;
+            else newDx = 0;
+            
+            if (pacmanPosition.y > ghost.y) newDy = 1;
+            else if (pacmanPosition.y < ghost.y) newDy = -1;
+            else newDy = 0;
+          } else {
+            // Random movement 30% of the time
+            const directions = [
+              { x: 0, y: -1 }, { x: 0, y: 1 }, 
+              { x: -1, y: 0 }, { x: 1, y: 0 }
+            ];
+            const randomDir = directions[Math.floor(Math.random() * directions.length)];
+            newDx = randomDir.x;
+            newDy = randomDir.y;
+          }
+        }
+        
+        newX = ghost.x + newDx;
+        newY = ghost.y + newDy;
+        
+        // Check boundaries and walls
+        if (newX < 0 || newX >= GRID_SIZE || newY < 0 || newY >= GRID_SIZE || maze[newY][newX] === 1) {
+          // Try different direction
+          const directions = [
+            { x: 0, y: -1 }, { x: 0, y: 1 }, 
+            { x: -1, y: 0 }, { x: 1, y: 0 }
+          ];
+          const validDirs = directions.filter(dir => {
+            const testX = ghost.x + dir.x;
+            const testY = ghost.y + dir.y; 
+            return testX >= 0 && testX < GRID_SIZE && testY >= 0 && testY < GRID_SIZE && maze[testY][testX] !== 1;
+          });
+          
+          if (validDirs.length > 0) {
+            const randomDir = validDirs[Math.floor(Math.random() * validDirs.length)];
+            newX = ghost.x + randomDir.x;
+            newY = ghost.y + randomDir.y;
+            newDx = randomDir.x;
+            newDy = randomDir.y;
+          } else {
+            newX = ghost.x;
+            newY = ghost.y;
+          }
+        }
+        
+        return { ...ghost, x: newX, y: newY, dx: newDx, dy: newDy };
+      })
+    );
+  }, [isPlaying, isPaused, gameOver, pacmanPosition, powerMode, maze]);
+
   const movePacman = useCallback(() => {
     if (!isPlaying || isPaused || gameOver || (direction.x === 0 && direction.y === 0)) return;
 
@@ -310,18 +385,33 @@ export const PacMan2D = ({ onScoreChange, onGameEnd, onGameStart }: PacMan2DProp
       }
       
       // Check ghost collision
-      const ghostCollision = ghosts.some(ghost => ghost.x === newX && ghost.y === newZ);
-      if (ghostCollision && !powerMode) {
-        if (!loseLife()) {
-          setGameOver(true);
-          setIsPlaying(false);
-          onGameEnd?.();
-          toast.error("Game Over! Sve živote ste izgubili!");
+      const ghostCollision = ghosts.findIndex(ghost => ghost.x === newX && ghost.y === newZ);
+      if (ghostCollision !== -1) {
+        if (powerMode) {
+          // Eat ghost when powered up
+          setGhosts(currentGhosts => {
+            const newGhosts = [...currentGhosts];
+            newGhosts[ghostCollision] = { ...newGhosts[ghostCollision], x: 10, y: 9 }; // Reset ghost to center
+            return newGhosts;
+          });
+          const bonusPoints = 200;
+          const newScore = score + bonusPoints;
+          setScore(newScore);
+          onScoreChange?.(newScore);
+          toast.success(`Ghost eaten! +${bonusPoints} points!`);
         } else {
-          // Reset position but keep playing
-          return { x: 10, y: 15 };
+          // Ghost kills Pac-Man
+          if (!loseLife()) {
+            setGameOver(true);
+            setIsPlaying(false);
+            onGameEnd?.();
+            toast.error("Game Over! Sve živote ste izgubili!");
+          } else {
+            toast.error("Ghost caught you! Life lost!");
+            return { x: 10, y: 15 };
+          }
+          return current;
         }
-        return current;
       }
       
       // Eat dots/pellets
@@ -333,7 +423,8 @@ export const PacMan2D = ({ onScoreChange, onGameEnd, onGameStart }: PacMan2DProp
         
         if (maze[newZ][newX] === 3) {
           setPowerMode(true);
-          setTimeout(() => setPowerMode(false), 10000);
+          setTimeout(() => setPowerMode(false), 8000);
+          toast.success("Power mode activated!");
         }
         
         setMaze(currentMaze => {
@@ -359,6 +450,14 @@ export const PacMan2D = ({ onScoreChange, onGameEnd, onGameStart }: PacMan2DProp
   useEffect(() => {
     if (isPlaying && !isPaused && !gameOver) {
       gameLoopRef.current = setInterval(movePacman, 150);
+      // Move ghosts slightly slower
+      const ghostTimer = setInterval(moveGhosts, 200);
+      return () => {
+        clearInterval(ghostTimer);
+        if (gameLoopRef.current) {
+          clearInterval(gameLoopRef.current);
+        }
+      };
     } else {
       if (gameLoopRef.current) {
         clearInterval(gameLoopRef.current);
@@ -370,7 +469,7 @@ export const PacMan2D = ({ onScoreChange, onGameEnd, onGameStart }: PacMan2DProp
         clearInterval(gameLoopRef.current);
       }
     };
-  }, [isPlaying, isPaused, gameOver, movePacman]);
+  }, [isPlaying, isPaused, gameOver, movePacman, moveGhosts]);
 
   // Enhanced keyboard controls with page scroll prevention  
   const handleKeyPress = useCallback((keyCode: string) => {
@@ -446,18 +545,25 @@ export const PacMan2D = ({ onScoreChange, onGameEnd, onGameStart }: PacMan2DProp
           )}
         </div>
 
-        <div className="relative">
-          <canvas
-            ref={canvasRef}
-            width={GRID_SIZE * CELL_SIZE}
-            height={GRID_SIZE * CELL_SIZE}
-            className="w-full h-auto bg-black rounded-lg border-2 border-arcade-gold"
-            style={{
-              maxWidth: '500px',
-              maxHeight: '500px',
-              imageRendering: 'pixelated'
-            }}
-          />
+        <div className="flex justify-center">
+          <div className="relative inline-block">
+            <canvas
+              ref={canvasRef}
+              width={GRID_SIZE * CELL_SIZE}
+              height={GRID_SIZE * CELL_SIZE}
+              className="bg-black rounded-lg border-4 border-arcade-gold shadow-[0_0_40px_rgba(255,215,0,0.6)]"
+              style={{
+                imageRendering: 'pixelated',
+                filter: 'contrast(1.4) brightness(1.3) saturate(1.5)',
+                background: 'linear-gradient(135deg, #0a2a0a 0%, #1a4d1a 50%, #2d5f2d 100%)'
+              }}
+            />
+            <div className="absolute -top-2 -left-2 -right-2 -bottom-2 bg-gradient-to-r from-arcade-gold via-neon-green to-arcade-gold rounded-lg opacity-30 animate-pulse-border"></div>
+            <div className="absolute top-2 left-2 text-xs font-bold text-arcade-gold/70">128-BIT JUNGLE ENGINE</div>
+            {powerMode && (
+              <div className="absolute top-2 right-2 text-xs font-bold text-neon-pink animate-neon-pulse">POWER MODE!</div>
+            )}
+          </div>
         </div>
         
         <div className="mt-4 text-sm text-muted-foreground text-center">

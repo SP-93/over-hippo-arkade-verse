@@ -195,19 +195,6 @@ export const OverProtocolIntegration = ({
         </DialogContent>
       </Dialog>
 
-      {/* Smart Contract Info */}
-      <Card className="p-3 bg-muted/10 border-muted">
-        <div className="space-y-2">
-          <h4 className="text-sm font-semibold text-primary">Smart Contract Integration</h4>
-          <p className="text-xs text-muted-foreground">
-            All transactions are secured by Over Protocol smart contracts
-          </p>
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <div className="h-2 w-2 bg-neon-green rounded-full animate-neon-pulse"></div>
-            Connected to Over Protocol Mainnet
-          </div>
-        </div>
-      </Card>
     </div>
   );
 };

@@ -484,22 +484,23 @@ export const UltraSnake2025 = ({ onScoreChange, onGameEnd, onGameStart }: UltraS
           )}
         </div>
 
-        <div className="relative">
-          <canvas
-            ref={canvasRef}
-            width={650}
-            height={650}
-            className="w-full h-[650px] bg-black rounded-lg border-2 border-neon-green/50"
-            style={{
-              maxWidth: '650px',
-              maxHeight: '650px',
-              filter: 'contrast(1.1) brightness(1.1)',
-              boxShadow: `
-                0 0 20px rgba(0, 255, 65, 0.3),
-                inset 0 0 20px rgba(0, 255, 65, 0.1)
-              `
-            }}
-          />
+        <div className="flex justify-center">
+          <div className="relative inline-block">
+            <canvas
+              ref={canvasRef}
+              width={500}
+              height={500}
+              className="bg-black rounded-lg border-4 border-neon-green shadow-[0_0_40px_rgba(0,255,0,0.6)]"
+              style={{
+                imageRendering: 'pixelated',
+                filter: 'contrast(1.3) brightness(1.2) saturate(1.4)',
+                background: 'linear-gradient(135deg, #0a0a0a 0%, #0a2a0a 50%, #1a4d1a 100%)'
+              }}
+            />
+            <div className="absolute -top-2 -left-2 -right-2 -bottom-2 bg-gradient-to-r from-neon-green via-neon-cyan to-neon-green rounded-lg opacity-30 animate-pulse-border"></div>
+            <div className="absolute top-2 left-2 text-xs font-orbitron text-neon-green/70">128-BIT NEON ENGINE</div>
+            <div className="absolute top-2 right-2 text-xs font-orbitron text-arcade-gold/70">SPEED: {Math.round((300-speed)/2)}%</div>
+          </div>
         </div>
         
         <div className="mt-4 text-sm text-muted-foreground text-center font-orbitron">

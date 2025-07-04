@@ -291,9 +291,6 @@ const Index = () => {
               <p className="text-xs md:text-sm text-muted-foreground backdrop-glass rounded-lg px-3 md:px-4 py-1 md:py-2 inline-block border border-neon max-w-md mx-auto">
                 Powered by Over Protocol • Built for the Web3 Gaming Revolution
               </p>
-              <p className="text-xs text-muted-foreground backdrop-glass rounded-lg px-2 md:px-3 py-1 inline-block border border-primary/30 break-all">
-                Profit Wallet: 0x4deA071d64F77F2F94Ac1EB80D1b7b2681993477
-              </p>
             </div>
           </div>
         </footer>

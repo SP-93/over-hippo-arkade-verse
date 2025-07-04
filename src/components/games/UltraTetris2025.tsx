@@ -734,22 +734,22 @@ export const UltraTetris2025 = ({ onScoreChange, onGameEnd, onGameStart }: Ultra
           )}
         </div>
 
-        <div className="relative">
-          <canvas
-            ref={canvasRef}
-            width={500}
-            height={650}
-            className="w-full h-[650px] bg-black rounded-lg border-2 border-neon-blue/50"
-            style={{
-              maxWidth: '500px',
-              maxHeight: '650px',
-              filter: 'contrast(1.2) brightness(1.1)',
-              boxShadow: `
-                0 0 30px rgba(68, 68, 255, 0.4),
-                inset 0 0 30px rgba(68, 68, 255, 0.1)
-              `
-            }}
-          />
+        <div className="flex justify-center">
+          <div className="relative inline-block">
+            <canvas
+              ref={canvasRef}
+              width={400}
+              height={500}
+              className="bg-black rounded-lg border-4 border-neon-blue shadow-[0_0_40px_rgba(68,68,255,0.6)]"
+              style={{
+                imageRendering: 'pixelated',
+                filter: 'contrast(1.3) brightness(1.2) saturate(1.4)',
+                background: 'linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #16213e 100%)'
+              }}
+            />
+            <div className="absolute -top-2 -left-2 -right-2 -bottom-2 bg-gradient-to-r from-neon-blue via-neon-pink to-neon-blue rounded-lg opacity-30 animate-pulse-border"></div>
+            <div className="absolute top-2 left-2 text-xs font-orbitron text-neon-blue/70">128-BIT ENGINE</div>
+          </div>
         </div>
         
         <div className="mt-4 text-sm text-muted-foreground text-center font-orbitron">
