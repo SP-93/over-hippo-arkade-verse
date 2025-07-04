@@ -10,12 +10,16 @@ interface ChipManagerProps {
 
 export const ChipManager = ({ playerChips, onChipChange }: ChipManagerProps) => {
   const [lastResetTime, setLastResetTime] = useState<string | null>(null);
+  const [firstChipConsumed, setFirstChipConsumed] = useState(false);
 
   useEffect(() => {
     const savedResetTime = localStorage.getItem('chip_reset_time');
+    const chipConsumed = localStorage.getItem('first_chip_consumed') === 'true';
     const now = new Date();
     
-    if (savedResetTime) {
+    setFirstChipConsumed(chipConsumed);
+    
+    if (savedResetTime && chipConsumed) {
       const resetTime = new Date(savedResetTime);
       const timeDiff = now.getTime() - resetTime.getTime();
       const hoursElapsed = timeDiff / (1000 * 60 * 60);
@@ -23,15 +27,13 @@ export const ChipManager = ({ playerChips, onChipChange }: ChipManagerProps) => 
       if (hoursElapsed >= 24) {
         // Reset chips to 5 after 24 hours
         onChipChange(5);
-        localStorage.setItem('chip_reset_time', now.toISOString());
-        setLastResetTime(now.toISOString());
+        localStorage.removeItem('chip_reset_time');
+        localStorage.removeItem('first_chip_consumed');
+        setLastResetTime(null);
+        setFirstChipConsumed(false);
       } else {
         setLastResetTime(savedResetTime);
       }
-    } else {
-      // First time - set initial chips and reset time
-      localStorage.setItem('chip_reset_time', now.toISOString());
-      setLastResetTime(now.toISOString());
     }
   }, [onChipChange]);
 
@@ -42,12 +44,21 @@ export const ChipManager = ({ playerChips, onChipChange }: ChipManagerProps) => 
   const consumeChip = (gameType: string): boolean => {
     if (!canPlayGame(gameType)) return false;
     
+    // Start 24h timer when first chip is consumed
+    if (!firstChipConsumed) {
+      const now = new Date();
+      localStorage.setItem('chip_reset_time', now.toISOString());
+      localStorage.setItem('first_chip_consumed', 'true');
+      setLastResetTime(now.toISOString());
+      setFirstChipConsumed(true);
+    }
+    
     onChipChange(playerChips - 1);
     return true;
   };
 
   const getTimeUntilReset = (): string => {
-    if (!lastResetTime) return "00:00:00";
+    if (!lastResetTime || !firstChipConsumed) return "Play to start timer";
     
     const resetTime = new Date(lastResetTime);
     const nextReset = new Date(resetTime.getTime() + (24 * 60 * 60 * 1000));
