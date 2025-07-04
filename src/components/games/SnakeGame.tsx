@@ -1,4 +1,4 @@
-import { Snake3DGame } from "./Snake3DGame";
+import { SimpleSnake3D } from "./SimpleSnake3D";
 
 interface SnakeGameProps {
   onScoreChange?: (score: number) => void;
@@ -7,6 +7,6 @@ interface SnakeGameProps {
 }
 
 export const SnakeGame = (props: SnakeGameProps) => {
-  console.log("SnakeGame wrapper loaded - 3D version");
-  return <Snake3DGame {...props} />;
+  console.log("SnakeGame wrapper loaded - Simple 3D version");
+  return <SimpleSnake3D {...props} />;
 };

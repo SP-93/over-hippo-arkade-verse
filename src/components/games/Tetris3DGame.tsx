@@ -326,7 +326,13 @@ export const Tetris3DGame = ({ onScoreChange, onGameEnd, onGameStart }: Tetris3D
         </div>
 
         <div className="h-[600px] bg-black rounded-lg overflow-hidden">
-          <Canvas camera={{ position: [8, 15, 12], fov: 50 }}>
+          <Canvas 
+            camera={{ position: [8, 15, 12], fov: 50 }}
+            onCreated={({ gl }) => {
+              gl.setSize(600, 600);
+            }}
+            fallback={<div className="flex items-center justify-center h-full text-white">Loading 3D...</div>}
+          >
             <ambientLight intensity={0.4} />
             <directionalLight position={[5, 10, 5]} intensity={0.8} />
             <pointLight position={[5, 10, 2]} intensity={0.6} color="#4444ff" />

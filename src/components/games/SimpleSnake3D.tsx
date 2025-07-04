@@ -1,95 +1,42 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Canvas, useFrame } from "@react-three/fiber";
-import { OrbitControls, Box, Sphere } from "@react-three/drei";
+import { Canvas } from "@react-three/fiber";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useGameManager } from "@/hooks/useGameManager";
 import { toast } from "sonner";
-import * as THREE from "three";
 
 const GRID_SIZE = 20;
 const INITIAL_SNAKE = [{ x: 10, y: 10, z: 0 }];
 const INITIAL_DIRECTION = { x: 1, y: 0, z: 0 };
 
-interface Snake3DGameProps {
+interface SimpleSnake3DProps {
   onScoreChange?: (score: number) => void;
   onGameEnd?: () => void;
   onGameStart?: () => boolean;
 }
 
-interface SnakeSegmentProps {
-  position: [number, number, number];
-  isHead?: boolean;
-}
-
-const SnakeSegment = ({ position, isHead }: SnakeSegmentProps) => {
-  const meshRef = useRef<THREE.Mesh>(null);
-  
-  useFrame((state) => {
-    if (meshRef.current) {
-      meshRef.current.rotation.x = state.clock.elapsedTime * 0.5;
-      meshRef.current.rotation.y = state.clock.elapsedTime * 0.3;
-    }
-  });
-
+// Simple 3D cube component without complex features
+const SimpleCube = ({ position, color, size = 0.8 }: any) => {
   return (
-    <Box
-      ref={meshRef}
-      position={position}
-      args={[0.8, 0.8, 0.8]}
-    >
-      <meshStandardMaterial 
-        color={isHead ? "#00ff41" : "#00cc33"} 
-        metalness={0.3}
-        roughness={0.2}
-        emissive={isHead ? "#004411" : "#002211"}
-      />
-    </Box>
+    <mesh position={position}>
+      <boxGeometry args={[size, size, size]} />
+      <meshStandardMaterial color={color} />
+    </mesh>
   );
 };
 
-const Food = ({ position }: { position: [number, number, number] }) => {
-  const meshRef = useRef<THREE.Mesh>(null);
-  
-  useFrame((state) => {
-    if (meshRef.current) {
-      meshRef.current.rotation.y = state.clock.elapsedTime * 2;
-      meshRef.current.position.y = position[1] + Math.sin(state.clock.elapsedTime * 3) * 0.2;
-    }
-  });
-
+// Simple 3D sphere for food
+const SimpleSphere = ({ position, color }: any) => {
   return (
-    <Sphere
-      ref={meshRef}
-      position={position}
-      args={[0.4, 16, 16]}
-    >
-      <meshStandardMaterial 
-        color="#ff3366" 
-        metalness={0.5}
-        roughness={0.1}
-        emissive="#441122"
-      />
-    </Sphere>
+    <mesh position={position}>
+      <sphereGeometry args={[0.4, 16, 16]} />
+      <meshStandardMaterial color={color} />
+    </mesh>
   );
 };
 
-const GameGrid = () => {
-  return (
-    <group>
-      {/* Grid lines */}
-      <gridHelper args={[GRID_SIZE, GRID_SIZE, "#333333", "#111111"]} />
-      {/* Game boundaries */}
-      <lineSegments>
-        <edgesGeometry args={[new THREE.BoxGeometry(GRID_SIZE, 0.1, GRID_SIZE)]} />
-        <lineBasicMaterial color="#666666" />
-      </lineSegments>
-    </group>
-  );
-};
-
-export const Snake3DGame = ({ onScoreChange, onGameEnd, onGameStart }: Snake3DGameProps = {}) => {
-  console.log("Snake3DGame loaded - real 3D version active!");
+export const SimpleSnake3D = ({ onScoreChange, onGameEnd, onGameStart }: SimpleSnake3DProps = {}) => {
+  console.log("SimpleSnake3D loaded!");
   const [snake, setSnake] = useState(INITIAL_SNAKE);
   const [direction, setDirection] = useState(INITIAL_DIRECTION);
   const [food, setFood] = useState({ x: 15, y: 0, z: 15 });
@@ -115,13 +62,10 @@ export const Snake3DGame = ({ onScoreChange, onGameEnd, onGameStart }: Snake3DGa
   }, [snake]);
 
   const checkCollision = useCallback((head: any) => {
-    // Wall collision
     if (head.x < -GRID_SIZE/2 || head.x >= GRID_SIZE/2 || 
         head.z < -GRID_SIZE/2 || head.z >= GRID_SIZE/2) {
       return true;
     }
-    
-    // Self collision
     return snake.some(segment => segment.x === head.x && segment.z === head.z);
   }, [snake]);
 
@@ -145,13 +89,11 @@ export const Snake3DGame = ({ onScoreChange, onGameEnd, onGameStart }: Snake3DGa
       
       newSnake.unshift(head);
       
-      // Check food collision
       if (head.x === food.x && head.z === food.z) {
         const newScore = score + 10;
         setScore(newScore);
         onScoreChange?.(newScore);
         setFood(generateFood());
-        // Increase speed slightly
         setSpeed(prev => Math.max(100, prev - 5));
       } else {
         newSnake.pop();
@@ -159,7 +101,7 @@ export const Snake3DGame = ({ onScoreChange, onGameEnd, onGameStart }: Snake3DGa
       
       return newSnake;
     });
-  }, [direction, food, isPlaying, isPaused, gameOver, checkCollision, generateFood]);
+  }, [direction, food, isPlaying, isPaused, gameOver, checkCollision, generateFood, score, onScoreChange, onGameEnd]);
 
   useEffect(() => {
     if (isPlaying && !isPaused && !gameOver) {
@@ -230,7 +172,7 @@ export const Snake3DGame = ({ onScoreChange, onGameEnd, onGameStart }: Snake3DGa
     <div className="space-y-4">
       <Card className="p-6 bg-gradient-card border-neon-green">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl font-bold text-neon-green">3D Snake</h2>
+          <h2 className="text-2xl font-bold text-neon-green">3D Snake (Simple)</h2>
           <div className="text-lg font-bold text-arcade-gold">Score: {score}</div>
         </div>
         
@@ -251,37 +193,29 @@ export const Snake3DGame = ({ onScoreChange, onGameEnd, onGameStart }: Snake3DGa
         </div>
 
         <div className="h-[600px] bg-black rounded-lg overflow-hidden">
-          <Canvas 
-            camera={{ position: [15, 15, 15], fov: 50 }}
-            onCreated={({ gl }) => {
-              gl.setSize(600, 600);
-            }}
-            fallback={<div className="flex items-center justify-center h-full text-white">Loading 3D...</div>}
-          >
-            <ambientLight intensity={0.3} />
+          <Canvas camera={{ position: [15, 15, 15], fov: 50 }}>
+            <ambientLight intensity={0.5} />
             <directionalLight position={[10, 10, 5]} intensity={1} />
-            <pointLight position={[0, 10, 0]} intensity={0.5} color="#00ff41" />
             
-            <GameGrid />
+            {/* Grid helper */}
+            <gridHelper args={[GRID_SIZE, GRID_SIZE, "#333333", "#111111"]} />
             
             {/* Snake segments */}
             {snake.map((segment, index) => (
-              <SnakeSegment
+              <SimpleCube
                 key={index}
                 position={[segment.x, segment.y, segment.z]}
-                isHead={index === 0}
+                color={index === 0 ? "#00ff41" : "#00cc33"}
               />
             ))}
             
             {/* Food */}
-            <Food position={[food.x, food.y, food.z]} />
-            
-            <OrbitControls enablePan={false} enableZoom={true} />
+            <SimpleSphere position={[food.x, food.y, food.z]} color="#ff3366" />
           </Canvas>
         </div>
         
         <div className="mt-4 text-sm text-muted-foreground text-center">
-          Use WASD or Arrow keys to move • Space to pause • Mouse to rotate camera
+          Use WASD or Arrow keys to move • Space to pause
         </div>
       </Card>
     </div>
