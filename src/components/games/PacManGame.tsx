@@ -6,6 +6,7 @@ import { Pause, Play, ArrowUp, ArrowDown, ArrowLeft, ArrowRight } from "lucide-r
 interface PacManGameProps {
   onScoreChange: (score: number) => void;
   onGameEnd: (finalScore: number) => void;
+  chipCost?: number; // Number of chips consumed for this game session
 }
 
 const BOARD_WIDTH = 19;
