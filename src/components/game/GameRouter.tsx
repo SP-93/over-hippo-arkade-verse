@@ -1,6 +1,6 @@
 import { UltraSnake2025 } from "@/components/games/UltraSnake2025";
 import { UltraTetris2025 } from "@/components/games/UltraTetris2025";
-import { PacMan3DGame } from "@/components/games/PacMan3DGame";
+import { PacMan2D } from "@/components/games/PacMan2D";
 import { GameTemplate } from "@/components/GameTemplate";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -40,7 +40,7 @@ export const GameRouter = ({ gameId, onScoreChange, onGameEnd, onGameStart }: Ga
 
   if (gameId === 'pacman') {
     return (
-      <PacMan3DGame 
+      <PacMan2D 
         onScoreChange={onScoreChange}
         onGameEnd={onGameEnd}
         onGameStart={onGameStart}

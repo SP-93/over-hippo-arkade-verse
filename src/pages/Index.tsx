@@ -3,9 +3,10 @@ import { useNavigate } from "react-router-dom";
 import { WalletConnection } from "@/components/WalletConnection";
 import { PlayerDashboard } from "@/components/PlayerDashboard";
 import { GameGrid } from "@/components/GameGrid";
-import { ChipManager, ChipDisplay } from "@/components/ChipManager";
+import { ChipDisplay } from "@/components/ChipManager";
 import { ChipPurchaseModal } from "@/components/ChipPurchaseModal";
 import { HippoBackground } from "@/components/HippoBackground";
+import { useChipManager } from "@/hooks/useChipManager";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -17,17 +18,15 @@ const Index = () => {
   const [isWalletConnected, setIsWalletConnected] = useState(false);
   const [walletAddress, setWalletAddress] = useState<string>("");
   const [walletType, setWalletType] = useState<string>("");
-  const [playerChips, setPlayerChips] = useState(5);
   const [currentView, setCurrentView] = useState<'home' | 'dashboard' | 'games'>('home');
   const navigate = useNavigate();
 
   // Initialize chip manager
-  const chipManager = ChipManager({ playerChips, onChipChange: setPlayerChips });
+  const chipManager = useChipManager();
 
   // Load wallet state from localStorage on component mount
   useEffect(() => {
     const savedWallet = localStorage.getItem('wallet_connection');
-    const savedChips = localStorage.getItem('player_chips');
     const savedView = localStorage.getItem('current_view');
     
     if (savedWallet) {
@@ -35,10 +34,6 @@ const Index = () => {
       setIsWalletConnected(walletData.isConnected);
       setWalletAddress(walletData.address);
       setWalletType(walletData.type);
-    }
-    
-    if (savedChips) {
-      setPlayerChips(parseInt(savedChips));
     }
     
     if (savedView && savedWallet) {
@@ -54,10 +49,9 @@ const Index = () => {
         address: walletAddress,
         type: walletType
       }));
-      localStorage.setItem('player_chips', playerChips.toString());
       localStorage.setItem('current_view', currentView);
     }
-  }, [isWalletConnected, walletAddress, walletType, playerChips, currentView]);
+  }, [isWalletConnected, walletAddress, walletType, currentView]);
 
   const handleWalletConnect = (connectedWalletType: string) => {
     setIsWalletConnected(true);
@@ -72,12 +66,11 @@ const Index = () => {
     setWalletType("");
     setCurrentView('home');
     localStorage.removeItem('wallet_connection');
-    localStorage.removeItem('player_chips');
     localStorage.removeItem('current_view');
   };
 
   const handleChipPurchase = (chips: number) => {
-    setPlayerChips(prev => prev + chips);
+    chipManager.setPlayerChips(prev => prev + chips);
     toast.success(`Added ${chips} chips to your account!`);
   };
 
@@ -96,9 +89,9 @@ const Index = () => {
   const renderCurrentView = () => {
     switch (currentView) {
       case 'dashboard':
-        return <PlayerDashboard playerAddress={walletAddress} playerChips={playerChips} />;
+        return <PlayerDashboard playerAddress={walletAddress} playerChips={chipManager.playerChips} />;
       case 'games':
-        return <GameGrid playerChips={playerChips} onPlayGame={handlePlayGame} />;
+        return <GameGrid playerChips={chipManager.playerChips} onPlayGame={handlePlayGame} />;
       default:
         return (
           <div className="text-center space-y-8 animate-zoom-in">
@@ -197,10 +190,10 @@ const Index = () => {
                 </div>
                 
                 <div className="flex items-center space-x-2 md:space-x-4">
-                  <ChipDisplay 
-                    playerChips={playerChips} 
-                    timeUntilReset={chipManager.getTimeUntilReset()} 
-                  />
+        <ChipDisplay 
+          playerChips={chipManager.playerChips} 
+          timeUntilReset={chipManager.getTimeUntilReset()}
+        />
                   <ChipPurchaseModal 
                     isConnected={isWalletConnected}
                     onPurchase={handleChipPurchase}

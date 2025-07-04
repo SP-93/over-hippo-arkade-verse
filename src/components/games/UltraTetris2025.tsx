@@ -95,7 +95,15 @@ export const UltraTetris2025 = ({ onScoreChange, onGameEnd, onGameStart }: Ultra
   const animationRef = useRef<number>();
   const [dropTime, setDropTime] = useState(500);
   
-  const { handleGameStart } = useGameManager();
+  const { 
+    playerChips, 
+    currentLives, 
+    chipManager, 
+    hasGameStarted, 
+    loseLife, 
+    handleGameStart, 
+    gameStatus 
+  } = useGameManager();
 
   const getRandomPiece = useCallback(() => {
     const pieceKeys = Object.keys(PIECES) as Array<keyof typeof PIECES>;
@@ -527,10 +535,19 @@ export const UltraTetris2025 = ({ onScoreChange, onGameEnd, onGameStart }: Ultra
     const newPosition = { x: 4, y: 0 };
     
     if (checkCollision(nextPiece, newPosition)) {
-      setGameOver(true);
-      setIsPlaying(false);
-      onGameEnd?.();
-      toast.error("Game Over!");
+      if (!loseLife()) {
+        setGameOver(true);
+        setIsPlaying(false);
+        onGameEnd?.();
+        toast.error("Game Over! Sve živote ste izgubili!");
+      } else {
+        // Reset board but keep playing with remaining lives
+        setBoard(Array(BOARD_HEIGHT).fill(null).map(() => Array(BOARD_WIDTH).fill(null)));
+        setCurrentPiece(getRandomPiece());
+        setNextPiece(getRandomPiece());
+        setCurrentPosition({ x: 4, y: 0 });
+        toast.warning("Tabla resetovana! Igrajte dalje!");
+      }
     } else {
       setCurrentPosition(newPosition);
     }
@@ -663,6 +680,7 @@ export const UltraTetris2025 = ({ onScoreChange, onGameEnd, onGameStart }: Ultra
             <div className="text-arcade-gold">SCORE: {score.toString().padStart(8, '0')}</div>
             <div className="text-neon-green">LEVEL: {level}</div>
             <div className="text-neon-pink">LINES: {lines}</div>
+            <div className="text-red-500">LIVES: {currentLives}</div>
           </div>
         </div>
         

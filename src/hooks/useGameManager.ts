@@ -1,29 +1,36 @@
 import { useState, useEffect } from "react";
-import { ChipManager } from "@/components/ChipManager";
+import { useChipManager } from "./useChipManager";
 import { toast } from "sonner";
 
 export const useGameManager = () => {
   const [gameTime, setGameTime] = useState(0);
   const [currentScore, setCurrentScore] = useState(0);
   const [gameStatus, setGameStatus] = useState<'playing' | 'paused' | 'finished'>('playing');
-  const [playerChips, setPlayerChips] = useState(5);
   const [hasGameStarted, setHasGameStarted] = useState(false);
+  const [currentLives, setCurrentLives] = useState(3);
 
   // Initialize chip manager
-  const chipManager = ChipManager({ playerChips, onChipChange: setPlayerChips });
+  const chipManager = useChipManager();
 
-  // Load player chips from localStorage
-  useEffect(() => {
-    const savedChips = localStorage.getItem('player_chips');
-    if (savedChips) {
-      setPlayerChips(parseInt(savedChips));
+  // Reset lives when new game starts
+  const resetLives = () => {
+    setCurrentLives(chipManager.getChipLives());
+  };
+
+  const loseLife = (): boolean => {
+    const newLives = currentLives - 1;
+    setCurrentLives(newLives);
+    
+    if (newLives <= 0) {
+      toast.error("Izgubili ste sve živote! Igra završena.");
+      setGameStatus('finished');
+      setHasGameStarted(false);
+      return false;
+    } else {
+      toast.warning(`Izgubili ste život! Ostalo: ${newLives}`);
+      return true;
     }
-  }, []);
-
-  // Save chips to localStorage when changed
-  useEffect(() => {
-    localStorage.setItem('player_chips', playerChips.toString());
-  }, [playerChips]);
+  };
 
   // Game timer
   useEffect(() => {
@@ -55,8 +62,10 @@ export const useGameManager = () => {
       }
       
       if (chipManager.consumeChip(gameId)) {
-        toast.success("Chip je potrošen! Uživajte u igri!");
+        resetLives();
+        toast.success(`Chip potrošen! Imate ${chipManager.getChipLives()} života za igru!`);
         setHasGameStarted(true);
+        setGameStatus('playing');
         return true;
       }
       return false;
@@ -73,12 +82,16 @@ export const useGameManager = () => {
     gameTime,
     currentScore,
     gameStatus,
-    playerChips,
+    playerChips: chipManager.playerChips,
     hasGameStarted,
+    currentLives,
+    chipManager,
     setCurrentScore,
     setGameStatus,
     endGame,
     handleGameStart,
-    pauseGame
+    pauseGame,
+    loseLife,
+    resetLives
   };
 };

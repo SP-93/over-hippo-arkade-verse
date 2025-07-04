@@ -80,7 +80,15 @@ export const UltraSnake2025 = ({ onScoreChange, onGameEnd, onGameStart }: UltraS
   const gameLoopRef = useRef<NodeJS.Timeout>();
   const animationRef = useRef<number>();
   
-  const { handleGameStart } = useGameManager();
+  const { 
+    playerChips, 
+    currentLives, 
+    chipManager, 
+    hasGameStarted, 
+    loseLife, 
+    handleGameStart, 
+    gameStatus 
+  } = useGameManager();
 
   const generateFood = useCallback(() => {
     let newFood;
@@ -312,20 +320,27 @@ export const UltraSnake2025 = ({ onScoreChange, onGameEnd, onGameStart }: UltraS
       head.y += direction.y;
       
       if (checkCollision(head)) {
-        setGameOver(true);
-        setIsPlaying(false);
-        onGameEnd?.();
-        // Explosion effect on death
-        const canvas = canvasRef.current;
-        if (canvas) {
-          const cellSize = Math.min(canvas.width, canvas.height) / GRID_SIZE;
-          createParticleExplosion(
-            head.x * cellSize + cellSize/2,
-            head.y * cellSize + cellSize/2,
-            `hsl(${currentHue}, 100%, 50%)`
-          );
+        if (!loseLife()) {
+          setGameOver(true);
+          setIsPlaying(false);
+          onGameEnd?.();
+          // Explosion effect on death
+          const canvas = canvasRef.current;
+          if (canvas) {
+            const cellSize = Math.min(canvas.width, canvas.height) / GRID_SIZE;
+            createParticleExplosion(
+              head.x * cellSize + cellSize/2,
+              head.y * cellSize + cellSize/2,
+              `hsl(${currentHue}, 100%, 50%)`
+            );
+          }
+          toast.error("Game Over! Sve živote ste izgubili!");
+        } else {
+          // Reset snake position but keep game running
+          setSnake(INITIAL_SNAKE);
+          setDirection(INITIAL_DIRECTION);
+          setFood({ x: 18, y: 18 });
         }
-        toast.error("Game Over!");
         return currentSnake;
       }
       
@@ -451,7 +466,10 @@ export const UltraSnake2025 = ({ onScoreChange, onGameEnd, onGameStart }: UltraS
       <Card className="p-6 bg-gradient-card border-neon-green">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-2xl font-bold text-neon-green font-orbitron">ULTRA SNAKE 2025</h2>
-          <div className="text-lg font-bold text-arcade-gold font-orbitron">SCORE: {score.toString().padStart(4, '0')}</div>
+          <div className="flex items-center gap-4">
+            <div className="text-lg font-bold text-arcade-gold font-orbitron">SCORE: {score.toString().padStart(4, '0')}</div>
+            <div className="text-lg font-bold text-red-500 font-orbitron">LIVES: {currentLives}</div>
+          </div>
         </div>
         
         <div className="flex gap-2 mb-4">
