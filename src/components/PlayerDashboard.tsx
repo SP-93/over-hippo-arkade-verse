@@ -8,12 +8,20 @@ import { toast } from "sonner";
 
 interface PlayerDashboardProps {
   playerAddress?: string;
+  playerChips?: number;
 }
 
-export const PlayerDashboard = ({ playerAddress }: PlayerDashboardProps) => {
-  const [chips, setChips] = useState(5);
+export const PlayerDashboard = ({ playerAddress, playerChips }: PlayerDashboardProps) => {
+  const [chips, setChips] = useState(playerChips || 5);
   const [points, setPoints] = useState(1250);
   const [timeUntilReset, setTimeUntilReset] = useState(18 * 3600 + 45 * 60); // 18h 45m in seconds
+
+  // Update chips when prop changes
+  useEffect(() => {
+    if (playerChips !== undefined) {
+      setChips(playerChips);
+    }
+  }, [playerChips]);
 
   useEffect(() => {
     const timer = setInterval(() => {

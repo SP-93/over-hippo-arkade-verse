@@ -29,7 +29,7 @@ export const ChipPurchaseModal = ({ isConnected, onPurchase }: ChipPurchaseModal
 
   const handlePurchase = async (chipPackage: ChipPackage) => {
     if (!isConnected) {
-      toast.error("Potrebno je da povežete wallet za kupovinu!");
+      toast.error("Please connect your wallet to purchase chips!");
       return;
     }
 
@@ -40,10 +40,10 @@ export const ChipPurchaseModal = ({ isConnected, onPurchase }: ChipPurchaseModal
       await new Promise(resolve => setTimeout(resolve, 2000));
       
       onPurchase(chipPackage.chips);
-      toast.success(`Uspešno ste kupili ${chipPackage.chips} chipova za ${chipPackage.price} Over Coin!`);
+      toast.success(`Successfully purchased ${chipPackage.chips} chips for ${chipPackage.price} Over Coins!`);
       setIsOpen(false);
     } catch (error) {
-      toast.error("Greška pri kupovini chipova. Pokušajte ponovo.");
+      toast.error("Error purchasing chips. Please try again.");
     } finally {
       setIsPurchasing(false);
     }
@@ -54,12 +54,12 @@ export const ChipPurchaseModal = ({ isConnected, onPurchase }: ChipPurchaseModal
       <DialogTrigger asChild>
         <Button variant="outline" className="gap-2">
           <ShoppingCart className="h-4 w-4" />
-          Kupi Chipove
+          Buy Chips
         </Button>
       </DialogTrigger>
       <DialogContent className="bg-card border-primary max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-center text-primary">Kupi Game Chipove</DialogTitle>
+          <DialogTitle className="text-center text-primary">Purchase Game Chips</DialogTitle>
         </DialogHeader>
         
         <div className="space-y-4">
@@ -67,10 +67,10 @@ export const ChipPurchaseModal = ({ isConnected, onPurchase }: ChipPurchaseModal
             <div className="p-4 border border-destructive rounded-lg bg-destructive/10">
               <div className="flex items-center gap-2 text-destructive">
                 <Wallet className="h-5 w-5" />
-                <span className="font-medium">Potreban je wallet</span>
+                <span className="font-medium">Wallet Required</span>
               </div>
               <p className="text-sm text-muted-foreground mt-1">
-                Povežite wallet da biste mogli kupiti chipove
+                Connect your wallet to purchase chips
               </p>
             </div>
           )}
@@ -92,17 +92,17 @@ export const ChipPurchaseModal = ({ isConnected, onPurchase }: ChipPurchaseModal
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="font-bold text-lg">{pkg.chips} Chipova</span>
+                        <span className="font-bold text-lg">{pkg.chips} Chips</span>
                         {pkg.popular && (
                           <Badge variant="secondary" className="text-xs">
-                            Popularan
+                            BEST VALUE
                           </Badge>
                         )}
                       </div>
                       <p className="text-sm text-muted-foreground">
-                        {pkg.chips === 5 && "Osnovni paket"}
-                        {pkg.chips === 10 && "Najbolja vrednost"}
-                        {pkg.chips === 20 && "Premium paket"}
+                        {pkg.chips === 5 && "Small Pack"}
+                        {pkg.chips === 10 && "Medium Pack"}
+                        {pkg.chips === 20 && "Large Pack"}
                       </p>
                     </div>
                   </div>
@@ -119,7 +119,7 @@ export const ChipPurchaseModal = ({ isConnected, onPurchase }: ChipPurchaseModal
                       className="mt-2"
                       variant={pkg.popular ? "default" : "outline"}
                     >
-                      {isPurchasing ? "Kupujem..." : "Kupi"}
+                      {isPurchasing ? "Purchasing..." : "Purchase"}
                     </Button>
                   </div>
                 </div>
@@ -129,7 +129,7 @@ export const ChipPurchaseModal = ({ isConnected, onPurchase }: ChipPurchaseModal
 
           <div className="p-3 bg-muted/30 rounded-lg">
             <p className="text-xs text-muted-foreground text-center">
-              Chipovi se troše za pokretanje igara. Svaka igra troši različit broj chipova.
+              Chips are consumed to start games. Each game costs different amount of chips.
             </p>
           </div>
         </div>

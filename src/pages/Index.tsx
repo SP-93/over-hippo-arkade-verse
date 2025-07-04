@@ -78,17 +78,17 @@ const Index = () => {
 
   const handleChipPurchase = (chips: number) => {
     setPlayerChips(prev => prev + chips);
-    toast.success(`Dodano je ${chips} chipova u vaš račun!`);
+    toast.success(`Added ${chips} chips to your account!`);
   };
 
   const handlePlayGame = (gameId: string) => {
     if (!chipManager.canPlayGame(gameId)) {
-      toast.error("Nemate dovoljno chipova za igru!");
+      toast.error("Not enough chips to play!");
       return;
     }
     
     if (chipManager.consumeChip(gameId)) {
-      toast.success("Chip je potrošen! Uživajte u igri!");
+      toast.success("Chip consumed! Enjoy your game!");
       navigate(`/game/${gameId}`);
     }
   };
@@ -96,7 +96,7 @@ const Index = () => {
   const renderCurrentView = () => {
     switch (currentView) {
       case 'dashboard':
-        return <PlayerDashboard playerAddress={walletAddress} />;
+        return <PlayerDashboard playerAddress={walletAddress} playerChips={playerChips} />;
       case 'games':
         return <GameGrid playerChips={playerChips} onPlayGame={handlePlayGame} />;
       default:
@@ -111,7 +111,13 @@ const Index = () => {
             </div>
             
             <div className="space-y-4">
-              <h1 className="text-4xl md:text-6xl font-black bg-gradient-hero bg-clip-text text-transparent animate-gradient drop-shadow-lg">
+              <h1 className="text-4xl md:text-6xl font-black text-white drop-shadow-2xl animate-gradient" style={{
+                background: 'linear-gradient(135deg, #ff6b6b, #4ecdc4, #45b7d1, #96ceb4, #feca57)',
+                backgroundSize: '400% 400%',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+                backgroundClip: 'text'
+              }}>
                 Over Hippo Arkade
               </h1>
               <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto backdrop-glass rounded-xl p-4 md:p-6 border border-neon hover-lift">
