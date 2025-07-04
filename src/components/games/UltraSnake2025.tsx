@@ -197,16 +197,51 @@ export const UltraSnake2025 = ({ onScoreChange, onGameEnd, onGameStart }: UltraS
     
     const cellSize = Math.min(canvas.width, canvas.height) / GRID_SIZE;
     
-    // Clear with gradient background
-    const bgGradient = ctx.createRadialGradient(
-      canvas.width/2, canvas.height/2, 0,
-      canvas.width/2, canvas.height/2, canvas.width/2
-    );
-    bgGradient.addColorStop(0, '#0a0a1a');
-    bgGradient.addColorStop(0.7, '#1a0a2e');
-    bgGradient.addColorStop(1, '#2e0a1a');
-    ctx.fillStyle = bgGradient;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    // Desert/Nature theme background
+    const time = Date.now() * 0.0005;
+    
+    // Sky gradient (desert sunset theme)
+    const skyGradient = ctx.createLinearGradient(0, 0, 0, canvas.height * 0.3);
+    skyGradient.addColorStop(0, `hsl(${45 + Math.sin(time) * 10}, 70%, 60%)`); // Sunset orange
+    skyGradient.addColorStop(0.6, `hsl(${25 + Math.sin(time) * 5}, 60%, 45%)`); // Deep orange
+    skyGradient.addColorStop(1, `hsl(${10}, 50%, 30%)`); // Dark red-brown
+    ctx.fillStyle = skyGradient;
+    ctx.fillRect(0, 0, canvas.width, canvas.height * 0.3);
+    
+    // Ground gradient (sandy desert)
+    const groundGradient = ctx.createLinearGradient(0, canvas.height * 0.3, 0, canvas.height);
+    groundGradient.addColorStop(0, `hsl(45, 60%, 70%)`); // Light sand
+    groundGradient.addColorStop(0.5, `hsl(40, 50%, 60%)`); // Medium sand
+    groundGradient.addColorStop(1, `hsl(35, 40%, 45%)`); // Dark sand
+    ctx.fillStyle = groundGradient;
+    ctx.fillRect(0, canvas.height * 0.3, canvas.width, canvas.height * 0.7);
+    
+    // Add floating sand particles
+    ctx.fillStyle = 'rgba(255, 220, 150, 0.3)';
+    for (let i = 0; i < 30; i++) {
+      const x = (i * 37 + time * 20) % canvas.width;
+      const y = canvas.height * 0.4 + Math.sin(time * 2 + i) * 30;
+      ctx.beginPath();
+      ctx.arc(x, y, 1 + Math.sin(i + time * 3) * 0.5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    
+    // Add cacti silhouettes
+    ctx.fillStyle = 'rgba(50, 80, 40, 0.6)';
+    for (let i = 0; i < 8; i++) {
+      const x = (i * 80 + 40) % canvas.width;
+      const y = canvas.height * 0.3;
+      const height = 40 + Math.sin(i) * 20;
+      
+      // Cactus body
+      ctx.fillRect(x - 8, y, 16, height);
+      
+      // Cactus arms
+      if (i % 2 === 0) {
+        ctx.fillRect(x - 20, y + height * 0.3, 12, 20);
+        ctx.fillRect(x + 8, y + height * 0.6, 12, 15);
+      }
+    }
     
     drawNeonGrid(ctx, cellSize);
     drawGlowingSnake(ctx, cellSize);

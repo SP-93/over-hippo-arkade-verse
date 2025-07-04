@@ -65,13 +65,25 @@ const PacManPlayer = ({ position, direction }: { position: [number, number, numb
 
 const Wall = ({ position }: { position: [number, number, number] }) => (
   <Box position={position} args={[CELL_SIZE * 0.9, CELL_SIZE * 2, CELL_SIZE * 0.9]}>
-    <meshStandardMaterial color="#0000ff" metalness={0.8} roughness={0.2} />
+    <meshStandardMaterial 
+      color="#2F4F2F" 
+      metalness={0.1} 
+      roughness={0.8}
+      emissive="#1a3d1a"
+      emissiveIntensity={0.2}
+    />
   </Box>
 );
 
 const Dot = ({ position }: { position: [number, number, number] }) => (
-  <Sphere position={position} args={[0.05, 8, 8]}>
-    <meshStandardMaterial color="#ffff88" emissive="#444400" />
+  <Sphere position={position} args={[0.08, 12, 12]}>
+    <meshStandardMaterial 
+      color="#FFD700" 
+      emissive="#FFD700"
+      emissiveIntensity={0.4}
+      metalness={0.3}
+      roughness={0.1}
+    />
   </Sphere>
 );
 
@@ -265,10 +277,10 @@ export const PacMan3DGame = ({ onScoreChange, onGameEnd, onGameStart }: PacMan3D
           )}
         </div>
 
-        <div className="h-[600px] bg-black rounded-lg overflow-hidden">
+        <div className="h-[600px] bg-gradient-to-b from-green-900 to-green-700 rounded-lg overflow-hidden border-2 border-arcade-gold">
           <Canvas 
             key="pacman-3d-canvas"
-            camera={{ position: [10, 20, 20], fov: 50 }}
+            camera={{ position: [10, 25, 25], fov: 60 }}
             onCreated={({ gl }) => {
               gl.setSize(600, 600);
               gl.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -279,11 +291,12 @@ export const PacMan3DGame = ({ onScoreChange, onGameEnd, onGameStart }: PacMan3D
               powerPreference: "high-performance"
             }}
             dpr={[1, 2]}
-            fallback={<div className="flex items-center justify-center h-full text-white">Loading 3D...</div>}
+            fallback={<div className="flex items-center justify-center h-full text-white">Loading Jungle Pac-Man...</div>}
           >
-            <ambientLight intensity={0.4} />
-            <directionalLight position={[10, 10, 5]} intensity={0.8} />
-            <pointLight position={[10, 5, 10]} intensity={0.6} color="#ffff88" />
+            <ambientLight intensity={0.6} color="#90EE90" />
+            <directionalLight position={[15, 15, 5]} intensity={1.2} color="#FFD700" />
+            <pointLight position={[10, 8, 10]} intensity={0.8} color="#ffff88" />
+            <fog attach="fog" args={['#228B22', 30, 80]} />
             
             {/* Render maze */}
             {maze.map((row, z) =>

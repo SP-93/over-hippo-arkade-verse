@@ -186,13 +186,43 @@ export const UltraTetris2025 = ({ onScoreChange, onGameEnd, onGameStart }: Ultra
     const offsetX = (canvas.width - BOARD_WIDTH * cellSize) / 2;
     const offsetY = 20;
     
-    // Clear with animated background
+    // Space theme background with stars and nebula
     const time = Date.now() * 0.001;
-    const bgGradient = ctx.createLinearGradient(0, 0, canvas.width, canvas.height);
-    bgGradient.addColorStop(0, `hsl(${(time * 20) % 360}, 20%, 5%)`);
-    bgGradient.addColorStop(0.5, '#0a0a1a');
-    bgGradient.addColorStop(1, `hsl(${(time * 20 + 180) % 360}, 20%, 5%)`);
+    
+    // Deep space gradient
+    const bgGradient = ctx.createRadialGradient(
+      canvas.width/2, canvas.height/3, 0,
+      canvas.width/2, canvas.height/3, canvas.width
+    );
+    bgGradient.addColorStop(0, '#1a0033');
+    bgGradient.addColorStop(0.3, '#0d0420');
+    bgGradient.addColorStop(0.7, '#050115');
+    bgGradient.addColorStop(1, '#000000');
     ctx.fillStyle = bgGradient;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Animated stars
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+    for (let i = 0; i < 50; i++) {
+      const x = (i * 47 + time * 10) % canvas.width;
+      const y = (i * 73 + Math.sin(time + i) * 20) % canvas.height;
+      const twinkle = Math.sin(time * 3 + i) * 0.5 + 0.5;
+      ctx.globalAlpha = twinkle;
+      ctx.beginPath();
+      ctx.arc(x, y, 1 + Math.sin(i + time) * 0.5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+    
+    // Nebula effect
+    const nebulaGradient = ctx.createRadialGradient(
+      canvas.width * 0.8, canvas.height * 0.3, 0,
+      canvas.width * 0.8, canvas.height * 0.3, canvas.width * 0.4
+    );
+    nebulaGradient.addColorStop(0, 'rgba(138, 43, 226, 0.1)');
+    nebulaGradient.addColorStop(0.5, 'rgba(75, 0, 130, 0.05)');
+    nebulaGradient.addColorStop(1, 'rgba(0, 0, 0, 0)');
+    ctx.fillStyle = nebulaGradient;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
     // Board outline with pulsing glow
@@ -258,34 +288,110 @@ export const UltraTetris2025 = ({ onScoreChange, onGameEnd, onGameStart }: Ultra
       });
     }
     
-    // Draw next piece preview
+    // Enhanced UI panels with space theme
+    const panelWidth = 140;
+    const panelHeight = 100;
+    
+    // NEXT piece panel
     if (nextPiece) {
-      const nextX = offsetX + BOARD_WIDTH * cellSize + 40;
+      const nextX = offsetX + BOARD_WIDTH * cellSize + 20;
       const nextY = offsetY + 20;
       
-      ctx.fillStyle = 'rgba(0, 255, 200, 0.1)';
-      ctx.strokeStyle = 'rgba(0, 255, 200, 0.5)';
-      ctx.lineWidth = 2;
-      ctx.fillRect(nextX - 10, nextY - 10, 120, 80);
-      ctx.strokeRect(nextX - 10, nextY - 10, 120, 80);
+      // Panel background with space theme
+      const panelGradient = ctx.createLinearGradient(nextX, nextY, nextX + panelWidth, nextY + panelHeight);
+      panelGradient.addColorStop(0, 'rgba(30, 30, 80, 0.9)');
+      panelGradient.addColorStop(1, 'rgba(10, 10, 40, 0.9)');
+      ctx.fillStyle = panelGradient;
+      ctx.fillRect(nextX, nextY, panelWidth, panelHeight);
       
-      ctx.fillStyle = '#00ffcc';
+      // Panel border with glow
+      ctx.strokeStyle = '#00ffff';
+      ctx.lineWidth = 2;
+      ctx.shadowColor = '#00ffff';
+      ctx.shadowBlur = 10;
+      ctx.strokeRect(nextX, nextY, panelWidth, panelHeight);
+      ctx.shadowBlur = 0;
+      
+      // Panel title
+      ctx.fillStyle = '#00ffff';
       ctx.font = 'bold 14px Orbitron, monospace';
       ctx.textAlign = 'center';
-      ctx.fillText('NEXT', nextX + 50, nextY - 20);
+      ctx.fillText('NEXT', nextX + panelWidth/2, nextY + 20);
       
+      // Next piece preview
+      const previewOffsetX = nextX + panelWidth/2 - 30;
+      const previewOffsetY = nextY + 40;
       nextPiece.blocks.forEach(([px, py]: [number, number]) => {
         drawNeonBlock(
           ctx,
-          nextX + px * 20 + 10,
-          nextY + py * 20 + 10,
-          18,
+          previewOffsetX + px * 15,
+          previewOffsetY + py * 15,
+          14,
           nextPiece.color,
           nextPiece.glow,
           false,
-          0.8
+          0.9
         );
       });
+    }
+    
+    // HOLD panel (placeholder for future feature)
+    const holdX = offsetX - 160;
+    const holdY = offsetY + 20;
+    
+    const holdPanelGradient = ctx.createLinearGradient(holdX, holdY, holdX + panelWidth, holdY + panelHeight);
+    holdPanelGradient.addColorStop(0, 'rgba(80, 30, 30, 0.9)');
+    holdPanelGradient.addColorStop(1, 'rgba(40, 10, 10, 0.9)');
+    ctx.fillStyle = holdPanelGradient;
+    ctx.fillRect(holdX, holdY, panelWidth, panelHeight);
+    
+    ctx.strokeStyle = '#ff6666';
+    ctx.lineWidth = 2;
+    ctx.shadowColor = '#ff6666';
+    ctx.shadowBlur = 10;
+    ctx.strokeRect(holdX, holdY, panelWidth, panelHeight);
+    ctx.shadowBlur = 0;
+    
+    ctx.fillStyle = '#ff6666';
+    ctx.font = 'bold 14px Orbitron, monospace';
+    ctx.textAlign = 'center';
+    ctx.fillText('HOLD', holdX + panelWidth/2, holdY + 20);
+    
+    // Stats panel
+    const statsX = offsetX - 160;
+    const statsY = offsetY + 140;
+    const statsHeight = 180;
+    
+    const statsPanelGradient = ctx.createLinearGradient(statsX, statsY, statsX + panelWidth, statsY + statsHeight);
+    statsPanelGradient.addColorStop(0, 'rgba(30, 80, 30, 0.9)');
+    statsPanelGradient.addColorStop(1, 'rgba(10, 40, 10, 0.9)');
+    ctx.fillStyle = statsPanelGradient;
+    ctx.fillRect(statsX, statsY, panelWidth, statsHeight);
+    
+    ctx.strokeStyle = '#66ff66';
+    ctx.lineWidth = 2;
+    ctx.shadowColor = '#66ff66';
+    ctx.shadowBlur = 10;
+    ctx.strokeRect(statsX, statsY, panelWidth, statsHeight);
+    ctx.shadowBlur = 0;
+    
+    // Stats text
+    ctx.fillStyle = '#66ff66';
+    ctx.font = 'bold 12px Orbitron, monospace';
+    ctx.textAlign = 'left';
+    ctx.fillText('LEVEL', statsX + 10, statsY + 25);
+    ctx.fillText(`${level}`, statsX + 10, statsY + 45);
+    
+    ctx.fillText('LINES', statsX + 10, statsY + 70);
+    ctx.fillText(`${lines}`, statsX + 10, statsY + 90);
+    
+    ctx.fillText('SCORE', statsX + 10, statsY + 115);
+    ctx.fillText(`${score}`, statsX + 10, statsY + 135);
+    
+    if (combo > 1) {
+      ctx.fillStyle = '#ffff00';
+      ctx.fillText('COMBO', statsX + 10, statsY + 160);
+      ctx.fillText(`${combo}X`, statsX + 10, statsY + 175);
     }
     
     // Draw particles
