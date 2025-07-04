@@ -252,10 +252,18 @@ export const Snake3DGame = ({ onScoreChange, onGameEnd, onGameStart }: Snake3DGa
 
         <div className="h-[600px] bg-black rounded-lg overflow-hidden">
           <Canvas 
+            key="snake-3d-canvas"
             camera={{ position: [15, 15, 15], fov: 50 }}
             onCreated={({ gl }) => {
               gl.setSize(600, 600);
+              gl.setPixelRatio(Math.min(window.devicePixelRatio, 2));
             }}
+            gl={{ 
+              antialias: true, 
+              alpha: false,
+              powerPreference: "high-performance"
+            }}
+            dpr={[1, 2]}
             fallback={<div className="flex items-center justify-center h-full text-white">Loading 3D...</div>}
           >
             <ambientLight intensity={0.3} />

@@ -267,10 +267,18 @@ export const PacMan3DGame = ({ onScoreChange, onGameEnd, onGameStart }: PacMan3D
 
         <div className="h-[600px] bg-black rounded-lg overflow-hidden">
           <Canvas 
+            key="pacman-3d-canvas"
             camera={{ position: [10, 20, 20], fov: 50 }}
             onCreated={({ gl }) => {
               gl.setSize(600, 600);
+              gl.setPixelRatio(Math.min(window.devicePixelRatio, 2));
             }}
+            gl={{ 
+              antialias: true, 
+              alpha: false,
+              powerPreference: "high-performance"
+            }}
+            dpr={[1, 2]}
             fallback={<div className="flex items-center justify-center h-full text-white">Loading 3D...</div>}
           >
             <ambientLight intensity={0.4} />
