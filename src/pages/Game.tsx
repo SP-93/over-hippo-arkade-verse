@@ -7,6 +7,8 @@ import { ArrowLeft, Coins, Timer, Trophy } from "lucide-react";
 import { TetrisGame } from "@/components/games/TetrisGame";
 import { SnakeGame } from "@/components/games/SnakeGame";
 import { PacManGame } from "@/components/games/PacManGame";
+import { BreakoutGame } from "@/components/games/BreakoutGame";
+import { AsteroidsGame } from "@/components/games/AsteroidsGame";
 import { GameTemplate } from "@/components/GameTemplate";
 import { ChipManager } from "@/components/ChipManager";
 import { toast } from "sonner";
@@ -160,7 +162,21 @@ export const Game = () => {
               onGameStart={handleGameStart}
             />
           )}
-          {!['tetris', 'snake', 'pacman'].includes(gameId || '') && (
+          {gameId === 'breakout' && (
+            <BreakoutGame 
+              onScoreChange={setCurrentScore}
+              onGameEnd={endGame}
+              onGameStart={handleGameStart}
+            />
+          )}
+          {gameId === 'asteroids' && (
+            <AsteroidsGame 
+              onScoreChange={setCurrentScore}
+              onGameEnd={endGame}
+              onGameStart={handleGameStart}
+            />
+          )}
+          {!['tetris', 'snake', 'pacman', 'breakout', 'asteroids'].includes(gameId || '') && (
             <>
               {/* Coming Soon Games */}
               {gameId === 'mario' && (
