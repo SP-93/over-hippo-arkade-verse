@@ -1,0 +1,471 @@
+import { useState, useEffect, useRef, useCallback } from "react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { useGameManager } from "@/hooks/useGameManager";
+import { toast } from "sonner";
+
+const GRID_SIZE = 25;
+const INITIAL_SNAKE = [{ x: 12, y: 12 }];
+const INITIAL_DIRECTION = { x: 1, y: 0 };
+
+interface UltraSnake2025Props {
+  onScoreChange?: (score: number) => void;
+  onGameEnd?: () => void;
+  onGameStart?: () => boolean;
+}
+
+class Particle {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  life: number;
+  maxLife: number;
+  size: number;
+  color: string;
+  hue: number;
+
+  constructor(x: number, y: number, color: string) {
+    this.x = x;
+    this.y = y;
+    this.vx = (Math.random() - 0.5) * 10;
+    this.vy = (Math.random() - 0.5) * 10;
+    this.life = 1;
+    this.maxLife = 30 + Math.random() * 30;
+    this.size = 2 + Math.random() * 4;
+    this.color = color;
+    this.hue = Math.random() * 360;
+  }
+
+  update() {
+    this.x += this.vx;
+    this.y += this.vy;
+    this.vx *= 0.98;
+    this.vy *= 0.98;
+    this.life -= 1;
+    this.hue += 2;
+  }
+
+  draw(ctx: CanvasRenderingContext2D) {
+    const alpha = this.life / this.maxLife;
+    ctx.save();
+    ctx.globalCompositeOperation = 'screen';
+    ctx.shadowColor = `hsl(${this.hue}, 100%, 50%)`;
+    ctx.shadowBlur = 20;
+    ctx.fillStyle = `hsla(${this.hue}, 100%, 50%, ${alpha})`;
+    ctx.beginPath();
+    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  isDead() {
+    return this.life <= 0;
+  }
+}
+
+export const UltraSnake2025 = ({ onScoreChange, onGameEnd, onGameStart }: UltraSnake2025Props = {}) => {
+  console.log("UltraSnake2025 loaded - Modern neon version active!");
+  const [snake, setSnake] = useState(INITIAL_SNAKE);
+  const [direction, setDirection] = useState(INITIAL_DIRECTION);
+  const [food, setFood] = useState({ x: 18, y: 18 });
+  const [score, setScore] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+  const [gameOver, setGameOver] = useState(false);
+  const [speed, setSpeed] = useState(200);
+  const [particles, setParticles] = useState<Particle[]>([]);
+  const [currentHue, setCurrentHue] = useState(200);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const gameLoopRef = useRef<NodeJS.Timeout>();
+  const animationRef = useRef<number>();
+  
+  const { handleGameStart } = useGameManager();
+
+  const generateFood = useCallback(() => {
+    let newFood;
+    do {
+      newFood = {
+        x: Math.floor(Math.random() * GRID_SIZE),
+        y: Math.floor(Math.random() * GRID_SIZE)
+      };
+    } while (snake.some(segment => segment.x === newFood.x && segment.y === newFood.y));
+    return newFood;
+  }, [snake]);
+
+  const createParticleExplosion = useCallback((x: number, y: number, color: string) => {
+    const newParticles: Particle[] = [];
+    for (let i = 0; i < 15; i++) {
+      newParticles.push(new Particle(x, y, color));
+    }
+    setParticles(prev => [...prev, ...newParticles]);
+  }, []);
+
+  const drawNeonGrid = useCallback((ctx: CanvasRenderingContext2D, cellSize: number) => {
+    ctx.strokeStyle = 'rgba(0, 255, 200, 0.1)';
+    ctx.lineWidth = 1;
+    ctx.shadowColor = 'rgba(0, 255, 200, 0.3)';
+    ctx.shadowBlur = 2;
+    
+    for (let i = 0; i <= GRID_SIZE; i++) {
+      const pos = i * cellSize;
+      
+      // Vertical lines
+      ctx.beginPath();
+      ctx.moveTo(pos, 0);
+      ctx.lineTo(pos, GRID_SIZE * cellSize);
+      ctx.stroke();
+      
+      // Horizontal lines
+      ctx.beginPath();
+      ctx.moveTo(0, pos);
+      ctx.lineTo(GRID_SIZE * cellSize, pos);
+      ctx.stroke();
+    }
+    ctx.shadowBlur = 0;
+  }, []);
+
+  const drawGlowingSnake = useCallback((ctx: CanvasRenderingContext2D, cellSize: number) => {
+    snake.forEach((segment, index) => {
+      const x = segment.x * cellSize;
+      const y = segment.y * cellSize;
+      const isHead = index === 0;
+      
+      // Main body with gradient
+      const gradient = ctx.createRadialGradient(
+        x + cellSize/2, y + cellSize/2, 0,
+        x + cellSize/2, y + cellSize/2, cellSize/2
+      );
+      
+      if (isHead) {
+        gradient.addColorStop(0, `hsl(${currentHue}, 100%, 80%)`);
+        gradient.addColorStop(0.7, `hsl(${currentHue}, 100%, 50%)`);
+        gradient.addColorStop(1, `hsl(${currentHue}, 100%, 20%)`);
+      } else {
+        const alpha = 1 - (index / snake.length) * 0.5;
+        gradient.addColorStop(0, `hsla(${currentHue}, 100%, 60%, ${alpha})`);
+        gradient.addColorStop(1, `hsla(${currentHue}, 100%, 30%, ${alpha})`);
+      }
+      
+      // Outer glow
+      ctx.shadowColor = `hsl(${currentHue}, 100%, 50%)`;
+      ctx.shadowBlur = isHead ? 25 : 15;
+      ctx.fillStyle = gradient;
+      ctx.fillRect(x + 2, y + 2, cellSize - 4, cellSize - 4);
+      
+      // Inner highlight for head
+      if (isHead) {
+        ctx.shadowBlur = 0;
+        ctx.fillStyle = `hsla(${currentHue}, 100%, 90%, 0.8)`;
+        ctx.fillRect(x + cellSize/3, y + cellSize/3, cellSize/3, cellSize/3);
+      }
+    });
+    ctx.shadowBlur = 0;
+  }, [snake, currentHue]);
+
+  const drawPulsatingFood = useCallback((ctx: CanvasRenderingContext2D, cellSize: number) => {
+    const x = food.x * cellSize;
+    const y = food.y * cellSize;
+    const time = Date.now() * 0.005;
+    const pulse = 1 + Math.sin(time * 3) * 0.3;
+    const size = (cellSize * 0.8) * pulse;
+    const offset = (cellSize - size) / 2;
+    
+    // Multiple glow layers
+    for (let i = 3; i >= 0; i--) {
+      const layerSize = size + i * 4;
+      const layerOffset = (cellSize - layerSize) / 2;
+      const alpha = (4 - i) / 4;
+      
+      ctx.shadowColor = `hsla(${(currentHue + 180) % 360}, 100%, 50%, ${alpha})`;
+      ctx.shadowBlur = 20 + i * 5;
+      ctx.fillStyle = `hsla(${(currentHue + 180) % 360}, 100%, 60%, ${alpha})`;
+      
+      ctx.beginPath();
+      ctx.arc(x + cellSize/2, y + cellSize/2, layerSize/2, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.shadowBlur = 0;
+  }, [food, currentHue]);
+
+  const draw = useCallback(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    
+    const cellSize = Math.min(canvas.width, canvas.height) / GRID_SIZE;
+    
+    // Clear with gradient background
+    const bgGradient = ctx.createRadialGradient(
+      canvas.width/2, canvas.height/2, 0,
+      canvas.width/2, canvas.height/2, canvas.width/2
+    );
+    bgGradient.addColorStop(0, '#0a0a1a');
+    bgGradient.addColorStop(0.7, '#1a0a2e');
+    bgGradient.addColorStop(1, '#2e0a1a');
+    ctx.fillStyle = bgGradient;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    drawNeonGrid(ctx, cellSize);
+    drawGlowingSnake(ctx, cellSize);
+    drawPulsatingFood(ctx, cellSize);
+    
+    // Update and draw particles
+    setParticles(prev => {
+      const updated = prev.map(p => {
+        p.update();
+        p.draw(ctx);
+        return p;
+      }).filter(p => !p.isDead());
+      return updated;
+    });
+    
+    // Game over effect
+    if (gameOver) {
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      ctx.shadowColor = '#ff0040';
+      ctx.shadowBlur = 30;
+      ctx.fillStyle = '#ff0040';
+      ctx.font = 'bold 48px Orbitron, monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('GAME OVER', canvas.width/2, canvas.height/2 - 30);
+      
+      ctx.shadowColor = '#00ff80';
+      ctx.shadowBlur = 20;
+      ctx.fillStyle = '#00ff80';
+      ctx.font = 'bold 24px Orbitron, monospace';
+      ctx.fillText(`SCORE: ${score}`, canvas.width/2, canvas.height/2 + 30);
+      ctx.shadowBlur = 0;
+    }
+    
+    if (isPaused && !gameOver) {
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      ctx.shadowColor = '#00ffff';
+      ctx.shadowBlur = 25;
+      ctx.fillStyle = '#00ffff';
+      ctx.font = 'bold 36px Orbitron, monospace';
+      ctx.textAlign = 'center';
+      ctx.fillText('PAUSED', canvas.width/2, canvas.height/2);
+      ctx.shadowBlur = 0;
+    }
+  }, [snake, food, currentHue, particles, gameOver, isPaused, score, drawNeonGrid, drawGlowingSnake, drawPulsatingFood]);
+
+  const checkCollision = useCallback((head: any) => {
+    // Wall collision
+    if (head.x < 0 || head.x >= GRID_SIZE || head.y < 0 || head.y >= GRID_SIZE) {
+      return true;
+    }
+    
+    // Self collision
+    return snake.some(segment => segment.x === head.x && segment.y === head.y);
+  }, [snake]);
+
+  const moveSnake = useCallback(() => {
+    if (!isPlaying || isPaused || gameOver) return;
+
+    setSnake(currentSnake => {
+      const newSnake = [...currentSnake];
+      const head = { ...newSnake[0] };
+      
+      head.x += direction.x;
+      head.y += direction.y;
+      
+      if (checkCollision(head)) {
+        setGameOver(true);
+        setIsPlaying(false);
+        onGameEnd?.();
+        // Explosion effect on death
+        const canvas = canvasRef.current;
+        if (canvas) {
+          const cellSize = Math.min(canvas.width, canvas.height) / GRID_SIZE;
+          createParticleExplosion(
+            head.x * cellSize + cellSize/2,
+            head.y * cellSize + cellSize/2,
+            `hsl(${currentHue}, 100%, 50%)`
+          );
+        }
+        toast.error("Game Over!");
+        return currentSnake;
+      }
+      
+      newSnake.unshift(head);
+      
+      // Check food collision
+      if (head.x === food.x && head.y === food.y) {
+        const newScore = score + 10;
+        setScore(newScore);
+        onScoreChange?.(newScore);
+        setFood(generateFood());
+        setSpeed(prev => Math.max(80, prev - 3));
+        setCurrentHue(prev => (prev + 30) % 360);
+        
+        // Food eat particle effect
+        const canvas = canvasRef.current;
+        if (canvas) {
+          const cellSize = Math.min(canvas.width, canvas.height) / GRID_SIZE;
+          createParticleExplosion(
+            food.x * cellSize + cellSize/2,
+            food.y * cellSize + cellSize/2,
+            `hsl(${(currentHue + 180) % 360}, 100%, 50%)`
+          );
+        }
+        
+        toast.success(`Score: ${newScore}! Speed boost!`);
+      } else {
+        newSnake.pop();
+      }
+      
+      return newSnake;
+    });
+  }, [direction, food, isPlaying, isPaused, gameOver, checkCollision, generateFood, score, onScoreChange, onGameEnd, currentHue, createParticleExplosion]);
+
+  useEffect(() => {
+    if (isPlaying && !isPaused && !gameOver) {
+      gameLoopRef.current = setInterval(moveSnake, speed);
+    } else {
+      if (gameLoopRef.current) {
+        clearInterval(gameLoopRef.current);
+      }
+    }
+    
+    return () => {
+      if (gameLoopRef.current) {
+        clearInterval(gameLoopRef.current);
+      }
+    };
+  }, [isPlaying, isPaused, gameOver, speed, moveSnake]);
+
+  // Animation loop for smooth rendering
+  const animate = useCallback(() => {
+    draw();
+    animationRef.current = requestAnimationFrame(animate);
+  }, [draw]);
+
+  useEffect(() => {
+    animationRef.current = requestAnimationFrame(animate);
+    return () => {
+      if (animationRef.current) {
+        cancelAnimationFrame(animationRef.current);
+      }
+    };
+  }, [animate]);
+
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (!isPlaying || isPaused || gameOver) return;
+      
+      switch (e.key) {
+        case 'ArrowUp':
+        case 'w':
+        case 'W':
+          if (direction.y !== 1) setDirection({ x: 0, y: -1 });
+          break;
+        case 'ArrowDown':
+        case 's':
+        case 'S':
+          if (direction.y !== -1) setDirection({ x: 0, y: 1 });
+          break;
+        case 'ArrowLeft':
+        case 'a':
+        case 'A':
+          if (direction.x !== 1) setDirection({ x: -1, y: 0 });
+          break;
+        case 'ArrowRight':
+        case 'd':
+        case 'D':
+          if (direction.x !== -1) setDirection({ x: 1, y: 0 });
+          break;
+        case ' ':
+          setIsPaused(!isPaused);
+          break;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [direction, isPlaying, isPaused, gameOver]);
+
+  const startGame = () => {
+    if (onGameStart && !onGameStart()) return;
+    if (!handleGameStart('snake')) return;
+    
+    setSnake(INITIAL_SNAKE);
+    setDirection(INITIAL_DIRECTION);
+    setFood({ x: 18, y: 18 });
+    setScore(0);
+    setSpeed(200);
+    setCurrentHue(200);
+    setParticles([]);
+    setGameOver(false);
+    setIsPlaying(true);
+    setIsPaused(false);
+  };
+
+  const pauseGame = () => {
+    setIsPaused(!isPaused);
+  };
+
+  return (
+    <div className="space-y-4">
+      <Card className="p-6 bg-gradient-card border-neon-green">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-2xl font-bold text-neon-green font-orbitron">ULTRA SNAKE 2025</h2>
+          <div className="text-lg font-bold text-arcade-gold font-orbitron">SCORE: {score.toString().padStart(4, '0')}</div>
+        </div>
+        
+        <div className="flex gap-2 mb-4">
+          <Button
+            onClick={startGame}
+            variant="arcade"
+            disabled={isPlaying && !gameOver}
+            className="font-orbitron"
+          >
+            {gameOver ? 'RESTART' : 'START GAME'}
+          </Button>
+          
+          {isPlaying && !gameOver && (
+            <Button onClick={pauseGame} variant="secondary" className="font-orbitron">
+              {isPaused ? 'RESUME' : 'PAUSE'}
+            </Button>
+          )}
+        </div>
+
+        <div className="relative">
+          <canvas
+            ref={canvasRef}
+            width={650}
+            height={650}
+            className="w-full h-[650px] bg-black rounded-lg border-2 border-neon-green/50"
+            style={{
+              maxWidth: '650px',
+              maxHeight: '650px',
+              filter: 'contrast(1.1) brightness(1.1)',
+              boxShadow: `
+                0 0 20px rgba(0, 255, 65, 0.3),
+                inset 0 0 20px rgba(0, 255, 65, 0.1)
+              `
+            }}
+          />
+        </div>
+        
+        <div className="mt-4 text-sm text-muted-foreground text-center font-orbitron">
+          WASD or ARROW KEYS • SPACE to PAUSE • COLLECT NEON ORBS • AVOID WALLS & SELF
+        </div>
+        
+        <div className="mt-2 text-center">
+          <div className="inline-flex items-center gap-4 text-xs text-neon-green/70 font-orbitron">
+            <span>SPEED: {Math.round((300-speed)/2)}%</span>
+            <span>LENGTH: {snake.length}</span>
+            <span>PARTICLES: {particles.length}</span>
+          </div>
+        </div>
+      </Card>
+    </div>
+  );
+};
