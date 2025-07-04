@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Pause, Play, RotateCw, ArrowDown, ArrowLeft, ArrowRight } from "lucide-react";
+import { TetrisBackground } from "@/components/TetrisBackground";
 
 interface TetrisGameProps {
   onScoreChange: (score: number) => void;
@@ -295,23 +296,26 @@ export const TetrisGame = ({ onScoreChange, onGameEnd, onGameStart }: TetrisGame
   };
 
   return (
-    <div className="flex flex-col lg:flex-row gap-6 p-4">
+    <div className="flex flex-col lg:flex-row gap-6 p-4 relative">
+      {/* Interactive Background */}
+      <TetrisBackground score={score} level={level} lines={lines} />
+      
       {/* Game Board */}
-      <Card className="flex-1 p-6 bg-gradient-card border-primary">
+      <Card className="flex-1 p-6 bg-gradient-card border-neon-blue backdrop-glass hover-lift relative z-10">
         <div className="flex flex-col items-center space-y-4">
-          <h3 className="text-2xl font-bold text-primary">Tetris</h3>
+          <h3 className="text-2xl font-bold text-neon-blue animate-text-glow drop-shadow-lg">🟦 Tetris Master</h3>
           
           {/* Combo Display */}
           {comboDisplay && (
-            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10 animate-zoom-in">
-              <div className="bg-primary/90 text-primary-foreground px-4 py-2 rounded-lg text-xl font-bold shadow-neon-strong">
+            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-20 animate-zoom-in">
+              <div className="bg-primary/90 text-primary-foreground px-4 py-2 rounded-lg text-xl font-bold shadow-neon-strong animate-bounce">
                 {comboDisplay}
               </div>
             </div>
           )}
 
-          <div className="bg-background/50 p-4 rounded-lg border-2 border-primary shadow-neon relative">
-            <div className="flex flex-col">
+          <div className="bg-gradient-to-br from-background/90 to-background/70 p-6 rounded-xl border-2 border-neon-blue shadow-intense backdrop-blur-sm">
+            <div className="flex flex-col bg-gradient-to-br from-background/60 to-background/40 p-3 rounded-lg border border-primary/30">
               {renderBoard()}
             </div>
           </div>

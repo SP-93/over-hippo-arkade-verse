@@ -191,16 +191,52 @@ export const SnakeGame = ({ onScoreChange, onGameEnd, onGameStart, chipCost = 1 
         board.push(
           <div
             key={`${x}-${y}`}
-            className={`w-4 h-4 border border-border/20 ${
-              cellType === 'head' 
-                ? 'bg-neon-green shadow-neon animate-neon-pulse' 
-                : cellType === 'body'
-                ? 'bg-primary'
-                : cellType === 'food'
-                ? 'bg-arcade-gold shadow-neon animate-glow rounded-full'
-                : 'bg-muted/10'
+            className={`w-6 h-6 border border-border/10 relative overflow-hidden ${
+              cellType === 'empty' ? 'bg-gradient-to-br from-muted/5 to-muted/10' : ''
             }`}
-          />
+            style={{
+              background: cellType === 'empty' 
+                ? 'linear-gradient(135deg, hsl(var(--muted) / 0.05), hsl(var(--muted) / 0.1))'
+                : 'transparent'
+            }}
+          >
+            {cellType === 'head' && (
+              <div 
+                className="w-full h-full relative overflow-hidden rounded-sm"
+                style={{
+                  background: 'linear-gradient(135deg, #00ff88, #00cc66)',
+                  boxShadow: '0 0 8px hsl(var(--neon-green))',
+                }}
+              >
+                <div className="absolute inset-1 bg-gradient-to-br from-white/30 to-transparent rounded-sm"></div>
+                <div className="absolute top-1 left-1 w-1 h-1 bg-yellow-400 rounded-full"></div>
+                <div className="absolute top-1 right-1 w-1 h-1 bg-yellow-400 rounded-full"></div>
+              </div>
+            )}
+            {cellType === 'body' && (
+              <div 
+                className="w-full h-full rounded-sm"
+                style={{
+                  background: 'linear-gradient(135deg, #00dd77, #00aa55)',
+                  boxShadow: '0 0 4px hsl(var(--primary))',
+                }}
+              >
+                <div className="absolute inset-1 bg-gradient-to-br from-white/20 to-transparent rounded-sm"></div>
+              </div>
+            )}
+            {cellType === 'food' && (
+              <div 
+                className="w-full h-full rounded-full animate-bounce relative"
+                style={{
+                  background: 'linear-gradient(135deg, #ff4444, #cc2222)',
+                  boxShadow: '0 0 12px hsl(var(--arcade-gold))',
+                }}
+              >
+                <div className="absolute inset-1 bg-gradient-to-br from-white/40 to-transparent rounded-full"></div>
+                <div className="absolute top-1 right-1 w-1 h-1 bg-white/80 rounded-full"></div>
+              </div>
+            )}
+          </div>
         );
       }
     }
@@ -210,13 +246,13 @@ export const SnakeGame = ({ onScoreChange, onGameEnd, onGameStart, chipCost = 1 
   return (
     <div className="flex flex-col lg:flex-row gap-6 p-4">
       {/* Game Board */}
-      <Card className="flex-1 p-6 bg-gradient-card border-primary">
+      <Card className="flex-1 p-6 bg-gradient-card border-neon-green backdrop-glass hover-lift">
         <div className="flex flex-col items-center space-y-4">
-          <h3 className="text-2xl font-bold text-primary">Snake</h3>
+          <h3 className="text-2xl font-bold text-neon-green animate-text-glow drop-shadow-lg">🐍 Snake Adventure</h3>
           
-          <div className="bg-background/50 p-4 rounded-lg border-2 border-primary shadow-neon">
+          <div className="bg-gradient-to-br from-background/80 to-background/60 p-6 rounded-xl border-2 border-neon-green shadow-intense backdrop-blur-sm">
             <div 
-              className="grid gap-0 bg-background/20 p-2 rounded"
+              className="grid gap-0 bg-gradient-to-br from-background/40 to-background/20 p-3 rounded-lg border border-primary/30"
               style={{ gridTemplateColumns: `repeat(${BOARD_SIZE}, 1fr)` }}
             >
               {renderBoard()}

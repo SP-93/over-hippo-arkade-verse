@@ -256,37 +256,80 @@ export const PacManGame = ({ onScoreChange, onGameEnd, onGameStart }: PacManGame
     return maze.map((row, y) => (
       <div key={y} className="flex">
         {row.map((cell, x) => {
-          let content = '';
-          let className = 'w-6 h-6 flex items-center justify-center text-xs ';
-          
-          if (cell === 1) {
-            className += 'bg-neon-blue border border-neon-blue/50';
-          } else if (cell === 2) {
-            className += 'bg-background/20';
-            content = '•';
-          } else if (cell === 3) {
-            className += 'bg-background/20';
-            content = '●';
-          } else {
-            className += 'bg-background/20';
-          }
-
-          // Add pacman
-          if (pacman.x === x && pacman.y === y) {
-            className += ' bg-arcade-gold shadow-neon animate-neon-pulse';
-            content = '◉';
-          }
-
-          // Add ghosts
+          const isPacman = pacman.x === x && pacman.y === y;
           const ghost = ghosts.find(g => g.x === x && g.y === y);
-          if (ghost) {
-            className += ` shadow-neon ${powerMode ? 'animate-float' : ''}`;
-            content = powerMode ? '👻' : '👾';
-          }
-
+          
           return (
-            <div key={x} className={className} style={{ color: ghost?.color }}>
-              {content}
+            <div
+              key={x}
+              className={`w-6 h-6 relative overflow-hidden ${
+                cell === 1 
+                  ? 'bg-gradient-to-br from-neon-blue to-neon-blue/80 border border-neon-blue/50' 
+                  : 'bg-gradient-to-br from-background/20 to-background/10'
+              }`}
+              style={{
+                borderRadius: cell === 1 ? '2px' : '0',
+                boxShadow: cell === 1 ? '0 0 4px hsl(var(--neon-blue))' : 'none'
+              }}
+            >
+              {/* Dots */}
+              {cell === 2 && (
+                <div 
+                  className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-1 h-1 rounded-full animate-pulse"
+                  style={{
+                    background: 'linear-gradient(135deg, #ffdd44, #ffaa00)',
+                    boxShadow: '0 0 4px #ffaa00'
+                  }}
+                />
+              )}
+              
+              {/* Power Pellets */}
+              {cell === 3 && (
+                <div 
+                  className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-2 h-2 rounded-full animate-bounce"
+                  style={{
+                    background: 'linear-gradient(135deg, #ff4444, #cc2222)',
+                    boxShadow: '0 0 8px #ff4444'
+                  }}
+                />
+              )}
+
+              {/* Pacman */}
+              {isPacman && (
+                <div 
+                  className="absolute inset-0.5 rounded-full animate-pulse"
+                  style={{
+                    background: 'linear-gradient(135deg, #ffff00, #ffdd00)',
+                    boxShadow: '0 0 12px #ffff00',
+                    transform: `rotate(${
+                      pacman.direction.x === 1 ? '0deg' :
+                      pacman.direction.x === -1 ? '180deg' :
+                      pacman.direction.y === -1 ? '270deg' : '90deg'
+                    })`,
+                    clipPath: 'polygon(50% 0%, 100% 40%, 100% 60%, 50% 100%, 0% 50%)'
+                  }}
+                >
+                  <div className="absolute top-1 right-1 w-0.5 h-0.5 bg-black rounded-full"></div>
+                </div>
+              )}
+
+              {/* Ghosts */}
+              {ghost && (
+                <div 
+                  className="absolute inset-0.5 animate-float"
+                  style={{
+                    background: powerMode 
+                      ? 'linear-gradient(135deg, #4444ff, #2222cc)' 
+                      : ghost.color,
+                    borderRadius: '50% 50% 20% 20%',
+                    boxShadow: `0 0 8px ${powerMode ? '#4444ff' : ghost.color}`
+                  }}
+                >
+                  <div className="absolute top-1 left-1 w-0.5 h-0.5 bg-white rounded-full"></div>
+                  <div className="absolute top-1 right-1 w-0.5 h-0.5 bg-white rounded-full"></div>
+                  <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-white/20 to-transparent"></div>
+                </div>
+              )}
             </div>
           );
         })}
@@ -297,12 +340,12 @@ export const PacManGame = ({ onScoreChange, onGameEnd, onGameStart }: PacManGame
   return (
     <div className="flex flex-col lg:flex-row gap-6 p-4">
       {/* Game Board */}
-      <Card className="flex-1 p-6 bg-gradient-card border-primary">
+      <Card className="flex-1 p-6 bg-gradient-card border-arcade-gold backdrop-glass hover-lift">
         <div className="flex flex-col items-center space-y-4">
-          <h3 className="text-2xl font-bold text-primary">Pac-Man</h3>
+          <h3 className="text-2xl font-bold text-arcade-gold animate-text-glow drop-shadow-lg">👻 Pac-Man Arcade</h3>
           
-          <div className="bg-background/50 p-4 rounded-lg border-2 border-primary shadow-neon">
-            <div className="flex flex-col bg-background/20 p-2 rounded">
+          <div className="bg-gradient-to-br from-background/90 to-background/70 p-6 rounded-xl border-2 border-arcade-gold shadow-intense backdrop-blur-sm">
+            <div className="flex flex-col bg-gradient-to-br from-background/60 to-background/40 p-3 rounded-lg border border-primary/30">
               {renderBoard()}
             </div>
           </div>

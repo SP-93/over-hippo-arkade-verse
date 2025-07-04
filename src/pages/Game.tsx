@@ -7,6 +7,7 @@ import { ArrowLeft, Coins, Timer, Trophy } from "lucide-react";
 import { TetrisGame } from "@/components/games/TetrisGame";
 import { SnakeGame } from "@/components/games/SnakeGame";
 import { PacManGame } from "@/components/games/PacManGame";
+import { GameTemplate } from "@/components/GameTemplate";
 import { ChipManager } from "@/components/ChipManager";
 import { toast } from "sonner";
 
@@ -160,23 +161,101 @@ export const Game = () => {
             />
           )}
           {!['tetris', 'snake', 'pacman'].includes(gameId || '') && (
-            <Card className="p-8 bg-gradient-card border-primary min-h-96">
-              <div className="text-center space-y-6">
-                <h3 className="text-2xl font-bold text-primary mb-2">
-                  {gameId?.charAt(0).toUpperCase() + gameId?.slice(1)} Game
-                </h3>
-                <p className="text-muted-foreground mb-4">
-                  This game is coming soon! Try Tetris, Snake, or Pac-Man for now.
-                </p>
-                <Button 
-                  variant="default" 
-                  onClick={() => navigate('/')}
-                  className="mt-4"
-                >
-                  Return to Arcade
-                </Button>
-              </div>
-            </Card>
+            <>
+              {/* Coming Soon Games */}
+              {gameId === 'mario' && (
+                <GameTemplate 
+                  gameId="mario"
+                  title="Super Mario"
+                  description="Platform adventure classic with jumping, coin collecting, and enemy stomping action"
+                  comingSoonDate="Q2 2025"
+                  difficulty="Medium"
+                  genre="Platform Adventure"
+                  features={[
+                    "Multiple worlds and levels",
+                    "Power-ups and special abilities", 
+                    "Boss battles",
+                    "Secret areas and bonus levels",
+                    "Retro pixel art graphics",
+                    "Classic soundtrack"
+                  ]}
+                />
+              )}
+              {gameId === 'flipper' && (
+                <GameTemplate 
+                  gameId="flipper"
+                  title="Flipper Pinball"
+                  description="Retro pinball arcade action with realistic physics and multiple tables"
+                  comingSoonDate="Q3 2025"
+                  difficulty="Hard"
+                  genre="Arcade Pinball"
+                  features={[
+                    "Multiple themed pinball tables",
+                    "Realistic ball physics",
+                    "Special combo scoring",
+                    "Multiball modes",
+                    "Visual effects and animations",
+                    "Tournament leaderboards"
+                  ]}
+                />
+              )}
+              {gameId === 'kingkong' && (
+                <GameTemplate 
+                  gameId="kingkong"
+                  title="King Kong Climber"
+                  description="Climb the tower, dodge obstacles, and save the day in this action-packed adventure"
+                  comingSoonDate="Q4 2025"
+                  difficulty="Hard"
+                  genre="Action Arcade"
+                  features={[
+                    "Tower climbing adventure",
+                    "Dynamic obstacles",
+                    "Power-ups and tools",
+                    "Boss encounters",
+                    "Progressive difficulty",
+                    "Rescue missions"
+                  ]}
+                />
+              )}
+              {gameId === 'frogger' && (
+                <GameTemplate 
+                  gameId="frogger"
+                  title="Frogger Road Cross"
+                  description="Help the frog cross busy roads and rivers safely in this classic arcade game"
+                  comingSoonDate="Q1 2025"
+                  difficulty="Medium"
+                  genre="Arcade Action"
+                  features={[
+                    "Multiple road crossing levels",
+                    "Moving vehicles and obstacles",
+                    "River crossing challenges",
+                    "Time-based scoring",
+                    "Progressive speed increases",
+                    "Bonus lily pad rewards"
+                  ]}
+                />
+              )}
+              {/* Unknown game fallback */}
+              {!['mario', 'flipper', 'kingkong', 'frogger'].includes(gameId || '') && (
+                <Card className="p-8 bg-gradient-card border-primary min-h-96">
+                  <div className="text-center space-y-6">
+                    <h3 className="text-2xl font-bold text-primary mb-2">
+                      {gameId?.charAt(0).toUpperCase() + gameId?.slice(1)} Game
+                    </h3>
+                    <p className="text-muted-foreground mb-4">
+                      This game is coming soon! Try Tetris, Snake, or Pac-Man for now.
+                    </p>
+                    <Button 
+                      variant="default" 
+                      onClick={() => navigate('/')}
+                      className="mt-4"
+                    >
+                      Return to Arcade
+                    </Button>
+                  </div>
+                </Card>
+              )}
+            </>
           )}
         </div>
 
