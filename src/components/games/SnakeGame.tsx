@@ -24,7 +24,7 @@ export const SnakeGame = ({ onScoreChange, onGameEnd, onGameStart, chipCost = 1 
   const [isPlaying, setIsPlaying] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [gameOver, setGameOver] = useState(false);
-  const [speed, setSpeed] = useState(120); // Balanced speed for 32-bit gameplay
+  const [speed, setSpeed] = useState(180); // Slower speed for better gameplay
   const [gameStartTime, setGameStartTime] = useState(0);
   const [bonusTimer, setBonusTimer] = useState(0);
   const gameLoopRef = useRef<NodeJS.Timeout>();
@@ -183,7 +183,7 @@ export const SnakeGame = ({ onScoreChange, onGameEnd, onGameStart, chipCost = 1 
     setDirection(INITIAL_DIRECTION);
     setFood({ x: 15, y: 15 });
     setScore(0);
-    setSpeed(120); // Balanced 32-bit start
+    setSpeed(180); // Slower 32-bit start
     setGameOver(false);
     setIsPlaying(true);
     setIsPaused(false);

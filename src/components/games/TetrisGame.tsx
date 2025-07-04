@@ -35,7 +35,7 @@ export const TetrisGame = ({ onScoreChange, onGameEnd, onGameStart }: TetrisGame
   const [isPaused, setIsPaused] = useState(false);
   const [gameOver, setGameOver] = useState(false);
   const gameLoopRef = useRef<NodeJS.Timeout>();
-  const [dropTime, setDropTime] = useState(250); // 4x faster for 32-bit speed
+  const [dropTime, setDropTime] = useState(400); // Slower for better control
   const [combo, setCombo] = useState(0);
   const [comboDisplay, setComboDisplay] = useState('');
 
@@ -251,7 +251,7 @@ export const TetrisGame = ({ onScoreChange, onGameEnd, onGameStart }: TetrisGame
     setScore(0);
     setLevel(1);
     setLines(0);
-    setDropTime(250); // 32-bit fast start
+    setDropTime(400); // Slower 32-bit start
     setGameOver(false);
     setIsPlaying(true);
     setIsPaused(false);
