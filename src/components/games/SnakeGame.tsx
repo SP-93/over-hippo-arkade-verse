@@ -24,7 +24,7 @@ export const SnakeGame = ({ onScoreChange, onGameEnd, onGameStart, chipCost = 1 
   const [isPlaying, setIsPlaying] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [gameOver, setGameOver] = useState(false);
-  const [speed, setSpeed] = useState(150);
+  const [speed, setSpeed] = useState(60); // 2.5x faster for 32-bit gameplay
   const [gameStartTime, setGameStartTime] = useState(0);
   const [bonusTimer, setBonusTimer] = useState(0);
   const gameLoopRef = useRef<NodeJS.Timeout>();
@@ -76,9 +76,9 @@ export const SnakeGame = ({ onScoreChange, onGameEnd, onGameStart, chipCost = 1 
         onScoreChange(newScore);
         setFood(generateFood());
         
-        // Increase speed every 5 points
-        if (newScore % 50 === 0) {
-          setSpeed(prev => Math.max(50, prev - 10));
+        // Increase speed every 30 points for faster progression
+        if (newScore % 30 === 0) {
+          setSpeed(prev => Math.max(20, prev - 8)); // Faster max speed
         }
       } else {
         newSnake.pop();
@@ -183,7 +183,7 @@ export const SnakeGame = ({ onScoreChange, onGameEnd, onGameStart, chipCost = 1 
     setDirection(INITIAL_DIRECTION);
     setFood({ x: 15, y: 15 });
     setScore(0);
-    setSpeed(150);
+    setSpeed(60); // 32-bit fast start
     setGameOver(false);
     setIsPlaying(true);
     setIsPaused(false);

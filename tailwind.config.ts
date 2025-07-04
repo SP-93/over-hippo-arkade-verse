@@ -58,6 +58,13 @@ export default {
 					blue: 'hsl(var(--neon-blue))',
 					green: 'hsl(var(--neon-green))'
 				},
+				sega: {
+					cyan: 'hsl(var(--sega-cyan))',
+					magenta: 'hsl(var(--sega-magenta))',
+					lime: 'hsl(var(--sega-lime))',
+					orange: 'hsl(var(--sega-orange))',
+					purple: 'hsl(var(--sega-purple))'
+				},
 				arcade: {
 					gold: 'hsl(var(--arcade-gold))'
 				},
@@ -169,12 +176,18 @@ export default {
 				'gradient-primary': 'var(--gradient-primary)',
 				'gradient-secondary': 'var(--gradient-secondary)',
 				'gradient-bg': 'var(--gradient-bg)',
-				'gradient-card': 'var(--gradient-card)'
+				'gradient-card': 'var(--gradient-card)',
+				'gradient-sega': 'var(--gradient-sega)',
+				'gradient-metal': 'var(--gradient-metal)',
+				'gradient-chrome': 'var(--gradient-chrome)'
 			},
 			boxShadow: {
 				'neon': 'var(--shadow-neon)',
 				'neon-strong': 'var(--shadow-neon-strong)',
-				'card': 'var(--shadow-card)'
+				'card': 'var(--shadow-card)',
+				'chrome': 'var(--shadow-chrome)',
+				'sprite': 'var(--shadow-sprite)',
+				'particle': 'var(--shadow-particle)'
 			}
 		}
 	},

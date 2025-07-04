@@ -212,7 +212,7 @@ export const PacManGame = ({ onScoreChange, onGameEnd, onGameStart }: PacManGame
         movePacman();
         moveGhosts();
         checkCollisions();
-      }, 200);
+      }, 80); // 2.5x faster for 32-bit speed
     } else {
       if (gameLoopRef.current) {
         clearInterval(gameLoopRef.current);

@@ -39,35 +39,50 @@ All colors MUST be HSL. Retro arcade aesthetic with neon accents.
 
     --radius: 0.75rem;
 
-    /* Gaming specific colors */
-    --neon-pink: 320 100% 60%;
-    --neon-blue: 200 100% 60%;
-    --neon-green: 120 100% 50%;
-    --arcade-gold: 45 100% 60%;
-    --danger-red: 0 100% 60%;
+    /* 32-bit SEGA Gaming Colors */
+    --neon-pink: 320 100% 65%;
+    --neon-blue: 200 100% 65%;
+    --neon-green: 120 100% 55%;
+    --arcade-gold: 45 100% 65%;
+    --danger-red: 0 100% 65%;
+    --sega-cyan: 180 100% 60%;
+    --sega-magenta: 300 100% 70%;
+    --sega-lime: 90 100% 55%;
+    --sega-orange: 25 100% 60%;
+    --sega-purple: 270 100% 65%;
 
-    /* Gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(280 100% 60%), hsl(320 100% 60%));
-    --gradient-secondary: linear-gradient(135deg, hsl(200 100% 60%), hsl(160 100% 50%));
-    --gradient-bg: linear-gradient(135deg, hsl(230 35% 7%), hsl(240 30% 12%));
-    --gradient-card: linear-gradient(135deg, hsl(240 30% 12%), hsl(250 25% 15%));
-    --gradient-hero: linear-gradient(135deg, hsl(280 100% 60%) 0%, hsl(320 100% 60%) 25%, hsl(200 100% 60%) 50%, hsl(160 100% 50%) 75%, hsl(45 100% 60%) 100%);
-    --gradient-neon: linear-gradient(90deg, hsl(280 100% 60%), hsl(320 100% 60%), hsl(200 100% 60%));
+    /* 32-bit SEGA Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(280 100% 65%), hsl(320 100% 70%));
+    --gradient-secondary: linear-gradient(135deg, hsl(200 100% 65%), hsl(180 100% 60%));
+    --gradient-bg: linear-gradient(135deg, hsl(230 40% 8%), hsl(240 35% 15%));
+    --gradient-card: linear-gradient(135deg, hsl(240 35% 15%), hsl(250 30% 18%));
+    --gradient-hero: linear-gradient(135deg, hsl(280 100% 65%) 0%, hsl(320 100% 70%) 20%, hsl(200 100% 65%) 40%, hsl(180 100% 60%) 60%, hsl(45 100% 65%) 80%, hsl(90 100% 55%) 100%);
+    --gradient-neon: linear-gradient(90deg, hsl(280 100% 65%), hsl(320 100% 70%), hsl(200 100% 65%));
+    --gradient-sega: linear-gradient(45deg, hsl(180 100% 60%), hsl(300 100% 70%), hsl(90 100% 55%), hsl(25 100% 60%));
+    --gradient-metal: linear-gradient(135deg, hsl(220 20% 85%), hsl(220 15% 75%), hsl(220 10% 65%));
+    --gradient-chrome: linear-gradient(135deg, hsl(0 0% 95%), hsl(220 5% 85%), hsl(220 10% 75%), hsl(0 0% 95%));
 
-    /* Shadows and effects */
-    --shadow-neon: 0 0 20px hsl(280 100% 60% / 0.5);
-    --shadow-neon-strong: 0 0 30px hsl(280 100% 60% / 0.8);
-    --shadow-card: 0 8px 32px hsl(230 35% 7% / 0.5);
-    --shadow-glow: 0 4px 20px hsl(var(--primary) / 0.4), 0 8px 40px hsl(var(--primary) / 0.2);
-    --shadow-intense: 0 0 40px hsl(var(--primary) / 0.6), 0 0 80px hsl(var(--primary) / 0.4), 0 0 120px hsl(var(--primary) / 0.2);
+    /* 32-bit Shadows and Effects */
+    --shadow-neon: 0 0 25px hsl(280 100% 65% / 0.6);
+    --shadow-neon-strong: 0 0 35px hsl(280 100% 65% / 0.9);
+    --shadow-card: 0 12px 40px hsl(230 40% 8% / 0.6);
+    --shadow-glow: 0 6px 25px hsl(var(--primary) / 0.5), 0 12px 50px hsl(var(--primary) / 0.3);
+    --shadow-intense: 0 0 50px hsl(var(--primary) / 0.7), 0 0 100px hsl(var(--primary) / 0.5), 0 0 150px hsl(var(--primary) / 0.3);
+    --shadow-chrome: 0 4px 15px rgba(255,255,255,0.2), inset 0 1px 0 rgba(255,255,255,0.3);
+    --shadow-sprite: 0 2px 8px rgba(0,0,0,0.4), 0 4px 16px rgba(0,0,0,0.2);
+    --shadow-particle: 0 0 15px currentColor, 0 0 30px currentColor;
 
-    /* Animations */
-    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    --transition-bounce: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    /* 32-bit Fast Animations */
+    --transition-smooth: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: all 0.2s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    --transition-fast: all 0.1s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-snappy: all 0.08s cubic-bezier(0.25, 0.46, 0.45, 0.94);
     
-    /* Enhanced effects */
-    --glow-pulse: 0 0 20px hsl(var(--primary)), 0 0 40px hsl(var(--primary)), 0 0 60px hsl(var(--primary));
-    --particle-trail: linear-gradient(90deg, transparent, hsl(var(--primary) / 0.8), transparent);
+    /* Enhanced 32-bit Effects */
+    --glow-pulse: 0 0 25px hsl(var(--primary)), 0 0 50px hsl(var(--primary)), 0 0 75px hsl(var(--primary));
+    --particle-trail: linear-gradient(90deg, transparent, hsl(var(--primary) / 0.9), hsl(var(--primary) / 0.6), transparent);
+    --sprite-shine: linear-gradient(135deg, transparent 30%, rgba(255,255,255,0.3) 50%, transparent 70%);
+    --chrome-reflect: linear-gradient(45deg, transparent, rgba(255,255,255,0.4), transparent);
 
     /* Hippo character animations */
     --hippo-float: bounce 3s ease-in-out infinite;
