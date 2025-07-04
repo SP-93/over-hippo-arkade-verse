@@ -1,5 +1,7 @@
 import { TetrisGame } from "@/components/games/TetrisGame";
 import { SnakeGame } from "@/components/games/SnakeGame";
+import { Snake3DGame } from "@/components/games/Snake3DGame";
+import { Tetris3DGame } from "@/components/games/Tetris3DGame";
 import { PacManGame } from "@/components/games/PacManGame";
 import { BreakoutGame } from "@/components/games/BreakoutGame";
 import { AsteroidsGame } from "@/components/games/AsteroidsGame";
@@ -17,14 +19,24 @@ interface GameRouterProps {
   onScoreChange: (score: number) => void;
   onGameEnd: () => void;
   onGameStart: () => boolean;
+  is3DMode?: boolean;
 }
 
-export const GameRouter = ({ gameId, onScoreChange, onGameEnd, onGameStart }: GameRouterProps) => {
+export const GameRouter = ({ gameId, onScoreChange, onGameEnd, onGameStart, is3DMode = false }: GameRouterProps) => {
   const navigate = useNavigate();
 
   const availableGames = ['tetris', 'snake', 'pacman', 'breakout', 'asteroids', 'flipper', 'mario', 'kingkong', 'frogger'];
 
   if (gameId === 'tetris') {
+    if (is3DMode) {
+      return (
+        <Tetris3DGame 
+          onScoreChange={onScoreChange}
+          onGameEnd={onGameEnd}
+          onGameStart={onGameStart}
+        />
+      );
+    }
     return (
       <TetrisGame 
         onScoreChange={onScoreChange}
@@ -35,6 +47,15 @@ export const GameRouter = ({ gameId, onScoreChange, onGameEnd, onGameStart }: Ga
   }
 
   if (gameId === 'snake') {
+    if (is3DMode) {
+      return (
+        <Snake3DGame 
+          onScoreChange={onScoreChange}
+          onGameEnd={onGameEnd}
+          onGameStart={onGameStart}
+        />
+      );
+    }
     return (
       <SnakeGame 
         onScoreChange={onScoreChange}
