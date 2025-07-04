@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { WalletConnection } from "@/components/WalletConnection";
 import { PlayerDashboard } from "@/components/PlayerDashboard";
@@ -12,14 +12,61 @@ import heroLogo from "@/assets/hero-logo.jpg";
 const Index = () => {
   const [isWalletConnected, setIsWalletConnected] = useState(false);
   const [walletAddress, setWalletAddress] = useState<string>("");
+  const [walletType, setWalletType] = useState<string>("");
   const [playerChips, setPlayerChips] = useState(5);
   const [currentView, setCurrentView] = useState<'home' | 'dashboard' | 'games'>('home');
   const navigate = useNavigate();
 
-  const handleWalletConnect = (walletType: string) => {
+  // Load wallet state from localStorage on component mount
+  useEffect(() => {
+    const savedWallet = localStorage.getItem('wallet_connection');
+    const savedChips = localStorage.getItem('player_chips');
+    const savedView = localStorage.getItem('current_view');
+    
+    if (savedWallet) {
+      const walletData = JSON.parse(savedWallet);
+      setIsWalletConnected(walletData.isConnected);
+      setWalletAddress(walletData.address);
+      setWalletType(walletData.type);
+    }
+    
+    if (savedChips) {
+      setPlayerChips(parseInt(savedChips));
+    }
+    
+    if (savedView && savedWallet) {
+      setCurrentView(savedView as 'home' | 'dashboard' | 'games');
+    }
+  }, []);
+
+  // Save wallet state to localStorage whenever it changes
+  useEffect(() => {
+    if (isWalletConnected) {
+      localStorage.setItem('wallet_connection', JSON.stringify({
+        isConnected: isWalletConnected,
+        address: walletAddress,
+        type: walletType
+      }));
+      localStorage.setItem('player_chips', playerChips.toString());
+      localStorage.setItem('current_view', currentView);
+    }
+  }, [isWalletConnected, walletAddress, walletType, playerChips, currentView]);
+
+  const handleWalletConnect = (connectedWalletType: string) => {
     setIsWalletConnected(true);
     setWalletAddress("0x742d35Cc6622C4532C3124d52C3F4A2cBe4267D8");
+    setWalletType(connectedWalletType);
     setCurrentView('dashboard');
+  };
+
+  const handleWalletDisconnect = () => {
+    setIsWalletConnected(false);
+    setWalletAddress("");
+    setWalletType("");
+    setCurrentView('home');
+    localStorage.removeItem('wallet_connection');
+    localStorage.removeItem('player_chips');
+    localStorage.removeItem('current_view');
   };
 
   const handlePlayGame = (gameId: string) => {
@@ -79,7 +126,9 @@ const Index = () => {
               <div className="mt-12">
                 <WalletConnection 
                   onConnect={handleWalletConnect} 
-                  isConnected={isWalletConnected} 
+                  onDisconnect={handleWalletDisconnect}
+                  isConnected={isWalletConnected}
+                  walletType={walletType}
                 />
               </div>
             )}
@@ -126,7 +175,9 @@ const Index = () => {
                 </Badge>
                 <WalletConnection 
                   onConnect={handleWalletConnect} 
-                  isConnected={isWalletConnected} 
+                  onDisconnect={handleWalletDisconnect}
+                  isConnected={isWalletConnected}
+                  walletType={walletType}
                 />
               </div>
             </div>

@@ -2,15 +2,17 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { QrCode, Wallet } from "lucide-react";
+import { QrCode, Wallet, LogOut } from "lucide-react";
 import { toast } from "sonner";
 
 interface WalletConnectionProps {
   onConnect: (walletType: string) => void;
+  onDisconnect?: () => void;
   isConnected: boolean;
+  walletType?: string;
 }
 
-export const WalletConnection = ({ onConnect, isConnected }: WalletConnectionProps) => {
+export const WalletConnection = ({ onConnect, onDisconnect, isConnected, walletType }: WalletConnectionProps) => {
   const [showQR, setShowQR] = useState(false);
 
   const connectMetaMask = async () => {
@@ -54,9 +56,25 @@ export const WalletConnection = ({ onConnect, isConnected }: WalletConnectionPro
   if (isConnected) {
     return (
       <Card className="p-4 bg-gradient-card border-primary animate-glow">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <Wallet className="h-5 w-5 text-neon-green" />
-          <span className="text-neon-green font-bold">Wallet Connected</span>
+          <div className="flex flex-col">
+            <span className="text-neon-green font-bold text-sm">Connected</span>
+            <span className="text-xs text-muted-foreground">{walletType}</span>
+          </div>
+          {onDisconnect && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                onDisconnect();
+                toast.success("Wallet disconnected");
+              }}
+              className="h-8 w-8 p-0 ml-auto hover:bg-destructive/10 hover:text-destructive"
+            >
+              <LogOut className="h-4 w-4" />
+            </Button>
+          )}
         </div>
       </Card>
     );

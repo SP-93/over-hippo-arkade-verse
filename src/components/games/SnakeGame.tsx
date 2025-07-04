@@ -1,0 +1,302 @@
+import { useState, useEffect, useCallback, useRef } from "react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Pause, Play, ArrowUp, ArrowDown, ArrowLeft, ArrowRight } from "lucide-react";
+
+interface SnakeGameProps {
+  onScoreChange: (score: number) => void;
+  onGameEnd: (finalScore: number) => void;
+}
+
+const BOARD_SIZE = 20;
+const INITIAL_SNAKE = [{ x: 10, y: 10 }];
+const INITIAL_DIRECTION = { x: 0, y: -1 };
+
+export const SnakeGame = ({ onScoreChange, onGameEnd }: SnakeGameProps) => {
+  const [snake, setSnake] = useState(INITIAL_SNAKE);
+  const [food, setFood] = useState({ x: 15, y: 15 });
+  const [direction, setDirection] = useState(INITIAL_DIRECTION);
+  const [score, setScore] = useState(0);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [isPaused, setIsPaused] = useState(false);
+  const [gameOver, setGameOver] = useState(false);
+  const [speed, setSpeed] = useState(150);
+  const gameLoopRef = useRef<NodeJS.Timeout>();
+
+  const generateFood = useCallback(() => {
+    let newFood;
+    do {
+      newFood = {
+        x: Math.floor(Math.random() * BOARD_SIZE),
+        y: Math.floor(Math.random() * BOARD_SIZE)
+      };
+    } while (snake.some(segment => segment.x === newFood.x && segment.y === newFood.y));
+    return newFood;
+  }, [snake]);
+
+  const moveSnake = useCallback(() => {
+    if (isPaused || gameOver) return;
+
+    setSnake(currentSnake => {
+      const newSnake = [...currentSnake];
+      const head = { ...newSnake[0] };
+      
+      head.x += direction.x;
+      head.y += direction.y;
+
+      // Check wall collision
+      if (head.x < 0 || head.x >= BOARD_SIZE || head.y < 0 || head.y >= BOARD_SIZE) {
+        setGameOver(true);
+        setIsPlaying(false);
+        onGameEnd(score);
+        return currentSnake;
+      }
+
+      // Check self collision
+      if (newSnake.some(segment => segment.x === head.x && segment.y === head.y)) {
+        setGameOver(true);
+        setIsPlaying(false);
+        onGameEnd(score);
+        return currentSnake;
+      }
+
+      newSnake.unshift(head);
+
+      // Check food collision
+      if (head.x === food.x && head.y === food.y) {
+        const newScore = score + 10;
+        setScore(newScore);
+        onScoreChange(newScore);
+        setFood(generateFood());
+        
+        // Increase speed every 5 points
+        if (newScore % 50 === 0) {
+          setSpeed(prev => Math.max(50, prev - 10));
+        }
+      } else {
+        newSnake.pop();
+      }
+
+      return newSnake;
+    });
+  }, [direction, food, score, isPaused, gameOver, onScoreChange, onGameEnd, generateFood]);
+
+  const changeDirection = useCallback((newDirection: { x: number; y: number }) => {
+    if (!isPlaying || isPaused || gameOver) return;
+    
+    // Prevent reverse direction
+    if (newDirection.x === -direction.x && newDirection.y === -direction.y) return;
+    
+    setDirection(newDirection);
+  }, [direction, isPlaying, isPaused, gameOver]);
+
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      if (!isPlaying || isPaused || gameOver) return;
+      
+      switch (e.key) {
+        case 'ArrowUp':
+          e.preventDefault();
+          changeDirection({ x: 0, y: -1 });
+          break;
+        case 'ArrowDown':
+          e.preventDefault();
+          changeDirection({ x: 0, y: 1 });
+          break;
+        case 'ArrowLeft':
+          e.preventDefault();
+          changeDirection({ x: -1, y: 0 });
+          break;
+        case 'ArrowRight':
+          e.preventDefault();
+          changeDirection({ x: 1, y: 0 });
+          break;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    return () => window.removeEventListener('keydown', handleKeyPress);
+  }, [changeDirection, isPlaying, isPaused, gameOver]);
+
+  useEffect(() => {
+    if (isPlaying && !isPaused && !gameOver) {
+      gameLoopRef.current = setInterval(moveSnake, speed);
+    } else {
+      if (gameLoopRef.current) {
+        clearInterval(gameLoopRef.current);
+      }
+    }
+
+    return () => {
+      if (gameLoopRef.current) {
+        clearInterval(gameLoopRef.current);
+      }
+    };
+  }, [isPlaying, isPaused, gameOver, speed, moveSnake]);
+
+  const startGame = () => {
+    setSnake(INITIAL_SNAKE);
+    setDirection(INITIAL_DIRECTION);
+    setFood({ x: 15, y: 15 });
+    setScore(0);
+    setSpeed(150);
+    setGameOver(false);
+    setIsPlaying(true);
+    setIsPaused(false);
+    onScoreChange(0);
+  };
+
+  const pauseGame = () => {
+    setIsPaused(!isPaused);
+  };
+
+  const renderBoard = () => {
+    const board = [];
+    for (let y = 0; y < BOARD_SIZE; y++) {
+      for (let x = 0; x < BOARD_SIZE; x++) {
+        let cellType = 'empty';
+        
+        const snakeSegmentIndex = snake.findIndex(segment => segment.x === x && segment.y === y);
+        if (snakeSegmentIndex !== -1) {
+          cellType = snakeSegmentIndex === 0 ? 'head' : 'body';
+        } else if (food.x === x && food.y === y) {
+          cellType = 'food';
+        }
+
+        board.push(
+          <div
+            key={`${x}-${y}`}
+            className={`w-4 h-4 border border-border/20 ${
+              cellType === 'head' 
+                ? 'bg-neon-green shadow-neon animate-neon-pulse' 
+                : cellType === 'body'
+                ? 'bg-primary'
+                : cellType === 'food'
+                ? 'bg-arcade-gold shadow-neon animate-glow rounded-full'
+                : 'bg-muted/10'
+            }`}
+          />
+        );
+      }
+    }
+    return board;
+  };
+
+  return (
+    <div className="flex flex-col lg:flex-row gap-6 p-4">
+      {/* Game Board */}
+      <Card className="flex-1 p-6 bg-gradient-card border-primary">
+        <div className="flex flex-col items-center space-y-4">
+          <h3 className="text-2xl font-bold text-primary">Snake</h3>
+          
+          <div className="bg-background/50 p-4 rounded-lg border-2 border-primary shadow-neon">
+            <div 
+              className="grid gap-0 bg-background/20 p-2 rounded"
+              style={{ gridTemplateColumns: `repeat(${BOARD_SIZE}, 1fr)` }}
+            >
+              {renderBoard()}
+            </div>
+          </div>
+
+          <div className="flex gap-2">
+            {!isPlaying ? (
+              <Button onClick={startGame} variant="default" className="animate-neon-pulse">
+                <Play className="h-4 w-4 mr-2" />
+                Start Game
+              </Button>
+            ) : (
+              <Button onClick={pauseGame} variant="secondary">
+                {isPaused ? <Play className="h-4 w-4 mr-2" /> : <Pause className="h-4 w-4 mr-2" />}
+                {isPaused ? 'Resume' : 'Pause'}
+              </Button>
+            )}
+          </div>
+
+          {gameOver && (
+            <div className="text-center space-y-2 animate-zoom-in">
+              <h3 className="text-xl font-bold text-danger-red">Game Over!</h3>
+              <p className="text-muted-foreground">Final Score: {score.toLocaleString()}</p>
+              <p className="text-sm text-muted-foreground">Snake Length: {snake.length}</p>
+            </div>
+          )}
+        </div>
+      </Card>
+
+      {/* Game Info */}
+      <div className="w-full lg:w-64 space-y-4">
+        <Card className="p-4 bg-gradient-card border-neon-blue">
+          <h4 className="font-bold text-neon-blue mb-2">Score</h4>
+          <p className="text-2xl font-bold text-arcade-gold">{score.toLocaleString()}</p>
+        </Card>
+
+        <Card className="p-4 bg-gradient-card border-neon-green">
+          <h4 className="font-bold text-neon-green mb-2">Length</h4>
+          <p className="text-xl font-bold">{snake.length}</p>
+        </Card>
+
+        <Card className="p-4 bg-gradient-card border-neon-pink">
+          <h4 className="font-bold text-neon-pink mb-2">Speed</h4>
+          <p className="text-xl font-bold">{Math.round((200 - speed) / 2)}%</p>
+        </Card>
+
+        {/* Mobile Controls */}
+        <Card className="p-4 bg-gradient-card border-arcade-gold lg:hidden">
+          <h4 className="font-bold text-arcade-gold mb-4">Controls</h4>
+          <div className="grid grid-cols-3 gap-2">
+            <div></div>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onTouchStart={() => changeDirection({ x: 0, y: -1 })}
+              className="h-12"
+            >
+              <ArrowUp className="h-4 w-4" />
+            </Button>
+            <div></div>
+            
+            <Button 
+              variant="outline" 
+              size="sm"
+              onTouchStart={() => changeDirection({ x: -1, y: 0 })}
+              className="h-12"
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+            <div></div>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onTouchStart={() => changeDirection({ x: 1, y: 0 })}
+              className="h-12"
+            >
+              <ArrowRight className="h-4 w-4" />
+            </Button>
+            
+            <div></div>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onTouchStart={() => changeDirection({ x: 0, y: 1 })}
+              className="h-12"
+            >
+              <ArrowDown className="h-4 w-4" />
+            </Button>
+            <div></div>
+          </div>
+        </Card>
+
+        {/* Instructions */}
+        <Card className="p-4 bg-gradient-card border-border">
+          <h4 className="font-bold mb-2">Instructions</h4>
+          <div className="text-sm text-muted-foreground space-y-1">
+            <p>• Arrow keys: Change direction</p>
+            <p>• Eat food to grow and score</p>
+            <p>• Avoid walls and yourself</p>
+            <p>• Speed increases with score</p>
+            <p>• Each food = 10 points</p>
+          </div>
+        </Card>
+      </div>
+    </div>
+  );
+};

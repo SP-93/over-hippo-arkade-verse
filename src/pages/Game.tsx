@@ -3,8 +3,10 @@ import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
 import { ArrowLeft, Coins, Timer, Trophy } from "lucide-react";
+import { TetrisGame } from "@/components/games/TetrisGame";
+import { SnakeGame } from "@/components/games/SnakeGame";
+import { PacManGame } from "@/components/games/PacManGame";
 import { toast } from "sonner";
 
 export const Game = () => {
@@ -99,73 +101,33 @@ export const Game = () => {
         </div>
 
         {/* Game Area */}
-        <Card className="p-8 bg-gradient-card border-primary min-h-96">
-          <div className="text-center space-y-6">
-            <div className="w-full h-64 bg-muted rounded-lg flex items-center justify-center animate-neon-pulse">
-              <div className="text-center">
+        <div className="w-full">
+          {gameId === 'tetris' && (
+            <TetrisGame 
+              onScoreChange={setCurrentScore}
+              onGameEnd={endGame}
+            />
+          )}
+          {gameId === 'snake' && (
+            <SnakeGame 
+              onScoreChange={setCurrentScore}
+              onGameEnd={endGame}
+            />
+          )}
+          {gameId === 'pacman' && (
+            <PacManGame 
+              onScoreChange={setCurrentScore}
+              onGameEnd={endGame}
+            />
+          )}
+          {!['tetris', 'snake', 'pacman'].includes(gameId || '') && (
+            <Card className="p-8 bg-gradient-card border-primary min-h-96">
+              <div className="text-center space-y-6">
                 <h3 className="text-2xl font-bold text-primary mb-2">
                   {gameId?.charAt(0).toUpperCase() + gameId?.slice(1)} Game
                 </h3>
                 <p className="text-muted-foreground mb-4">
-                  Game simulation running...
-                </p>
-                <div className="space-y-2">
-                  <p className="text-sm text-muted-foreground">Score Progress</p>
-                  <Progress value={(currentScore % 1000) / 10} className="w-64 mx-auto" />
-                </div>
-              </div>
-            </div>
-
-            {gameStatus === 'playing' && (
-              <div className="space-y-4">
-                <p className="text-muted-foreground">
-                  Use arrow keys to move, spacebar to action
-                </p>
-                <div className="flex gap-4 justify-center">
-                  <Button 
-                    variant="secondary" 
-                    onClick={() => setGameStatus('paused')}
-                  >
-                    Pause Game
-                  </Button>
-                  <Button 
-                    variant="destructive" 
-                    onClick={endGame}
-                  >
-                    End Game
-                  </Button>
-                </div>
-              </div>
-            )}
-
-            {gameStatus === 'paused' && (
-              <div className="space-y-4">
-                <h3 className="text-xl font-bold text-primary">Game Paused</h3>
-                <div className="flex gap-4 justify-center">
-                  <Button 
-                    variant="default" 
-                    onClick={() => setGameStatus('playing')}
-                  >
-                    Resume Game
-                  </Button>
-                  <Button 
-                    variant="destructive" 
-                    onClick={endGame}
-                  >
-                    End Game
-                  </Button>
-                </div>
-              </div>
-            )}
-
-            {gameStatus === 'finished' && (
-              <div className="space-y-4">
-                <h3 className="text-2xl font-bold text-neon-green">Game Complete!</h3>
-                <p className="text-lg">
-                  Final Score: <span className="font-bold text-arcade-gold">{currentScore.toLocaleString()}</span>
-                </p>
-                <p className="text-muted-foreground">
-                  Points have been added to your account
+                  This game is coming soon! Try Tetris, Snake, or Pac-Man for now.
                 </p>
                 <Button 
                   variant="default" 
@@ -175,9 +137,9 @@ export const Game = () => {
                   Return to Arcade
                 </Button>
               </div>
-            )}
-          </div>
-        </Card>
+            </Card>
+          )}
+        </div>
 
         {/* Game Instructions */}
         <Card className="p-6 bg-gradient-card border-border">
