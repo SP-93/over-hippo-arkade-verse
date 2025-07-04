@@ -5,6 +5,7 @@ import { BreakoutGame } from "@/components/games/BreakoutGame";
 import { AsteroidsGame } from "@/components/games/AsteroidsGame";
 import { FlipperGame } from "@/components/games/FlipperGame";
 import { MarioGame } from "@/components/games/MarioGame";
+import { KingKongGame } from "@/components/games/KingKongGame";
 import { GameTemplate } from "@/components/GameTemplate";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -92,24 +93,12 @@ export const GameRouter = ({ gameId, onScoreChange, onGameEnd, onGameStart }: Ga
     );
   }
 
-  // Coming Soon Games
   if (gameId === 'kingkong') {
     return (
-      <GameTemplate 
-        gameId="kingkong"
-        title="King Kong Climber"
-        description="Climb the tower, dodge obstacles, and save the day in this action-packed adventure"
-        comingSoonDate="Q4 2025"
-        difficulty="Hard"
-        genre="Action Arcade"
-        features={[
-          "Tower climbing adventure",
-          "Dynamic obstacles",
-          "Power-ups and tools",
-          "Boss encounters",
-          "Progressive difficulty",
-          "Rescue missions"
-        ]}
+      <KingKongGame 
+        onScoreChange={onScoreChange}
+        onGameEnd={onGameEnd}
+        onGameStart={onGameStart}
       />
     );
   }
