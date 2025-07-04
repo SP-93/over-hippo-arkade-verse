@@ -185,8 +185,12 @@ All colors MUST be HSL. Retro arcade aesthetic with neon accents.
 }
 
 @keyframes text-glow {
-  0%, 100% { text-shadow: 0 0 10px hsl(var(--primary) / 0.5); }
-  50% { text-shadow: 0 0 20px hsl(var(--primary) / 1), 0 0 30px hsl(var(--primary) / 0.8), 0 0 40px hsl(var(--primary) / 0.6); }
+  0%, 100% { 
+    text-shadow: 0 0 10px hsl(var(--primary) / 0.3), 0 0 20px hsl(var(--primary) / 0.2);
+  }
+  50% { 
+    text-shadow: 0 0 20px hsl(var(--primary) / 0.5), 0 0 30px hsl(var(--primary) / 0.3), 0 0 40px hsl(var(--primary) / 0.1);
+  }
 }
 
 /* Utility classes */
@@ -259,4 +263,70 @@ All colors MUST be HSL. Retro arcade aesthetic with neon accents.
 .backdrop-glass {
   backdrop-filter: blur(10px);
   background: hsl(var(--card) / 0.8);
+}
+
+/* Responsive utilities */
+@media (max-width: 768px) {
+  .animate-float {
+    animation-duration: 2s;
+  }
+  
+  .animate-drift {
+    animation-duration: 12s;
+  }
+  
+  .backdrop-glass {
+    backdrop-filter: blur(8px);
+  }
+}
+
+/* Interactive hover effects */
+.hover-lift {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.hover-lift:hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: var(--shadow-intense);
+}
+
+/* Enhanced buttons */
+.btn-neon {
+  background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-glow)));
+  border: 1px solid hsl(var(--primary));
+  box-shadow: 0 4px 15px hsl(var(--primary) / 0.4);
+  transition: all 0.3s ease;
+}
+
+.btn-neon:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px hsl(var(--primary) / 0.6);
+}
+
+/* Game card enhancements */
+.game-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.game-card::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(45deg, transparent, hsl(var(--primary) / 0.1), transparent);
+  transform: rotate(45deg);
+  transition: transform 0.6s ease;
+  z-index: 1;
+}
+
+.game-card:hover::before {
+  transform: rotate(45deg) translate(100%, 100%);
+}
+
+.game-card > * {
+  position: relative;
+  z-index: 2;
 }

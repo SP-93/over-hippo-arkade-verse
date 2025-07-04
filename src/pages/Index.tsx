@@ -102,7 +102,7 @@ const Index = () => {
       default:
         return (
           <div className="text-center space-y-8 animate-zoom-in">
-            <div className="mb-8">
+            <div className="mb-8 hover-lift">
               <img 
                 src={heroLogo} 
                 alt="Over Hippo Arkade" 
@@ -111,36 +111,36 @@ const Index = () => {
             </div>
             
             <div className="space-y-4">
-              <h1 className="text-6xl font-black bg-gradient-hero bg-clip-text text-transparent animate-gradient animate-text-glow">
+              <h1 className="text-4xl md:text-6xl font-black bg-gradient-hero bg-clip-text text-transparent animate-gradient drop-shadow-lg">
                 Over Hippo Arkade
               </h1>
-              <p className="text-xl text-muted-foreground max-w-2xl mx-auto backdrop-glass rounded-xl p-4 border border-neon">
+              <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto backdrop-glass rounded-xl p-4 md:p-6 border border-neon hover-lift">
                 The ultimate Web3 gaming platform where you play, earn, and dominate the arcade!
               </p>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12">
-              <Card className="p-6 bg-gradient-card border-neon-pink hover:shadow-intense transition-all duration-500 transform hover:scale-105 animate-pulse-border backdrop-glass">
-                <Gamepad className="h-12 w-12 text-neon-pink mx-auto mb-4 animate-float drop-shadow-lg" />
-                <h3 className="text-xl font-bold mb-2 text-neon-pink">10+ Classic Games</h3>
-                <p className="text-muted-foreground">Play Tetris, Mario, Pac-Man and more retro favorites</p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mt-12">
+              <Card className="p-4 md:p-6 bg-gradient-card border-neon-pink hover:shadow-intense transition-all duration-500 hover-lift animate-pulse-border backdrop-glass game-card">
+                <Gamepad className="h-10 md:h-12 w-10 md:w-12 text-neon-pink mx-auto mb-4 animate-float drop-shadow-lg" />
+                <h3 className="text-lg md:text-xl font-bold mb-2 text-neon-pink">10+ Classic Games</h3>
+                <p className="text-sm md:text-base text-muted-foreground">Play Tetris, Mario, Pac-Man and more retro favorites</p>
               </Card>
 
-              <Card className="p-6 bg-gradient-card border-arcade-gold hover:shadow-intense transition-all duration-500 transform hover:scale-105 animate-pulse-border backdrop-glass">
-                <Zap className="h-12 w-12 text-arcade-gold mx-auto mb-4 animate-neon-pulse drop-shadow-lg" />
-                <h3 className="text-xl font-bold mb-2 text-arcade-gold">Play to Earn</h3>
-                <p className="text-muted-foreground">Earn points and exchange them for various tokens</p>
+              <Card className="p-4 md:p-6 bg-gradient-card border-arcade-gold hover:shadow-intense transition-all duration-500 hover-lift animate-pulse-border backdrop-glass game-card">
+                <Zap className="h-10 md:h-12 w-10 md:w-12 text-arcade-gold mx-auto mb-4 animate-neon-pulse drop-shadow-lg" />
+                <h3 className="text-lg md:text-xl font-bold mb-2 text-arcade-gold">Play to Earn</h3>
+                <p className="text-sm md:text-base text-muted-foreground">Earn points and exchange them for various tokens</p>
               </Card>
 
-              <Card className="p-6 bg-gradient-card border-neon-blue hover:shadow-intense transition-all duration-500 transform hover:scale-105 animate-pulse-border backdrop-glass">
-                <Wallet className="h-12 w-12 text-neon-blue mx-auto mb-4 animate-float drop-shadow-lg" />
-                <h3 className="text-xl font-bold mb-2 text-neon-blue">Web3 Integration</h3>
-                <p className="text-muted-foreground">Connect MetaMask, OKX or any compatible wallet</p>
+              <Card className="p-4 md:p-6 bg-gradient-card border-neon-blue hover:shadow-intense transition-all duration-500 hover-lift animate-pulse-border backdrop-glass game-card">
+                <Wallet className="h-10 md:h-12 w-10 md:w-12 text-neon-blue mx-auto mb-4 animate-float drop-shadow-lg" />
+                <h3 className="text-lg md:text-xl font-bold mb-2 text-neon-blue">Web3 Integration</h3>
+                <p className="text-sm md:text-base text-muted-foreground">Connect MetaMask, OKX or any compatible wallet</p>
               </Card>
             </div>
 
             {!isWalletConnected && (
-              <div className="mt-12 backdrop-glass rounded-2xl p-8 border border-neon shadow-glow animate-pulse-border">
+              <div className="mt-12 backdrop-glass rounded-2xl p-6 md:p-8 border border-neon shadow-glow animate-pulse-border hover-lift">
                 <WalletConnection 
                   onConnect={handleWalletConnect} 
                   onDisconnect={handleWalletDisconnect}
@@ -163,34 +163,34 @@ const Index = () => {
       <div className="relative z-10">
         {/* Navigation */}
         {isWalletConnected && (
-          <nav className="border-b border-border bg-gradient-card/80 backdrop-blur-md sticky top-0 z-50 shadow-glow">
+          <nav className="border-b border-border bg-gradient-card/90 backdrop-blur-lg sticky top-0 z-50 shadow-glow">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-              <div className="flex items-center justify-between h-16">
-                <div className="flex items-center space-x-4">
+              <div className="flex items-center justify-between h-16 md:h-20">
+                <div className="flex items-center space-x-2 md:space-x-4">
                   <Button
                     variant={currentView === 'home' ? 'default' : 'ghost'}
                     onClick={() => setCurrentView('home')}
-                    className="font-bold hover:shadow-glow transition-all duration-300"
+                    className="font-bold hover:shadow-glow transition-all duration-300 text-sm md:text-base px-3 md:px-4"
                   >
                     Home
                   </Button>
                   <Button
                     variant={currentView === 'dashboard' ? 'default' : 'ghost'}
                     onClick={() => setCurrentView('dashboard')}
-                    className="font-bold hover:shadow-glow transition-all duration-300"
+                    className="font-bold hover:shadow-glow transition-all duration-300 text-sm md:text-base px-3 md:px-4"
                   >
                     Dashboard
                   </Button>
                   <Button
                     variant={currentView === 'games' ? 'default' : 'ghost'}
                     onClick={() => setCurrentView('games')}
-                    className="font-bold hover:shadow-glow transition-all duration-300"
+                    className="font-bold hover:shadow-glow transition-all duration-300 text-sm md:text-base px-3 md:px-4"
                   >
                     Games
                   </Button>
                 </div>
                 
-                <div className="flex items-center space-x-4">
+                <div className="flex items-center space-x-2 md:space-x-4">
                   <ChipDisplay 
                     playerChips={playerChips} 
                     timeUntilReset={chipManager.getTimeUntilReset()} 
@@ -212,19 +212,19 @@ const Index = () => {
         )}
 
         {/* Main Content */}
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
           {renderCurrentView()}
         </main>
 
         {/* Footer */}
-        <footer className="border-t border-border bg-gradient-card/80 backdrop-blur-md mt-20 shadow-glow">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <div className="text-center space-y-4">
-              <h3 className="text-lg font-bold text-primary animate-text-glow">Over Hippo Arkade</h3>
-              <p className="text-sm text-muted-foreground backdrop-glass rounded-lg px-4 py-2 inline-block border border-neon">
+        <footer className="border-t border-border bg-gradient-card/90 backdrop-blur-lg mt-20 shadow-glow">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
+            <div className="text-center space-y-3 md:space-y-4">
+              <h3 className="text-base md:text-lg font-bold text-primary drop-shadow-lg">Over Hippo Arkade</h3>
+              <p className="text-xs md:text-sm text-muted-foreground backdrop-glass rounded-lg px-3 md:px-4 py-1 md:py-2 inline-block border border-neon max-w-md mx-auto">
                 Powered by Over Protocol • Built for the Web3 Gaming Revolution
               </p>
-              <p className="text-xs text-muted-foreground backdrop-glass rounded-lg px-3 py-1 inline-block border border-primary/30">
+              <p className="text-xs text-muted-foreground backdrop-glass rounded-lg px-2 md:px-3 py-1 inline-block border border-primary/30 break-all">
                 Profit Wallet: 0x4deA071d64F77F2F94Ac1EB80D1b7b2681993477
               </p>
             </div>
