@@ -6,6 +6,7 @@ import { AsteroidsGame } from "@/components/games/AsteroidsGame";
 import { FlipperGame } from "@/components/games/FlipperGame";
 import { MarioGame } from "@/components/games/MarioGame";
 import { KingKongGame } from "@/components/games/KingKongGame";
+import { FroggerGame } from "@/components/games/FroggerGame";
 import { GameTemplate } from "@/components/GameTemplate";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -21,7 +22,7 @@ interface GameRouterProps {
 export const GameRouter = ({ gameId, onScoreChange, onGameEnd, onGameStart }: GameRouterProps) => {
   const navigate = useNavigate();
 
-  const availableGames = ['tetris', 'snake', 'pacman', 'breakout', 'asteroids', 'flipper', 'mario'];
+  const availableGames = ['tetris', 'snake', 'pacman', 'breakout', 'asteroids', 'flipper', 'mario', 'kingkong', 'frogger'];
 
   if (gameId === 'tetris') {
     return (
@@ -105,21 +106,10 @@ export const GameRouter = ({ gameId, onScoreChange, onGameEnd, onGameStart }: Ga
 
   if (gameId === 'frogger') {
     return (
-      <GameTemplate 
-        gameId="frogger"
-        title="Frogger Road Cross"
-        description="Help the frog cross busy roads and rivers safely in this classic arcade game"
-        comingSoonDate="Q1 2025"
-        difficulty="Medium"
-        genre="Arcade Action"
-        features={[
-          "Multiple road crossing levels",
-          "Moving vehicles and obstacles",
-          "River crossing challenges",
-          "Time-based scoring",
-          "Progressive speed increases",
-          "Bonus lily pad rewards"
-        ]}
+      <FroggerGame 
+        onScoreChange={onScoreChange}
+        onGameEnd={onGameEnd}
+        onGameStart={onGameStart}
       />
     );
   }
