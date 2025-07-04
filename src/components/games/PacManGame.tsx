@@ -6,6 +6,7 @@ import { Pause, Play, ArrowUp, ArrowDown, ArrowLeft, ArrowRight } from "lucide-r
 interface PacManGameProps {
   onScoreChange: (score: number) => void;
   onGameEnd: (finalScore: number) => void;
+  onGameStart?: () => boolean;
   chipCost?: number; // Number of chips consumed for this game session
 }
 
@@ -31,7 +32,7 @@ const MAZE = [
   [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
 ];
 
-export const PacManGame = ({ onScoreChange, onGameEnd }: PacManGameProps) => {
+export const PacManGame = ({ onScoreChange, onGameEnd, onGameStart }: PacManGameProps) => {
   const [pacman, setPacman] = useState({ x: 9, y: 11, direction: { x: 0, y: 0 } });
   const [ghosts, setGhosts] = useState([
     { x: 9, y: 7, direction: { x: 1, y: 0 }, color: 'hsl(0 100% 50%)' },
@@ -226,6 +227,10 @@ export const PacManGame = ({ onScoreChange, onGameEnd }: PacManGameProps) => {
   }, [isPlaying, isPaused, gameOver, movePacman, moveGhosts, checkCollisions]);
 
   const startGame = () => {
+    if (onGameStart && !onGameStart()) {
+      return; // Don't start if chip consumption failed
+    }
+    
     setMaze(MAZE.map(row => [...row]));
     setPacman({ x: 9, y: 11, direction: { x: 0, y: 0 } });
     setGhosts([

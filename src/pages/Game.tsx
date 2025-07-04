@@ -7,6 +7,7 @@ import { ArrowLeft, Coins, Timer, Trophy } from "lucide-react";
 import { TetrisGame } from "@/components/games/TetrisGame";
 import { SnakeGame } from "@/components/games/SnakeGame";
 import { PacManGame } from "@/components/games/PacManGame";
+import { ChipManager } from "@/components/ChipManager";
 import { toast } from "sonner";
 
 export const Game = () => {
@@ -15,6 +16,24 @@ export const Game = () => {
   const [gameTime, setGameTime] = useState(0);
   const [currentScore, setCurrentScore] = useState(0);
   const [gameStatus, setGameStatus] = useState<'playing' | 'paused' | 'finished'>('playing');
+  const [playerChips, setPlayerChips] = useState(5);
+  const [hasGameStarted, setHasGameStarted] = useState(false);
+
+  // Initialize chip manager
+  const chipManager = ChipManager({ playerChips, onChipChange: setPlayerChips });
+
+  // Load player chips from localStorage
+  useEffect(() => {
+    const savedChips = localStorage.getItem('player_chips');
+    if (savedChips) {
+      setPlayerChips(parseInt(savedChips));
+    }
+  }, []);
+
+  // Save chips to localStorage when changed
+  useEffect(() => {
+    localStorage.setItem('player_chips', playerChips.toString());
+  }, [playerChips]);
 
   useEffect(() => {
     let timer: NodeJS.Timeout;
@@ -42,6 +61,24 @@ export const Game = () => {
     setTimeout(() => {
       toast.success(`${finalScore} points added to your account!`);
     }, 1000);
+  };
+
+  const handleGameStart = () => {
+    if (!hasGameStarted) {
+      if (!chipManager.canPlayGame(gameId || '')) {
+        toast.error("Nemate dovoljno chipova za igru!");
+        navigate('/');
+        return false;
+      }
+      
+      if (chipManager.consumeChip(gameId || '')) {
+        toast.success("Chip je potrošen! Uživajte u igri!");
+        setHasGameStarted(true);
+        return true;
+      }
+      return false;
+    }
+    return true;
   };
 
   const goBack = () => {
@@ -105,18 +142,21 @@ export const Game = () => {
             <TetrisGame 
               onScoreChange={setCurrentScore}
               onGameEnd={endGame}
+              onGameStart={handleGameStart}
             />
           )}
           {gameId === 'snake' && (
             <SnakeGame 
               onScoreChange={setCurrentScore}
               onGameEnd={endGame}
+              onGameStart={handleGameStart}
             />
           )}
           {gameId === 'pacman' && (
             <PacManGame 
               onScoreChange={setCurrentScore}
               onGameEnd={endGame}
+              onGameStart={handleGameStart}
             />
           )}
           {!['tetris', 'snake', 'pacman'].includes(gameId || '') && (

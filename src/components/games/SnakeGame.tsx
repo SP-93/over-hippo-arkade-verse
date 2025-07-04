@@ -6,6 +6,7 @@ import { Pause, Play, ArrowUp, ArrowDown, ArrowLeft, ArrowRight } from "lucide-r
 interface SnakeGameProps {
   onScoreChange: (score: number) => void;
   onGameEnd: (finalScore: number) => void;
+  onGameStart?: () => boolean;
   chipCost?: number; // Number of chips consumed for this game session
 }
 
@@ -13,7 +14,7 @@ const BOARD_SIZE = 20;
 const INITIAL_SNAKE = [{ x: 10, y: 10 }];
 const INITIAL_DIRECTION = { x: 0, y: -1 };
 
-export const SnakeGame = ({ onScoreChange, onGameEnd, chipCost = 1 }: SnakeGameProps) => {
+export const SnakeGame = ({ onScoreChange, onGameEnd, onGameStart, chipCost = 1 }: SnakeGameProps) => {
   const [snake, setSnake] = useState(INITIAL_SNAKE);
   const [food, setFood] = useState({ x: 15, y: 15 });
   const [bonusFood, setBonusFood] = useState<{ x: number; y: number; active: boolean }>({ x: 0, y: 0, active: false });
@@ -155,6 +156,10 @@ export const SnakeGame = ({ onScoreChange, onGameEnd, chipCost = 1 }: SnakeGameP
   }, [lives, score, onGameEnd]);
 
   const startGame = () => {
+    if (onGameStart && !onGameStart()) {
+      return; // Don't start if chip consumption failed
+    }
+    
     setSnake(INITIAL_SNAKE);
     setDirection(INITIAL_DIRECTION);
     setFood({ x: 15, y: 15 });

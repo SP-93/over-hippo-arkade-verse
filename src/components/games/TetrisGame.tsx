@@ -7,6 +7,7 @@ import { Pause, Play, RotateCw, ArrowDown, ArrowLeft, ArrowRight } from "lucide-
 interface TetrisGameProps {
   onScoreChange: (score: number) => void;
   onGameEnd: (finalScore: number) => void;
+  onGameStart?: () => boolean;
 }
 
 const BOARD_WIDTH = 10;
@@ -21,7 +22,7 @@ const TETRIS_PIECES = [
   { name: 'L', shape: [[0,0,1],[1,1,1]], color: 'hsl(30 100% 50%)' }
 ];
 
-export const TetrisGame = ({ onScoreChange, onGameEnd }: TetrisGameProps) => {
+export const TetrisGame = ({ onScoreChange, onGameEnd, onGameStart }: TetrisGameProps) => {
   const [board, setBoard] = useState(() => 
     Array(BOARD_HEIGHT).fill(null).map(() => Array(BOARD_WIDTH).fill(0))
   );
@@ -240,6 +241,10 @@ export const TetrisGame = ({ onScoreChange, onGameEnd }: TetrisGameProps) => {
   }, [isPlaying, isPaused, gameOver, dropTime, movePiece]);
 
   const startGame = () => {
+    if (onGameStart && !onGameStart()) {
+      return; // Don't start if chip consumption failed
+    }
+    
     setBoard(Array(BOARD_HEIGHT).fill(null).map(() => Array(BOARD_WIDTH).fill(0)));
     setCurrentPiece(getRandomPiece());
     setScore(0);
