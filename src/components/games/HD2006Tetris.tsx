@@ -180,6 +180,11 @@ export const HD2006Tetris = ({ onScoreChange, onGameEnd, onGameStart }: HD2006Te
     const handleKeyPress = (e: KeyboardEvent) => {
       if (!isPlaying || gameOver) return;
       
+      // Prevent page scrolling during gameplay
+      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'w', 'W', 'a', 'A', 's', 'S', 'd', 'D', ' '].includes(e.key)) {
+        e.preventDefault();
+      }
+      
       switch (e.key) {
         case 'ArrowLeft':
         case 'a':

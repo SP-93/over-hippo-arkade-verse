@@ -101,6 +101,11 @@ export const HD2006Snake = ({ onScoreChange, onGameEnd, onGameStart }: HD2006Sna
     const handleKeyPress = (e: KeyboardEvent) => {
       if (!isPlaying || isPaused || gameOver) return;
       
+      // Prevent page scrolling during gameplay
+      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'w', 'W', 'a', 'A', 's', 'S', 'd', 'D', ' '].includes(e.key)) {
+        e.preventDefault();
+      }
+      
       switch (e.key) {
         case 'ArrowUp':
         case 'w':
