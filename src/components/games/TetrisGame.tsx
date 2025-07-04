@@ -1,4 +1,4 @@
-import { Tetris3DGame } from "./Tetris3DGame";
+import { HD2006Tetris } from "./HD2006Tetris";
 
 interface TetrisGameProps {
   onScoreChange?: (score: number) => void;
@@ -7,6 +7,6 @@ interface TetrisGameProps {
 }
 
 export const TetrisGame = (props: TetrisGameProps) => {
-  console.log("TetrisGame wrapper loaded - 3D version");
-  return <Tetris3DGame {...props} />;
+  console.log("TetrisGame wrapper loaded - 2006 HD version");
+  return <HD2006Tetris {...props} />;
 };

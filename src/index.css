@@ -39,19 +39,31 @@ All colors MUST be HSL. Retro arcade aesthetic with neon accents.
 
     --radius: 0.75rem;
 
-    /* 32-bit SEGA Gaming Colors */
+    /* 32-bit SEGA Gaming Colors - Enhanced for 2006 HD */
     --neon-pink: 320 100% 65%;
     --neon-blue: 200 100% 65%;
     --neon-green: 120 100% 55%;
+    --neon-cyan: 180 100% 70%;
+    --neon-yellow: 60 100% 70%;
+    --neon-purple: 280 100% 70%;
     --arcade-gold: 45 100% 65%;
     --danger-red: 0 100% 65%;
+    
+    /* 2006 HD Gaming Colors - Xbox 360/PS3 era */
+    --hd-silver: 220 20% 85%;
+    --hd-gold: 45 100% 60%;
+    --hd-platinum: 240 15% 90%;
+    --hd-chrome: 210 30% 80%;
+    --hd-electric: 210 100% 70%;
+    --hd-crystal: 180 50% 85%;
+    
     --sega-cyan: 180 100% 60%;
     --sega-magenta: 300 100% 70%;
     --sega-lime: 90 100% 55%;
     --sega-orange: 25 100% 60%;
     --sega-purple: 270 100% 65%;
 
-    /* 32-bit SEGA Gradients */
+    /* Enhanced 2006 HD Gradients */
     --gradient-primary: linear-gradient(135deg, hsl(280 100% 65%), hsl(320 100% 70%));
     --gradient-secondary: linear-gradient(135deg, hsl(200 100% 65%), hsl(180 100% 60%));
     --gradient-bg: linear-gradient(135deg, hsl(230 40% 8%), hsl(240 35% 15%));
@@ -61,6 +73,20 @@ All colors MUST be HSL. Retro arcade aesthetic with neon accents.
     --gradient-sega: linear-gradient(45deg, hsl(180 100% 60%), hsl(300 100% 70%), hsl(90 100% 55%), hsl(25 100% 60%));
     --gradient-metal: linear-gradient(135deg, hsl(220 20% 85%), hsl(220 15% 75%), hsl(220 10% 65%));
     --gradient-chrome: linear-gradient(135deg, hsl(0 0% 95%), hsl(220 5% 85%), hsl(220 10% 75%), hsl(0 0% 95%));
+    --gradient-hd: linear-gradient(145deg, 
+      hsl(var(--hd-silver)) 0%, 
+      hsl(var(--hd-chrome)) 25%, 
+      hsl(var(--hd-platinum)) 50%, 
+      hsl(var(--hd-crystal)) 75%, 
+      hsl(var(--hd-electric)) 100%
+    );
+    --gradient-plasma: linear-gradient(135deg,
+      rgba(0, 255, 255, 0.9) 0%,
+      rgba(128, 0, 255, 0.8) 25%,
+      rgba(255, 0, 128, 0.7) 50%,
+      rgba(255, 255, 0, 0.8) 75%,
+      rgba(0, 255, 255, 0.9) 100%
+    );
 
     /* 32-bit Shadows and Effects */
     --shadow-neon: 0 0 25px hsl(280 100% 65% / 0.6);
