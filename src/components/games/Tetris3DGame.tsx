@@ -11,6 +11,12 @@ const BOARD_WIDTH = 10;
 const BOARD_HEIGHT = 20;
 const BOARD_DEPTH = 1;
 
+interface Tetris3DGameProps {
+  onScoreChange?: (score: number) => void;
+  onGameEnd?: () => void;
+  onGameStart?: () => boolean;
+}
+
 // Tetris pieces
 const PIECES = {
   I: { blocks: [[0,0,0],[1,0,0],[2,0,0],[3,0,0]], color: "#00ffff" },
@@ -101,7 +107,7 @@ const GameBoard = () => {
   );
 };
 
-export const Tetris3DGame = () => {
+export const Tetris3DGame = ({ onScoreChange, onGameEnd, onGameStart }: Tetris3DGameProps = {}) => {
   const [board, setBoard] = useState<(string | null)[][]>(() => 
     Array(BOARD_HEIGHT).fill(null).map(() => Array(BOARD_WIDTH).fill(null))
   );
@@ -170,7 +176,9 @@ export const Tetris3DGame = () => {
       
       const newLines = lines + completedLines.length;
       setLines(newLines);
-      setScore(prev => prev + completedLines.length * 100 * level);
+      const newScore = score + completedLines.length * 100 * level;
+      setScore(newScore);
+      onScoreChange?.(newScore);
       setLevel(Math.floor(newLines / 10) + 1);
       setDropTime(Math.max(50, 500 - (level * 50)));
       
@@ -184,6 +192,7 @@ export const Tetris3DGame = () => {
     if (checkCollision(newPiece, newPosition)) {
       setGameOver(true);
       setIsPlaying(false);
+      onGameEnd?.();
       toast.error("Game Over!");
     } else {
       setCurrentPiece(newPiece);
@@ -268,6 +277,7 @@ export const Tetris3DGame = () => {
   }, [isPlaying, gameOver, isPaused, movePiece, rotatePiece]);
 
   const startGame = () => {
+    if (onGameStart && !onGameStart()) return;
     if (!handleGameStart('tetris')) return;
     
     setBoard(Array(BOARD_HEIGHT).fill(null).map(() => Array(BOARD_WIDTH).fill(null)));

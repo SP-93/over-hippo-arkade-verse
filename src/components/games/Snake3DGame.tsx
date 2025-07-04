@@ -11,6 +11,12 @@ const GRID_SIZE = 20;
 const INITIAL_SNAKE = [{ x: 10, y: 10, z: 0 }];
 const INITIAL_DIRECTION = { x: 1, y: 0, z: 0 };
 
+interface Snake3DGameProps {
+  onScoreChange?: (score: number) => void;
+  onGameEnd?: () => void;
+  onGameStart?: () => boolean;
+}
+
 interface SnakeSegmentProps {
   position: [number, number, number];
   isHead?: boolean;
@@ -82,7 +88,7 @@ const GameGrid = () => {
   );
 };
 
-export const Snake3DGame = () => {
+export const Snake3DGame = ({ onScoreChange, onGameEnd, onGameStart }: Snake3DGameProps = {}) => {
   const [snake, setSnake] = useState(INITIAL_SNAKE);
   const [direction, setDirection] = useState(INITIAL_DIRECTION);
   const [food, setFood] = useState({ x: 15, y: 0, z: 15 });
@@ -131,6 +137,7 @@ export const Snake3DGame = () => {
       if (checkCollision(head)) {
         setGameOver(true);
         setIsPlaying(false);
+        onGameEnd?.();
         toast.error("Game Over!");
         return currentSnake;
       }
@@ -139,7 +146,9 @@ export const Snake3DGame = () => {
       
       // Check food collision
       if (head.x === food.x && head.z === food.z) {
-        setScore(prev => prev + 10);
+        const newScore = score + 10;
+        setScore(newScore);
+        onScoreChange?.(newScore);
         setFood(generateFood());
         // Increase speed slightly
         setSpeed(prev => Math.max(100, prev - 5));
@@ -199,6 +208,7 @@ export const Snake3DGame = () => {
   }, [direction, isPlaying, isPaused, gameOver]);
 
   const startGame = () => {
+    if (onGameStart && !onGameStart()) return;
     if (!handleGameStart('snake')) return;
     
     setSnake(INITIAL_SNAKE);
