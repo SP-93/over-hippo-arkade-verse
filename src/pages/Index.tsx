@@ -5,6 +5,7 @@ import { PlayerDashboard } from "@/components/PlayerDashboard";
 import { GameGrid } from "@/components/GameGrid";
 import { ChipManager, ChipDisplay } from "@/components/ChipManager";
 import { ChipPurchaseModal } from "@/components/ChipPurchaseModal";
+import { HippoBackground } from "@/components/HippoBackground";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -154,76 +155,82 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-bg">
-      {/* Navigation */}
-      {isWalletConnected && (
-        <nav className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center justify-between h-16">
-              <div className="flex items-center space-x-4">
-                <Button
-                  variant={currentView === 'home' ? 'default' : 'ghost'}
-                  onClick={() => setCurrentView('home')}
-                  className="font-bold"
-                >
-                  Home
-                </Button>
-                <Button
-                  variant={currentView === 'dashboard' ? 'default' : 'ghost'}
-                  onClick={() => setCurrentView('dashboard')}
-                  className="font-bold"
-                >
-                  Dashboard
-                </Button>
-                <Button
-                  variant={currentView === 'games' ? 'default' : 'ghost'}
-                  onClick={() => setCurrentView('games')}
-                  className="font-bold"
-                >
-                  Games
-                </Button>
-              </div>
-              
-              <div className="flex items-center space-x-4">
-                <ChipDisplay 
-                  playerChips={playerChips} 
-                  timeUntilReset={chipManager.getTimeUntilReset()} 
-                />
-                <ChipPurchaseModal 
-                  isConnected={isWalletConnected}
-                  onPurchase={handleChipPurchase}
-                />
-                <WalletConnection 
-                  onConnect={handleWalletConnect} 
-                  onDisconnect={handleWalletDisconnect}
-                  isConnected={isWalletConnected}
-                  walletType={walletType}
-                />
+    <div className="min-h-screen bg-gradient-bg relative">
+      {/* Animated hippo background */}
+      <HippoBackground />
+      
+      {/* Content wrapper with higher z-index */}
+      <div className="relative z-10">
+        {/* Navigation */}
+        {isWalletConnected && (
+          <nav className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <div className="flex items-center justify-between h-16">
+                <div className="flex items-center space-x-4">
+                  <Button
+                    variant={currentView === 'home' ? 'default' : 'ghost'}
+                    onClick={() => setCurrentView('home')}
+                    className="font-bold"
+                  >
+                    Home
+                  </Button>
+                  <Button
+                    variant={currentView === 'dashboard' ? 'default' : 'ghost'}
+                    onClick={() => setCurrentView('dashboard')}
+                    className="font-bold"
+                  >
+                    Dashboard
+                  </Button>
+                  <Button
+                    variant={currentView === 'games' ? 'default' : 'ghost'}
+                    onClick={() => setCurrentView('games')}
+                    className="font-bold"
+                  >
+                    Games
+                  </Button>
+                </div>
+                
+                <div className="flex items-center space-x-4">
+                  <ChipDisplay 
+                    playerChips={playerChips} 
+                    timeUntilReset={chipManager.getTimeUntilReset()} 
+                  />
+                  <ChipPurchaseModal 
+                    isConnected={isWalletConnected}
+                    onPurchase={handleChipPurchase}
+                  />
+                  <WalletConnection 
+                    onConnect={handleWalletConnect} 
+                    onDisconnect={handleWalletDisconnect}
+                    isConnected={isWalletConnected}
+                    walletType={walletType}
+                  />
+                </div>
               </div>
             </div>
-          </div>
-        </nav>
-      )}
+          </nav>
+        )}
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {renderCurrentView()}
-      </main>
+        {/* Main Content */}
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          {renderCurrentView()}
+        </main>
 
-      {/* Footer */}
-      <footer className="border-t border-border bg-card/30 backdrop-blur-sm mt-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="text-center space-y-4">
-            <h3 className="text-lg font-bold text-primary">Over Hippo Arkade</h3>
-            <p className="text-sm text-muted-foreground">
-              Powered by Over Protocol • Built for the Web3 Gaming Revolution
-            </p>
-            <p className="text-xs text-muted-foreground">
-              Profit Wallet: 0x4deA071d64F77F2F94Ac1EB80D1b7b2681993477
-            </p>
+        {/* Footer */}
+        <footer className="border-t border-border bg-card/30 backdrop-blur-sm mt-20">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div className="text-center space-y-4">
+              <h3 className="text-lg font-bold text-primary">Over Hippo Arkade</h3>
+              <p className="text-sm text-muted-foreground">
+                Powered by Over Protocol • Built for the Web3 Gaming Revolution
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Profit Wallet: 0x4deA071d64F77F2F94Ac1EB80D1b7b2681993477
+              </p>
+            </div>
           </div>
-        </div>
-      </footer>
+        </footer>
+      </div>
     </div>
   );
 };
