@@ -343,51 +343,52 @@ export const PacManGame = ({ onScoreChange, onGameEnd }: PacManGameProps) => {
           <p className="text-xl font-bold">{'◉ '.repeat(lives)}</p>
         </Card>
 
-        {/* Mobile Controls */}
-        <Card className="p-4 bg-gradient-card border-arcade-gold lg:hidden">
-          <h4 className="font-bold text-arcade-gold mb-4">Controls</h4>
-          <div className="grid grid-cols-3 gap-2">
-            <div></div>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onTouchStart={() => changeDirection({ x: 0, y: -1 })}
-              className="h-12"
-            >
-              <ArrowUp className="h-4 w-4" />
-            </Button>
-            <div></div>
-            
-            <Button 
-              variant="outline" 
-              size="sm"
-              onTouchStart={() => changeDirection({ x: -1, y: 0 })}
-              className="h-12"
-            >
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-            <div></div>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onTouchStart={() => changeDirection({ x: 1, y: 0 })}
-              className="h-12"
-            >
-              <ArrowRight className="h-4 w-4" />
-            </Button>
-            
-            <div></div>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onTouchStart={() => changeDirection({ x: 0, y: 1 })}
-              className="h-12"
-            >
-              <ArrowDown className="h-4 w-4" />
-            </Button>
-            <div></div>
-          </div>
-        </Card>
+        {/* Mobile Controls - Fixed Position */}
+        <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 lg:hidden z-50">
+          <Card className="p-3 bg-gradient-card/95 border-arcade-gold backdrop-blur-sm">
+            <div className="grid grid-cols-3 gap-3">
+              <div></div>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onTouchStart={() => changeDirection({ x: 0, y: -1 })}
+                className="h-12 w-12 border-arcade-gold text-arcade-gold hover:bg-arcade-gold/20"
+              >
+                <ArrowUp className="h-5 w-5" />
+              </Button>
+              <div></div>
+              
+              <Button 
+                variant="outline" 
+                size="sm"
+                onTouchStart={() => changeDirection({ x: -1, y: 0 })}
+                className="h-12 w-12 border-arcade-gold text-arcade-gold hover:bg-arcade-gold/20"
+              >
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+              <div></div>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onTouchStart={() => changeDirection({ x: 1, y: 0 })}
+                className="h-12 w-12 border-arcade-gold text-arcade-gold hover:bg-arcade-gold/20"
+              >
+                <ArrowRight className="h-5 w-5" />
+              </Button>
+              
+              <div></div>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onTouchStart={() => changeDirection({ x: 0, y: 1 })}
+                className="h-12 w-12 border-arcade-gold text-arcade-gold hover:bg-arcade-gold/20"
+              >
+                <ArrowDown className="h-5 w-5" />
+              </Button>
+              <div></div>
+            </div>
+          </Card>
+        </div>
 
         {/* Instructions */}
         <Card className="p-4 bg-gradient-card border-border">
