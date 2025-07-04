@@ -10,6 +10,7 @@ import { PacManGame } from "@/components/games/PacManGame";
 import { BreakoutGame } from "@/components/games/BreakoutGame";
 import { AsteroidsGame } from "@/components/games/AsteroidsGame";
 import { FlipperGame } from "@/components/games/FlipperGame";
+import { MarioGame } from "@/components/games/MarioGame";
 import { GameTemplate } from "@/components/GameTemplate";
 import { ChipManager } from "@/components/ChipManager";
 import { toast } from "sonner";
@@ -184,27 +185,16 @@ export const Game = () => {
               onGameStart={handleGameStart}
             />
           )}
-          {!['tetris', 'snake', 'pacman', 'breakout', 'asteroids', 'flipper'].includes(gameId || '') && (
+          {gameId === 'mario' && (
+            <MarioGame 
+              onScoreChange={setCurrentScore}
+              onGameEnd={endGame}
+              onGameStart={handleGameStart}
+            />
+          )}
+          {!['tetris', 'snake', 'pacman', 'breakout', 'asteroids', 'flipper', 'mario'].includes(gameId || '') && (
             <>
               {/* Coming Soon Games */}
-              {gameId === 'mario' && (
-                <GameTemplate 
-                  gameId="mario"
-                  title="Super Mario"
-                  description="Platform adventure classic with jumping, coin collecting, and enemy stomping action"
-                  comingSoonDate="Q2 2025"
-                  difficulty="Medium"
-                  genre="Platform Adventure"
-                  features={[
-                    "Multiple worlds and levels",
-                    "Power-ups and special abilities", 
-                    "Boss battles",
-                    "Secret areas and bonus levels",
-                    "Retro pixel art graphics",
-                    "Classic soundtrack"
-                  ]}
-                />
-              )}
               {gameId === 'kingkong' && (
                 <GameTemplate 
                   gameId="kingkong"
@@ -242,7 +232,7 @@ export const Game = () => {
                 />
               )}
               {/* Unknown game fallback */}
-              {!['mario', 'kingkong', 'frogger'].includes(gameId || '') && (
+              {!['kingkong', 'frogger'].includes(gameId || '') && (
                 <Card className="p-8 bg-gradient-card border-primary min-h-96">
                   <div className="text-center space-y-6">
                     <h3 className="text-2xl font-bold text-primary mb-2">
