@@ -4,13 +4,11 @@ import { GameHeader } from "@/components/game/GameHeader";
 import { GameStats } from "@/components/game/GameStats";
 import { GameRouter } from "@/components/game/GameRouter";
 import { GameInstructions } from "@/components/game/GameInstructions";
-import { GameModeToggle } from "@/components/GameModeToggle";
 import { useGameManager } from "@/hooks/useGameManager";
 
 export const Game = () => {
   const { gameId } = useParams<{ gameId: string }>();
   const navigate = useNavigate();
-  const [is3DMode, setIs3DMode] = useState(false);
   
   const {
     gameTime,
@@ -43,20 +41,12 @@ export const Game = () => {
           gameStatus={gameStatus}
         />
 
-        {(gameId === 'snake' || gameId === 'tetris') && (
-          <GameModeToggle 
-            onModeChange={setIs3DMode}
-            currentMode={is3DMode}
-          />
-        )}
-
         <div className="w-full">
           <GameRouter 
             gameId={gameId}
             onScoreChange={setCurrentScore}
             onGameEnd={endGame}
             onGameStart={onGameStart}
-            is3DMode={is3DMode}
           />
         </div>
 

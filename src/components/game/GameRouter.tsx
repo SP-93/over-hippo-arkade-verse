@@ -1,14 +1,6 @@
-import { TetrisGame } from "@/components/games/TetrisGame";
-import { SnakeGame } from "@/components/games/SnakeGame";
 import { Snake3DGame } from "@/components/games/Snake3DGame";
 import { Tetris3DGame } from "@/components/games/Tetris3DGame";
-import { PacManGame } from "@/components/games/PacManGame";
-import { BreakoutGame } from "@/components/games/BreakoutGame";
-import { AsteroidsGame } from "@/components/games/AsteroidsGame";
-import { FlipperGame } from "@/components/games/FlipperGame";
-import { MarioGame } from "@/components/games/MarioGame";
-import { KingKongGame } from "@/components/games/KingKongGame";
-import { FroggerGame } from "@/components/games/FroggerGame";
+import { PacMan3DGame } from "@/components/games/PacMan3DGame";
 import { GameTemplate } from "@/components/GameTemplate";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -19,26 +11,16 @@ interface GameRouterProps {
   onScoreChange: (score: number) => void;
   onGameEnd: () => void;
   onGameStart: () => boolean;
-  is3DMode?: boolean;
 }
 
-export const GameRouter = ({ gameId, onScoreChange, onGameEnd, onGameStart, is3DMode = false }: GameRouterProps) => {
+export const GameRouter = ({ gameId, onScoreChange, onGameEnd, onGameStart }: GameRouterProps) => {
   const navigate = useNavigate();
 
   const availableGames = ['tetris', 'snake', 'pacman', 'breakout', 'asteroids', 'flipper', 'mario', 'kingkong', 'frogger'];
 
   if (gameId === 'tetris') {
-    if (is3DMode) {
-      return (
-        <Tetris3DGame 
-          onScoreChange={onScoreChange}
-          onGameEnd={onGameEnd}
-          onGameStart={onGameStart}
-        />
-      );
-    }
     return (
-      <TetrisGame 
+      <Tetris3DGame 
         onScoreChange={onScoreChange}
         onGameEnd={onGameEnd}
         onGameStart={onGameStart}
@@ -47,17 +29,8 @@ export const GameRouter = ({ gameId, onScoreChange, onGameEnd, onGameStart, is3D
   }
 
   if (gameId === 'snake') {
-    if (is3DMode) {
-      return (
-        <Snake3DGame 
-          onScoreChange={onScoreChange}
-          onGameEnd={onGameEnd}
-          onGameStart={onGameStart}
-        />
-      );
-    }
     return (
-      <SnakeGame 
+      <Snake3DGame 
         onScoreChange={onScoreChange}
         onGameEnd={onGameEnd}
         onGameStart={onGameStart}
@@ -67,7 +40,7 @@ export const GameRouter = ({ gameId, onScoreChange, onGameEnd, onGameStart, is3D
 
   if (gameId === 'pacman') {
     return (
-      <PacManGame 
+      <PacMan3DGame 
         onScoreChange={onScoreChange}
         onGameEnd={onGameEnd}
         onGameStart={onGameStart}
@@ -77,61 +50,73 @@ export const GameRouter = ({ gameId, onScoreChange, onGameEnd, onGameStart, is3D
 
   if (gameId === 'breakout') {
     return (
-      <BreakoutGame 
-        onScoreChange={onScoreChange}
-        onGameEnd={onGameEnd}
-        onGameStart={onGameStart}
-      />
+      <Card className="p-8 bg-gradient-card border-neon-pink min-h-96">
+        <div className="text-center space-y-6">
+          <h3 className="text-2xl font-bold text-neon-pink mb-2">3D Breakout</h3>
+          <p className="text-muted-foreground mb-4">3D Breakout is coming soon!</p>
+          <Button variant="default" onClick={() => navigate('/')}>Return to Arcade</Button>
+        </div>
+      </Card>
     );
   }
 
   if (gameId === 'asteroids') {
     return (
-      <AsteroidsGame 
-        onScoreChange={onScoreChange}
-        onGameEnd={onGameEnd}
-        onGameStart={onGameStart}
-      />
+      <Card className="p-8 bg-gradient-card border-neon-green min-h-96">
+        <div className="text-center space-y-6">
+          <h3 className="text-2xl font-bold text-neon-green mb-2">3D Asteroids</h3>
+          <p className="text-muted-foreground mb-4">3D Asteroids is coming soon!</p>
+          <Button variant="default" onClick={() => navigate('/')}>Return to Arcade</Button>
+        </div>
+      </Card>
     );
   }
 
   if (gameId === 'flipper') {
     return (
-      <FlipperGame 
-        onScoreChange={onScoreChange}
-        onGameEnd={onGameEnd}
-        onGameStart={onGameStart}
-      />
+      <Card className="p-8 bg-gradient-card border-neon-blue min-h-96">
+        <div className="text-center space-y-6">
+          <h3 className="text-2xl font-bold text-neon-blue mb-2">3D Flipper</h3>
+          <p className="text-muted-foreground mb-4">3D Flipper is coming soon!</p>
+          <Button variant="default" onClick={() => navigate('/')}>Return to Arcade</Button>
+        </div>
+      </Card>
     );
   }
 
   if (gameId === 'mario') {
     return (
-      <MarioGame 
-        onScoreChange={onScoreChange}
-        onGameEnd={onGameEnd}
-        onGameStart={onGameStart}
-      />
+      <Card className="p-8 bg-gradient-card border-arcade-gold min-h-96">
+        <div className="text-center space-y-6">
+          <h3 className="text-2xl font-bold text-arcade-gold mb-2">3D Mario</h3>
+          <p className="text-muted-foreground mb-4">3D Mario is coming soon!</p>
+          <Button variant="default" onClick={() => navigate('/')}>Return to Arcade</Button>
+        </div>
+      </Card>
     );
   }
 
   if (gameId === 'kingkong') {
     return (
-      <KingKongGame 
-        onScoreChange={onScoreChange}
-        onGameEnd={onGameEnd}
-        onGameStart={onGameStart}
-      />
+      <Card className="p-8 bg-gradient-card border-neon-pink min-h-96">
+        <div className="text-center space-y-6">
+          <h3 className="text-2xl font-bold text-neon-pink mb-2">3D King Kong</h3>
+          <p className="text-muted-foreground mb-4">3D King Kong is coming soon!</p>
+          <Button variant="default" onClick={() => navigate('/')}>Return to Arcade</Button>
+        </div>
+      </Card>
     );
   }
 
   if (gameId === 'frogger') {
     return (
-      <FroggerGame 
-        onScoreChange={onScoreChange}
-        onGameEnd={onGameEnd}
-        onGameStart={onGameStart}
-      />
+      <Card className="p-8 bg-gradient-card border-neon-green min-h-96">
+        <div className="text-center space-y-6">
+          <h3 className="text-2xl font-bold text-neon-green mb-2">3D Frogger</h3>
+          <p className="text-muted-foreground mb-4">3D Frogger is coming soon!</p>
+          <Button variant="default" onClick={() => navigate('/')}>Return to Arcade</Button>
+        </div>
+      </Card>
     );
   }
 
