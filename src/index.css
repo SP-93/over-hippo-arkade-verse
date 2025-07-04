@@ -49,13 +49,21 @@ All colors MUST be HSL. Retro arcade aesthetic with neon accents.
     --arcade-gold: 45 100% 65%;
     --danger-red: 0 100% 65%;
     
-    /* 2006 HD Gaming Colors - Xbox 360/PS3 era */
-    --hd-silver: 220 20% 85%;
-    --hd-gold: 45 100% 60%;
-    --hd-platinum: 240 15% 90%;
-    --hd-chrome: 210 30% 80%;
-    --hd-electric: 210 100% 70%;
-    --hd-crystal: 180 50% 85%;
+    /* 2025 Modern Gaming Colors - Liquid Glass + Neon */
+    --glass-primary: 240 10% 15%;
+    --glass-secondary: 250 8% 20%;
+    --glass-accent: 260 12% 25%;
+    --neon-electric: 200 100% 60%;
+    --neon-cyber: 280 100% 65%;
+    --neon-quantum: 320 100% 70%;
+    --neon-plasma: 180 100% 55%;
+    --neon-fusion: 60 100% 65%;
+    
+    /* Liquid Glass Effects */
+    --glass-blur: blur(20px);
+    --glass-opacity: 0.1;
+    --glass-border: rgba(255, 255, 255, 0.1);
+    --glass-highlight: rgba(255, 255, 255, 0.2);
     
     --sega-cyan: 180 100% 60%;
     --sega-magenta: 300 100% 70%;
@@ -63,7 +71,36 @@ All colors MUST be HSL. Retro arcade aesthetic with neon accents.
     --sega-orange: 25 100% 60%;
     --sega-purple: 270 100% 65%;
 
-    /* Enhanced 2006 HD Gradients */
+    /* 2025 Modern Gradients - Liquid Glass + Neon */
+    --gradient-liquid: linear-gradient(135deg, 
+      hsl(var(--glass-primary)) 0%, 
+      hsl(var(--glass-secondary)) 30%, 
+      hsl(var(--glass-accent)) 100%
+    );
+    --gradient-cyber: linear-gradient(135deg,
+      hsl(var(--neon-electric)) 0%,
+      hsl(var(--neon-cyber)) 50%,
+      hsl(var(--neon-quantum)) 100%
+    );
+    --gradient-plasma: linear-gradient(135deg,
+      hsl(var(--neon-plasma)) 0%,
+      hsl(var(--neon-fusion)) 50%,
+      hsl(var(--neon-electric)) 100%
+    );
+    --gradient-glass: linear-gradient(135deg,
+      rgba(255, 255, 255, 0.1) 0%,
+      rgba(255, 255, 255, 0.2) 50%,
+      rgba(255, 255, 255, 0.05) 100%
+    );
+    --gradient-neon-wave: linear-gradient(45deg,
+      hsl(var(--neon-electric)) 0%,
+      hsl(var(--neon-cyber)) 25%,
+      hsl(var(--neon-quantum)) 50%,
+      hsl(var(--neon-plasma)) 75%,
+      hsl(var(--neon-fusion)) 100%
+    );
+    
+    /* Legacy gradients */
     --gradient-primary: linear-gradient(135deg, hsl(280 100% 65%), hsl(320 100% 70%));
     --gradient-secondary: linear-gradient(135deg, hsl(200 100% 65%), hsl(180 100% 60%));
     --gradient-bg: linear-gradient(135deg, hsl(230 40% 8%), hsl(240 35% 15%));
@@ -178,6 +215,59 @@ All colors MUST be HSL. Retro arcade aesthetic with neon accents.
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* 2025 Modern Animations */
+@keyframes liquid-glow {
+  0%, 100% { 
+    filter: blur(1px) brightness(1);
+    box-shadow: 0 0 30px hsl(var(--neon-electric) / 0.5);
+  }
+  50% { 
+    filter: blur(0px) brightness(1.2);
+    box-shadow: 0 0 60px hsl(var(--neon-cyber) / 0.8), 0 0 90px hsl(var(--neon-quantum) / 0.4);
+  }
+}
+
+@keyframes particle-float {
+  0%, 100% { 
+    transform: translateY(0px) translateX(0px) scale(1);
+    opacity: 0.7;
+  }
+  33% { 
+    transform: translateY(-10px) translateX(5px) scale(1.1);
+    opacity: 1;
+  }
+  66% { 
+    transform: translateY(-5px) translateX(-5px) scale(0.9);
+    opacity: 0.8;
+  }
+}
+
+@keyframes cyber-pulse {
+  0%, 100% { 
+    background: var(--gradient-cyber);
+    transform: scale(1) rotate(0deg);
+  }
+  50% { 
+    background: var(--gradient-plasma);
+    transform: scale(1.05) rotate(2deg);
+  }
+}
+
+@keyframes glass-shimmer {
+  0%, 100% { 
+    background-position: -200% center;
+  }
+  50% { 
+    background-position: 200% center;
+  }
+}
+
+@keyframes neon-wave {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 
 /* Custom keyframes for hippo animations */
@@ -370,4 +460,120 @@ All colors MUST be HSL. Retro arcade aesthetic with neon accents.
 .game-card > * {
   position: relative;
   z-index: 2;
+}
+
+/* 2025 Modern Utility Classes */
+.animate-liquid-glow {
+  animation: liquid-glow 3s ease-in-out infinite;
+}
+
+.animate-particle-float {
+  animation: particle-float 4s ease-in-out infinite;
+}
+
+.animate-cyber-pulse {
+  animation: cyber-pulse 2.5s ease-in-out infinite;
+}
+
+.animate-glass-shimmer {
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+  background-size: 200% 100%;
+  animation: glass-shimmer 3s ease-in-out infinite;
+}
+
+.animate-neon-wave {
+  background: var(--gradient-neon-wave);
+  background-size: 400% 400%;
+  animation: neon-wave 6s ease infinite;
+}
+
+/* Glassmorphism & Liquid Glass */
+.glass-card {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.glass-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--glass-highlight);
+  border-radius: inherit;
+  border-top-left-radius: inherit;
+  border-top-right-radius: inherit;
+}
+
+.liquid-glass {
+  background: var(--gradient-liquid);
+  backdrop-filter: blur(15px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+/* 2025 Neon Effects */
+.neon-electric {
+  color: hsl(var(--neon-electric));
+  text-shadow: 
+    0 0 10px hsl(var(--neon-electric) / 0.8),
+    0 0 20px hsl(var(--neon-electric) / 0.6),
+    0 0 30px hsl(var(--neon-electric) / 0.4);
+}
+
+.neon-cyber {
+  color: hsl(var(--neon-cyber));
+  text-shadow: 
+    0 0 10px hsl(var(--neon-cyber) / 0.8),
+    0 0 20px hsl(var(--neon-cyber) / 0.6);
+}
+
+.neon-quantum {
+  color: hsl(var(--neon-quantum));
+  text-shadow: 
+    0 0 15px hsl(var(--neon-quantum) / 0.9),
+    0 0 30px hsl(var(--neon-quantum) / 0.7);
+}
+
+/* Modern Backgrounds */
+.bg-gradient-liquid {
+  background: var(--gradient-liquid);
+}
+
+.bg-gradient-cyber {
+  background: var(--gradient-cyber);
+}
+
+.bg-gradient-plasma {
+  background: var(--gradient-plasma);
+}
+
+.bg-gradient-glass {
+  background: var(--gradient-glass);
+}
+
+/* 2025 Shadow Effects */
+.shadow-liquid {
+  box-shadow: 
+    0 10px 40px hsl(var(--neon-electric) / 0.3),
+    0 20px 80px hsl(var(--neon-cyber) / 0.2);
+}
+
+.shadow-cyber {
+  box-shadow: 
+    0 0 20px hsl(var(--neon-cyber) / 0.6),
+    0 0 40px hsl(var(--neon-quantum) / 0.4),
+    0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.shadow-quantum {
+  box-shadow: 
+    0 0 30px hsl(var(--neon-quantum) / 0.8),
+    0 0 60px hsl(var(--neon-electric) / 0.5),
+    0 30px 80px rgba(0, 0, 0, 0.4);
 }
