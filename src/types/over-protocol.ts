@@ -12,6 +12,7 @@ export interface ChipPurchaseTransaction {
   chipAmount: number;
   timestamp: number;
   txHash?: string;
+  status?: 'pending' | 'confirmed' | 'failed';
 }
 
 export interface WithdrawalTransaction {

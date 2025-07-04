@@ -107,8 +107,8 @@ export class OverProtocolBackend {
       const transaction: ChipPurchaseTransaction = {
         from: walletAddress,
         to: this.contractAddress,
-        amount: overCost,
-        chipsPurchased: chipAmount,
+        value: overCost.toString(),
+        chipAmount: chipAmount,
         timestamp: Date.now(),
         txHash: `0x${Math.random().toString(16).substring(2, 66)}`, // Demo hash
         status: 'pending'
