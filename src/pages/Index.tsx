@@ -5,8 +5,10 @@ import { PlayerDashboard } from "@/components/PlayerDashboard";
 import { GameGrid } from "@/components/GameGrid";
 import { ChipDisplay } from "@/components/ChipManager";
 import { ChipPurchaseModal } from "@/components/ChipPurchaseModal";
+import { OverProtocolIntegration } from "@/components/OverProtocolIntegration";
 import { HippoBackground } from "@/components/HippoBackground";
 import { useChipManager } from "@/hooks/useChipManager";
+import { usePlayerStats } from "@/hooks/usePlayerStats";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -19,10 +21,12 @@ const Index = () => {
   const [walletAddress, setWalletAddress] = useState<string>("");
   const [walletType, setWalletType] = useState<string>("");
   const [currentView, setCurrentView] = useState<'home' | 'dashboard' | 'games'>('home');
+  const [overBalance, setOverBalance] = useState(50.5); // Demo balance
   const navigate = useNavigate();
 
-  // Initialize chip manager
+  // Initialize chip manager and player stats
   const chipManager = useChipManager();
+  const playerStats = usePlayerStats(walletAddress);
 
   // Load wallet state from localStorage on component mount
   useEffect(() => {
@@ -72,6 +76,18 @@ const Index = () => {
   const handleChipPurchase = (chips: number) => {
     chipManager.setPlayerChips(prev => prev + chips);
     toast.success(`Added ${chips} chips to your account!`);
+  };
+
+  const handleOverPurchaseChips = (chipAmount: number, overCost: number) => {
+    if (overBalance >= overCost) {
+      setOverBalance(prev => prev - overCost);
+      chipManager.setPlayerChips(prev => prev + chipAmount);
+    }
+  };
+
+  const handleOverWithdraw = (amount: number) => {
+    setOverBalance(prev => prev - amount);
+    // In real implementation, this would trigger blockchain transaction
   };
 
   const handlePlayGame = (gameId: string) => {

@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useGameManager } from "@/hooks/useGameManager";
+import { useKeyboardControls } from "@/hooks/useKeyboardControls";
 import { toast } from "sonner";
 
 const BOARD_WIDTH = 10;
@@ -104,6 +105,63 @@ export const UltraTetris2025 = ({ onScoreChange, onGameEnd, onGameStart }: Ultra
     handleGameStart, 
     gameStatus 
   } = useGameManager();
+
+  const checkCollision = useCallback((piece: any, position: { x: number; y: number }) => {
+    return piece.blocks.some(([x, y]: [number, number]) => {
+      const newX = position.x + x;
+      const newY = position.y + y;
+      
+      return (
+        newX < 0 || 
+        newX >= BOARD_WIDTH || 
+        newY >= BOARD_HEIGHT ||
+        (newY >= 0 && board[newY][newX] !== null)
+      );
+    });
+  }, [board]);
+
+  const rotatePiece = useCallback(() => {
+    if (!currentPiece || gameOver || isPaused) return;
+    
+    const rotatedBlocks = currentPiece.blocks.map(([x, y]: [number, number]) => [-y, x]);
+    const rotatedPiece = { ...currentPiece, blocks: rotatedBlocks };
+    
+    if (!checkCollision(rotatedPiece, currentPosition)) {
+      setCurrentPiece(rotatedPiece);
+    }
+  }, [currentPiece, currentPosition, gameOver, isPaused, checkCollision]);
+
+  // Enhanced keyboard controls with page scroll prevention
+  const handleKeyPress = useCallback((keyCode: string) => {
+    if (!isPlaying || isPaused || gameOver) return;
+    
+    switch (keyCode) {
+      case 'ArrowLeft':
+        if (currentPiece && !checkCollision(currentPiece, { x: currentPosition.x - 1, y: currentPosition.y })) {
+          setCurrentPosition(prev => ({ ...prev, x: prev.x - 1 }));
+        }
+        break;
+      case 'ArrowRight':
+        if (currentPiece && !checkCollision(currentPiece, { x: currentPosition.x + 1, y: currentPosition.y })) {
+          setCurrentPosition(prev => ({ ...prev, x: prev.x + 1 }));
+        }
+        break;
+      case 'ArrowDown':
+        if (currentPiece && !checkCollision(currentPiece, { x: currentPosition.x, y: currentPosition.y + 1 })) {
+          setCurrentPosition(prev => ({ ...prev, y: prev.y + 1 }));
+        }
+        break;
+      case 'ArrowUp':
+      case 'Space':
+        rotatePiece();
+        break;
+      case 'KeyP':
+        setIsPaused(prev => !prev);
+        break;
+    }
+  }, [isPlaying, isPaused, gameOver, currentPiece, currentPosition, checkCollision, rotatePiece]);
+
+  useKeyboardControls(handleKeyPress, isPlaying && !gameOver);
 
   const getRandomPiece = useCallback(() => {
     const pieceKeys = Object.keys(PIECES) as Array<keyof typeof PIECES>;
@@ -296,14 +354,14 @@ export const UltraTetris2025 = ({ onScoreChange, onGameEnd, onGameStart }: Ultra
       });
     }
     
-    // Enhanced UI panels with space theme
-    const panelWidth = 140;
-    const panelHeight = 100;
+    // Enhanced UI panels with 128-bit quality space theme
+    const panelWidth = 160;
+    const panelHeight = 120;
     
-    // NEXT piece panel
+    // Enhanced NEXT piece panel with better positioning
     if (nextPiece) {
-      const nextX = offsetX + BOARD_WIDTH * cellSize + 20;
-      const nextY = offsetY + 20;
+      const nextX = offsetX + BOARD_WIDTH * cellSize + 30;
+      const nextY = offsetY + 30;
       
       // Panel background with space theme
       const panelGradient = ctx.createLinearGradient(nextX, nextY, nextX + panelWidth, nextY + panelHeight);
@@ -343,9 +401,9 @@ export const UltraTetris2025 = ({ onScoreChange, onGameEnd, onGameStart }: Ultra
       });
     }
     
-    // HOLD panel (placeholder for future feature)
-    const holdX = offsetX - 160;
-    const holdY = offsetY + 20;
+    // Enhanced HOLD panel with better positioning
+    const holdX = offsetX - 190;
+    const holdY = offsetY + 30;
     
     const holdPanelGradient = ctx.createLinearGradient(holdX, holdY, holdX + panelWidth, holdY + panelHeight);
     holdPanelGradient.addColorStop(0, 'rgba(80, 30, 30, 0.9)');
@@ -365,10 +423,10 @@ export const UltraTetris2025 = ({ onScoreChange, onGameEnd, onGameStart }: Ultra
     ctx.textAlign = 'center';
     ctx.fillText('HOLD', holdX + panelWidth/2, holdY + 20);
     
-    // Stats panel
-    const statsX = offsetX - 160;
-    const statsY = offsetY + 140;
-    const statsHeight = 180;
+    // Enhanced stats panel with better positioning
+    const statsX = offsetX - 190;
+    const statsY = offsetY + 170;
+    const statsHeight = 200;
     
     const statsPanelGradient = ctx.createLinearGradient(statsX, statsY, statsX + panelWidth, statsY + statsHeight);
     statsPanelGradient.addColorStop(0, 'rgba(30, 80, 30, 0.9)');
@@ -457,20 +515,6 @@ export const UltraTetris2025 = ({ onScoreChange, onGameEnd, onGameStart }: Ultra
       ctx.shadowBlur = 0;
     }
   }, [board, currentPiece, currentPosition, nextPiece, particles, combo, gameOver, isPaused, score, level, drawNeonBlock]);
-
-  const checkCollision = useCallback((piece: any, position: { x: number; y: number }) => {
-    return piece.blocks.some(([x, y]: [number, number]) => {
-      const newX = position.x + x;
-      const newY = position.y + y;
-      
-      return (
-        newX < 0 || 
-        newX >= BOARD_WIDTH || 
-        newY >= BOARD_HEIGHT ||
-        (newY >= 0 && board[newY][newX] !== null)
-      );
-    });
-  }, [board]);
 
   const placePiece = useCallback(() => {
     if (!currentPiece) return;
@@ -567,17 +611,6 @@ export const UltraTetris2025 = ({ onScoreChange, onGameEnd, onGameStart }: Ultra
       placePiece();
     }
   }, [currentPiece, currentPosition, gameOver, isPaused, checkCollision, placePiece]);
-
-  const rotatePiece = useCallback(() => {
-    if (!currentPiece || gameOver || isPaused) return;
-    
-    const rotatedBlocks = currentPiece.blocks.map(([x, y]: [number, number]) => [-y, x]);
-    const rotatedPiece = { ...currentPiece, blocks: rotatedBlocks };
-    
-    if (!checkCollision(rotatedPiece, currentPosition)) {
-      setCurrentPiece(rotatedPiece);
-    }
-  }, [currentPiece, currentPosition, gameOver, isPaused, checkCollision]);
 
   // Animation loop
   const animate = useCallback(() => {
