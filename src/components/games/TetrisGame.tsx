@@ -34,6 +34,19 @@ export const TetrisGame = ({ onScoreChange, onGameEnd }: TetrisGameProps) => {
   const [gameOver, setGameOver] = useState(false);
   const gameLoopRef = useRef<NodeJS.Timeout>();
   const [dropTime, setDropTime] = useState(1000);
+  const [combo, setCombo] = useState(0);
+  const [comboDisplay, setComboDisplay] = useState('');
+
+  // Combo messages
+  const getComboMessage = (linesCleared: number) => {
+    switch(linesCleared) {
+      case 1: return 'Single!';
+      case 2: return 'Double! x2';
+      case 3: return 'Triple! x3';
+      case 4: return 'TETRIS! x4';
+      default: return '';
+    }
+  };
 
   const getRandomPiece = useCallback(() => {
     const piece = TETRIS_PIECES[Math.floor(Math.random() * TETRIS_PIECES.length)];
@@ -81,18 +94,50 @@ export const TetrisGame = ({ onScoreChange, onGameEnd }: TetrisGameProps) => {
       const updatedBoard = [...emptyRows, ...newBoard];
       setBoard(updatedBoard);
       
-      const points = clearedLines === 4 ? 1000 : clearedLines * 100;
-      const newScore = score + points * level;
+      // Enhanced scoring with combo system
+      let basePoints = 0;
+      let multiplier = 1;
+      
+      switch(clearedLines) {
+        case 1:
+          basePoints = 100;
+          multiplier = 1;
+          break;
+        case 2:
+          basePoints = 300; // Double bonus
+          multiplier = 2;
+          break;
+        case 3:
+          basePoints = 500; // Triple bonus
+          multiplier = 3;
+          break;
+        case 4:
+          basePoints = 800; // TETRIS bonus
+          multiplier = 4;
+          break;
+      }
+      
+      const points = basePoints * level * multiplier;
+      const newScore = score + points;
       const newLines = lines + clearedLines;
       
       setScore(newScore);
       setLines(newLines);
+      setCombo(clearedLines);
+      setComboDisplay(getComboMessage(clearedLines));
       onScoreChange(newScore);
+      
+      // Clear combo message after 2 seconds
+      setTimeout(() => {
+        setComboDisplay('');
+      }, 2000);
       
       if (newLines >= level * 10) {
         setLevel(prev => prev + 1);
         setDropTime(prev => Math.max(50, prev - 50));
       }
+    } else {
+      setCombo(0);
     }
   }, [board, score, level, lines, onScoreChange]);
 
@@ -251,7 +296,16 @@ export const TetrisGame = ({ onScoreChange, onGameEnd }: TetrisGameProps) => {
         <div className="flex flex-col items-center space-y-4">
           <h3 className="text-2xl font-bold text-primary">Tetris</h3>
           
-          <div className="bg-background/50 p-4 rounded-lg border-2 border-primary shadow-neon">
+          {/* Combo Display */}
+          {comboDisplay && (
+            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-10 animate-zoom-in">
+              <div className="bg-primary/90 text-primary-foreground px-4 py-2 rounded-lg text-xl font-bold shadow-neon-strong">
+                {comboDisplay}
+              </div>
+            </div>
+          )}
+
+          <div className="bg-background/50 p-4 rounded-lg border-2 border-primary shadow-neon relative">
             <div className="flex flex-col">
               {renderBoard()}
             </div>

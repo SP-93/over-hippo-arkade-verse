@@ -6,22 +6,28 @@ import { Pause, Play, ArrowUp, ArrowDown, ArrowLeft, ArrowRight } from "lucide-r
 interface SnakeGameProps {
   onScoreChange: (score: number) => void;
   onGameEnd: (finalScore: number) => void;
+  chipCost?: number; // Number of chips consumed for this game session
 }
 
 const BOARD_SIZE = 20;
 const INITIAL_SNAKE = [{ x: 10, y: 10 }];
 const INITIAL_DIRECTION = { x: 0, y: -1 };
 
-export const SnakeGame = ({ onScoreChange, onGameEnd }: SnakeGameProps) => {
+export const SnakeGame = ({ onScoreChange, onGameEnd, chipCost = 1 }: SnakeGameProps) => {
   const [snake, setSnake] = useState(INITIAL_SNAKE);
   const [food, setFood] = useState({ x: 15, y: 15 });
+  const [bonusFood, setBonusFood] = useState<{ x: number; y: number; active: boolean }>({ x: 0, y: 0, active: false });
   const [direction, setDirection] = useState(INITIAL_DIRECTION);
   const [score, setScore] = useState(0);
+  const [lives, setLives] = useState(2); // 1 chip = 2 lives
   const [isPlaying, setIsPlaying] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [gameOver, setGameOver] = useState(false);
   const [speed, setSpeed] = useState(150);
+  const [gameStartTime, setGameStartTime] = useState(0);
+  const [bonusTimer, setBonusTimer] = useState(0);
   const gameLoopRef = useRef<NodeJS.Timeout>();
+  const bonusTimerRef = useRef<NodeJS.Timeout>();
 
   const generateFood = useCallback(() => {
     let newFood;
@@ -118,21 +124,35 @@ export const SnakeGame = ({ onScoreChange, onGameEnd }: SnakeGameProps) => {
     return () => window.removeEventListener('keydown', handleKeyPress);
   }, [changeDirection, isPlaying, isPaused, gameOver]);
 
+  // Generate bonus food every 2 minutes
   useEffect(() => {
     if (isPlaying && !isPaused && !gameOver) {
-      gameLoopRef.current = setInterval(moveSnake, speed);
-    } else {
-      if (gameLoopRef.current) {
-        clearInterval(gameLoopRef.current);
-      }
+      bonusTimerRef.current = setInterval(() => {
+        if (!bonusFood.active) {
+          const newBonusFood = generateFood();
+          setBonusFood({ ...newBonusFood, active: true });
+          setTimeout(() => {
+            setBonusFood(prev => ({ ...prev, active: false }));
+          }, 10000); // 10 seconds timeout
+        }
+      }, 120000); // 2 minutes
     }
-
     return () => {
-      if (gameLoopRef.current) {
-        clearInterval(gameLoopRef.current);
-      }
+      if (bonusTimerRef.current) clearInterval(bonusTimerRef.current);
     };
-  }, [isPlaying, isPaused, gameOver, speed, moveSnake]);
+  }, [isPlaying, isPaused, gameOver, bonusFood.active, generateFood]);
+
+  const handleCollision = useCallback(() => {
+    if (lives > 1) {
+      setLives(prev => prev - 1);
+      setSnake(INITIAL_SNAKE);
+      setDirection(INITIAL_DIRECTION);
+    } else {
+      setGameOver(true);
+      setIsPlaying(false);
+      onGameEnd(score);
+    }
+  }, [lives, score, onGameEnd]);
 
   const startGame = () => {
     setSnake(INITIAL_SNAKE);

@@ -21,8 +21,7 @@ export const Game = () => {
     if (gameStatus === 'playing') {
       timer = setInterval(() => {
         setGameTime(prev => prev + 1);
-        // Simulate score increase
-        setCurrentScore(prev => prev + Math.floor(Math.random() * 10));
+        // Score is now handled by individual games
       }, 1000);
     }
     return () => clearInterval(timer);

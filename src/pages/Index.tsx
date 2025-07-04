@@ -4,6 +4,7 @@ import { WalletConnection } from "@/components/WalletConnection";
 import { PlayerDashboard } from "@/components/PlayerDashboard";
 import { GameGrid } from "@/components/GameGrid";
 import { ChipManager, ChipDisplay } from "@/components/ChipManager";
+import { ChipPurchaseModal } from "@/components/ChipPurchaseModal";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -72,6 +73,11 @@ const Index = () => {
     localStorage.removeItem('wallet_connection');
     localStorage.removeItem('player_chips');
     localStorage.removeItem('current_view');
+  };
+
+  const handleChipPurchase = (chips: number) => {
+    setPlayerChips(prev => prev + chips);
+    toast.success(`Dodano je ${chips} chipova u vaš račun!`);
   };
 
   const handlePlayGame = (gameId: string) => {
@@ -182,6 +188,10 @@ const Index = () => {
                 <ChipDisplay 
                   playerChips={playerChips} 
                   timeUntilReset={chipManager.getTimeUntilReset()} 
+                />
+                <ChipPurchaseModal 
+                  isConnected={isWalletConnected}
+                  onPurchase={handleChipPurchase}
                 />
                 <WalletConnection 
                   onConnect={handleWalletConnect} 
