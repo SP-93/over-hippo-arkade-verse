@@ -1,4 +1,4 @@
-import { HD2006Snake } from "./HD2006Snake";
+import { Snake2025 } from "./Snake2025";
 
 interface SnakeGameProps {
   onScoreChange?: (score: number) => void;
@@ -7,6 +7,6 @@ interface SnakeGameProps {
 }
 
 export const SnakeGame = (props: SnakeGameProps) => {
-  console.log("SnakeGame wrapper loaded - 2006 HD version");
-  return <HD2006Snake {...props} />;
+  console.log("SnakeGame wrapper loaded - 2025 Ultra Modern version");
+  return <Snake2025 {...props} />;
 };
