@@ -9,7 +9,188 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      chip_transactions: {
+        Row: {
+          chip_amount: number
+          created_at: string
+          game_type: string | null
+          id: string
+          over_amount: number | null
+          status: string | null
+          transaction_hash: string | null
+          transaction_type: string
+          user_id: string
+        }
+        Insert: {
+          chip_amount: number
+          created_at?: string
+          game_type?: string | null
+          id?: string
+          over_amount?: number | null
+          status?: string | null
+          transaction_hash?: string | null
+          transaction_type: string
+          user_id: string
+        }
+        Update: {
+          chip_amount?: number
+          created_at?: string
+          game_type?: string | null
+          id?: string
+          over_amount?: number | null
+          status?: string | null
+          transaction_hash?: string | null
+          transaction_type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      game_scores: {
+        Row: {
+          created_at: string
+          game_type: string
+          id: string
+          level_reached: number | null
+          over_earned: number | null
+          score: number
+          time_played: number | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          game_type: string
+          id?: string
+          level_reached?: number | null
+          over_earned?: number | null
+          score: number
+          time_played?: number | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          game_type?: string
+          id?: string
+          level_reached?: number | null
+          over_earned?: number | null
+          score?: number
+          time_played?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          display_name: string | null
+          id: string
+          over_balance: number | null
+          total_chips: number | null
+          updated_at: string
+          user_id: string
+          wallet_address: string | null
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          over_balance?: number | null
+          total_chips?: number | null
+          updated_at?: string
+          user_id: string
+          wallet_address?: string | null
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          id?: string
+          over_balance?: number | null
+          total_chips?: number | null
+          updated_at?: string
+          user_id?: string
+          wallet_address?: string | null
+        }
+        Relationships: []
+      }
+      tournament_participants: {
+        Row: {
+          final_score: number | null
+          id: string
+          joined_at: string
+          prize_won: number | null
+          rank: number | null
+          tournament_id: string
+          user_id: string
+        }
+        Insert: {
+          final_score?: number | null
+          id?: string
+          joined_at?: string
+          prize_won?: number | null
+          rank?: number | null
+          tournament_id: string
+          user_id: string
+        }
+        Update: {
+          final_score?: number | null
+          id?: string
+          joined_at?: string
+          prize_won?: number | null
+          rank?: number | null
+          tournament_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tournament_participants_tournament_id_fkey"
+            columns: ["tournament_id"]
+            isOneToOne: false
+            referencedRelation: "tournaments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tournaments: {
+        Row: {
+          created_at: string
+          end_time: string
+          entry_fee: number
+          game_type: string
+          id: string
+          max_participants: number | null
+          name: string
+          prize_pool: number
+          start_time: string
+          status: string | null
+        }
+        Insert: {
+          created_at?: string
+          end_time: string
+          entry_fee: number
+          game_type: string
+          id?: string
+          max_participants?: number | null
+          name: string
+          prize_pool: number
+          start_time: string
+          status?: string | null
+        }
+        Update: {
+          created_at?: string
+          end_time?: string
+          entry_fee?: number
+          game_type?: string
+          id?: string
+          max_participants?: number | null
+          name?: string
+          prize_pool?: number
+          start_time?: string
+          status?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
