@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { useGameManager } from "@/hooks/useGameManager";
+import { useKeyboardControls } from "@/hooks/useKeyboardControls";
 import { toast } from "sonner";
 
 const GRID_SIZE = 25;
@@ -406,40 +407,34 @@ export const UltraSnake2025 = ({ onScoreChange, onGameEnd, onGameStart }: UltraS
     };
   }, [animate]);
 
-  useEffect(() => {
-    const handleKeyPress = (e: KeyboardEvent) => {
-      if (!isPlaying || isPaused || gameOver) return;
-      
-      switch (e.key) {
-        case 'ArrowUp':
-        case 'w':
-        case 'W':
-          if (direction.y !== 1) setDirection({ x: 0, y: -1 });
-          break;
-        case 'ArrowDown':
-        case 's':
-        case 'S':
-          if (direction.y !== -1) setDirection({ x: 0, y: 1 });
-          break;
-        case 'ArrowLeft':
-        case 'a':
-        case 'A':
-          if (direction.x !== 1) setDirection({ x: -1, y: 0 });
-          break;
-        case 'ArrowRight':
-        case 'd':
-        case 'D':
-          if (direction.x !== -1) setDirection({ x: 1, y: 0 });
-          break;
-        case ' ':
-          setIsPaused(!isPaused);
-          break;
-      }
-    };
+  // Enhanced keyboard controls with page scroll prevention
+  const handleKeyPress = useCallback((keyCode: string) => {
+    if (!isPlaying || isPaused || gameOver) return;
+    
+    switch (keyCode) {
+      case 'ArrowUp':
+      case 'KeyW':
+        if (direction.y !== 1) setDirection({ x: 0, y: -1 });
+        break;
+      case 'ArrowDown':
+      case 'KeyS':
+        if (direction.y !== -1) setDirection({ x: 0, y: 1 });
+        break;
+      case 'ArrowLeft':
+      case 'KeyA':
+        if (direction.x !== 1) setDirection({ x: -1, y: 0 });
+        break;
+      case 'ArrowRight':
+      case 'KeyD':
+        if (direction.x !== -1) setDirection({ x: 1, y: 0 });
+        break;
+      case 'Space':
+        setIsPaused(!isPaused);
+        break;
+    }
+  }, [isPlaying, isPaused, gameOver, direction]);
 
-    window.addEventListener('keydown', handleKeyPress);
-    return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [direction, isPlaying, isPaused, gameOver]);
+  useKeyboardControls(handleKeyPress, isPlaying && !gameOver);
 
   const startGame = () => {
     if (onGameStart && !onGameStart()) return;

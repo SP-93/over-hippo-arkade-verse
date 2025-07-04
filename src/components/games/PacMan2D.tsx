@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { useGameManager } from "@/hooks/useGameManager";
+import { useKeyboardControls } from "@/hooks/useKeyboardControls";
 import { toast } from "sonner";
 
 const GRID_SIZE = 21;
@@ -371,36 +372,34 @@ export const PacMan2D = ({ onScoreChange, onGameEnd, onGameStart }: PacMan2DProp
     };
   }, [isPlaying, isPaused, gameOver, movePacman]);
 
-  useEffect(() => {
-    const handleKeyPress = (e: KeyboardEvent) => {
-      if (!isPlaying || gameOver) return;
-      
-      switch (e.key) {
-        case 'ArrowUp':
-        case 'w':
-          setDirection({ x: 0, y: -1 });
-          break;
-        case 'ArrowDown':
-        case 's':
-          setDirection({ x: 0, y: 1 });
-          break;
-        case 'ArrowLeft':
-        case 'a':
-          setDirection({ x: -1, y: 0 });
-          break;
-        case 'ArrowRight':
-        case 'd':
-          setDirection({ x: 1, y: 0 });
-          break;
-        case ' ' :
-          setIsPaused(!isPaused);
-          break;
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyPress);
-    return () => window.removeEventListener('keydown', handleKeyPress);
+  // Enhanced keyboard controls with page scroll prevention  
+  const handleKeyPress = useCallback((keyCode: string) => {
+    if (!isPlaying || gameOver) return;
+    
+    switch (keyCode) {
+      case 'ArrowUp':
+      case 'KeyW':
+        setDirection({ x: 0, y: -1 });
+        break;
+      case 'ArrowDown':
+      case 'KeyS':
+        setDirection({ x: 0, y: 1 });
+        break;
+      case 'ArrowLeft':
+      case 'KeyA':
+        setDirection({ x: -1, y: 0 });
+        break;
+      case 'ArrowRight':
+      case 'KeyD':
+        setDirection({ x: 1, y: 0 });
+        break;
+      case 'Space':
+        setIsPaused(!isPaused);
+        break;
+    }
   }, [isPlaying, gameOver, isPaused]);
+
+  useKeyboardControls(handleKeyPress, isPlaying && !gameOver);
 
   const startGame = () => {
     if (onGameStart && !onGameStart()) return;

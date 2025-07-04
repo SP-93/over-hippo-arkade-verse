@@ -98,6 +98,12 @@ const Index = () => {
     
     if (chipManager.consumeChip(gameId)) {
       toast.success("Chip consumed! Enjoy your game!");
+      // Track game play in player stats
+      playerStats.setPlayerStats(prev => ({
+        ...prev,
+        gamesPlayed: prev.gamesPlayed + 1,
+        lastPlayed: new Date().toISOString()
+      }));
       navigate(`/game/${gameId}`);
     }
   };
@@ -105,7 +111,46 @@ const Index = () => {
   const renderCurrentView = () => {
     switch (currentView) {
       case 'dashboard':
-        return <PlayerDashboard playerAddress={walletAddress} playerChips={chipManager.playerChips} />;
+        return (
+          <div className="space-y-6">
+            <PlayerDashboard playerAddress={walletAddress} playerChips={chipManager.playerChips} />
+            <Card className="p-6 bg-gradient-card border-primary animate-glow">
+              <h3 className="text-xl font-bold text-primary mb-4">Player Statistics</h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-neon-green">{playerStats.playerStats.totalScore.toLocaleString()}</p>
+                  <p className="text-sm text-muted-foreground">Total Score</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-neon-blue">{playerStats.playerStats.gamesPlayed}</p>
+                  <p className="text-sm text-muted-foreground">Games Played</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-arcade-gold">{overBalance.toFixed(2)}</p>
+                  <p className="text-sm text-muted-foreground">OVER Balance</p>
+                </div>
+                <div className="text-center">
+                  <p className="text-2xl font-bold text-neon-purple">{playerStats.playerStats.achievements.length}</p>
+                  <p className="text-sm text-muted-foreground">Achievements</p>
+                </div>
+              </div>
+              <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="bg-muted/20 p-4 rounded-lg border border-neon-cyan/30">
+                  <h4 className="font-semibold text-neon-cyan mb-2">Tetris High Score</h4>
+                  <p className="text-xl font-bold">{playerStats.playerStats.highScores.tetris.toLocaleString()}</p>
+                </div>
+                <div className="bg-muted/20 p-4 rounded-lg border border-neon-green/30">
+                  <h4 className="font-semibold text-neon-green mb-2">Snake High Score</h4>
+                  <p className="text-xl font-bold">{playerStats.playerStats.highScores.snake.toLocaleString()}</p>
+                </div>
+                <div className="bg-muted/20 p-4 rounded-lg border border-neon-yellow/30">
+                  <h4 className="font-semibold text-neon-yellow mb-2">Pac-Man High Score</h4>
+                  <p className="text-xl font-bold">{playerStats.playerStats.highScores.pacman.toLocaleString()}</p>
+                </div>
+              </div>
+            </Card>
+          </div>
+        );
       case 'games':
         return <GameGrid playerChips={chipManager.playerChips} onPlayGame={handlePlayGame} />;
       default:
@@ -206,13 +251,20 @@ const Index = () => {
                 </div>
                 
                 <div className="flex items-center space-x-2 md:space-x-4">
-        <ChipDisplay 
-          playerChips={chipManager.playerChips} 
-          timeUntilReset={chipManager.getTimeUntilReset()}
-        />
-                  <ChipPurchaseModal 
-                    isConnected={isWalletConnected}
-                    onPurchase={handleChipPurchase}
+                  <ChipDisplay 
+                    playerChips={chipManager.playerChips} 
+                    timeUntilReset={chipManager.getTimeUntilReset()}
+                    currentLives={playerStats.playerStats.overTokens > 0 ? 3 : 0}
+                    showLives={isWalletConnected}
+                  />
+                  <Badge variant="secondary" className="bg-arcade-gold/20 text-arcade-gold border-arcade-gold">
+                    Score: {playerStats.playerStats.totalScore.toLocaleString()}
+                  </Badge>
+                  <OverProtocolIntegration
+                    walletAddress={walletAddress}
+                    overBalance={overBalance}
+                    onPurchaseChips={handleOverPurchaseChips}
+                    onWithdrawTokens={handleOverWithdraw}
                   />
                   <WalletConnection 
                     onConnect={handleWalletConnect} 
