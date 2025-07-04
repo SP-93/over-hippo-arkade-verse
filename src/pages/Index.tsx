@@ -3,10 +3,12 @@ import { useNavigate } from "react-router-dom";
 import { WalletConnection } from "@/components/WalletConnection";
 import { PlayerDashboard } from "@/components/PlayerDashboard";
 import { GameGrid } from "@/components/GameGrid";
+import { ChipManager, ChipDisplay } from "@/components/ChipManager";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Gamepad, Wallet, Zap } from "lucide-react";
+import { toast } from "sonner";
 import heroLogo from "@/assets/hero-logo.jpg";
 
 const Index = () => {
@@ -16,6 +18,9 @@ const Index = () => {
   const [playerChips, setPlayerChips] = useState(5);
   const [currentView, setCurrentView] = useState<'home' | 'dashboard' | 'games'>('home');
   const navigate = useNavigate();
+
+  // Initialize chip manager
+  const chipManager = ChipManager({ playerChips, onChipChange: setPlayerChips });
 
   // Load wallet state from localStorage on component mount
   useEffect(() => {
@@ -70,8 +75,13 @@ const Index = () => {
   };
 
   const handlePlayGame = (gameId: string) => {
-    if (playerChips > 0) {
-      setPlayerChips(prev => prev - 1);
+    if (!chipManager.canPlayGame(gameId)) {
+      toast.error("Nemate dovoljno chipova za igru!");
+      return;
+    }
+    
+    if (chipManager.consumeChip(gameId)) {
+      toast.success("Chip je potrošen! Uživajte u igri!");
       navigate(`/game/${gameId}`);
     }
   };
@@ -169,10 +179,10 @@ const Index = () => {
               </div>
               
               <div className="flex items-center space-x-4">
-                <Badge variant="outline" className="text-arcade-gold border-arcade-gold">
-                  <Zap className="h-4 w-4 mr-1" />
-                  {playerChips} Chips
-                </Badge>
+                <ChipDisplay 
+                  playerChips={playerChips} 
+                  timeUntilReset={chipManager.getTimeUntilReset()} 
+                />
                 <WalletConnection 
                   onConnect={handleWalletConnect} 
                   onDisconnect={handleWalletDisconnect}
