@@ -108,6 +108,7 @@ const GameBoard = () => {
 };
 
 export const Tetris3DGame = ({ onScoreChange, onGameEnd, onGameStart }: Tetris3DGameProps = {}) => {
+  console.log("Tetris3DGame loaded - real 3D version active!");
   const [board, setBoard] = useState<(string | null)[][]>(() => 
     Array(BOARD_HEIGHT).fill(null).map(() => Array(BOARD_WIDTH).fill(null))
   );

@@ -7,5 +7,6 @@ interface SnakeGameProps {
 }
 
 export const SnakeGame = (props: SnakeGameProps) => {
+  console.log("SnakeGame wrapper loaded - 3D version");
   return <Snake3DGame {...props} />;
 };

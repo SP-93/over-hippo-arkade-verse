@@ -89,6 +89,7 @@ const GameGrid = () => {
 };
 
 export const Snake3DGame = ({ onScoreChange, onGameEnd, onGameStart }: Snake3DGameProps = {}) => {
+  console.log("Snake3DGame loaded - real 3D version active!");
   const [snake, setSnake] = useState(INITIAL_SNAKE);
   const [direction, setDirection] = useState(INITIAL_DIRECTION);
   const [food, setFood] = useState({ x: 15, y: 0, z: 15 });

@@ -7,5 +7,6 @@ interface TetrisGameProps {
 }
 
 export const TetrisGame = (props: TetrisGameProps) => {
+  console.log("TetrisGame wrapper loaded - 3D version");
   return <Tetris3DGame {...props} />;
 };
