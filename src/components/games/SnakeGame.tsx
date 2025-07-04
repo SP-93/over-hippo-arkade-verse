@@ -143,6 +143,25 @@ export const SnakeGame = ({ onScoreChange, onGameEnd, onGameStart, chipCost = 1 
     };
   }, [isPlaying, isPaused, gameOver, bonusFood.active, generateFood]);
 
+  // Main game loop - dodano!
+  useEffect(() => {
+    if (isPlaying && !isPaused && !gameOver) {
+      gameLoopRef.current = setInterval(() => {
+        moveSnake();
+      }, speed);
+    } else {
+      if (gameLoopRef.current) {
+        clearInterval(gameLoopRef.current);
+      }
+    }
+
+    return () => {
+      if (gameLoopRef.current) {
+        clearInterval(gameLoopRef.current);
+      }
+    };
+  }, [isPlaying, isPaused, gameOver, speed, moveSnake]);
+
   const handleCollision = useCallback(() => {
     if (lives > 1) {
       setLives(prev => prev - 1);
