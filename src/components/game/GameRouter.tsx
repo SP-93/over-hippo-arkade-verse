@@ -1,5 +1,5 @@
-import { Snake3DGame } from "@/components/games/Snake3DGame";
-import { Tetris3DGame } from "@/components/games/Tetris3DGame";
+import { Snake3DPseudo } from "@/components/games/Snake3DPseudo";
+import { Tetris3DPseudo } from "@/components/games/Tetris3DPseudo";
 import { PacMan3DGame } from "@/components/games/PacMan3DGame";
 import { GameTemplate } from "@/components/GameTemplate";
 import { Card } from "@/components/ui/card";
@@ -20,7 +20,7 @@ export const GameRouter = ({ gameId, onScoreChange, onGameEnd, onGameStart }: Ga
 
   if (gameId === 'tetris') {
     return (
-      <Tetris3DGame 
+      <Tetris3DPseudo 
         onScoreChange={onScoreChange}
         onGameEnd={onGameEnd}
         onGameStart={onGameStart}
@@ -30,7 +30,7 @@ export const GameRouter = ({ gameId, onScoreChange, onGameEnd, onGameStart }: Ga
 
   if (gameId === 'snake') {
     return (
-      <Snake3DGame 
+      <Snake3DPseudo 
         onScoreChange={onScoreChange}
         onGameEnd={onGameEnd}
         onGameStart={onGameStart}
