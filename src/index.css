@@ -2,41 +2,64 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
+/* Over Hippo Arkade - Gaming Platform Design System
+All colors MUST be HSL. Retro arcade aesthetic with neon accents.
 */
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --background: 230 35% 7%;
+    --foreground: 300 100% 95%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card: 240 30% 12%;
+    --card-foreground: 300 100% 95%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover: 240 30% 12%;
+    --popover-foreground: 300 100% 95%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 280 100% 60%;
+    --primary-foreground: 230 35% 7%;
+    --primary-glow: 285 100% 70%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 320 100% 50%;
+    --secondary-foreground: 230 35% 7%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 240 20% 20%;
+    --muted-foreground: 280 20% 65%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 160 100% 50%;
+    --accent-foreground: 230 35% 7%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --border: 240 20% 20%;
+    --input: 240 30% 15%;
+    --ring: 280 100% 60%;
 
-    --radius: 0.5rem;
+    --radius: 0.75rem;
+
+    /* Gaming specific colors */
+    --neon-pink: 320 100% 60%;
+    --neon-blue: 200 100% 60%;
+    --neon-green: 120 100% 50%;
+    --arcade-gold: 45 100% 60%;
+    --danger-red: 0 100% 60%;
+
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(280 100% 60%), hsl(320 100% 60%));
+    --gradient-secondary: linear-gradient(135deg, hsl(200 100% 60%), hsl(160 100% 50%));
+    --gradient-bg: linear-gradient(135deg, hsl(230 35% 7%), hsl(240 30% 12%));
+    --gradient-card: linear-gradient(135deg, hsl(240 30% 12%), hsl(250 25% 15%));
+
+    /* Shadows and effects */
+    --shadow-neon: 0 0 20px hsl(280 100% 60% / 0.5);
+    --shadow-neon-strong: 0 0 30px hsl(280 100% 60% / 0.8);
+    --shadow-card: 0 8px 32px hsl(230 35% 7% / 0.5);
+
+    /* Animations */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 
     --sidebar-background: 0 0% 98%;
 
