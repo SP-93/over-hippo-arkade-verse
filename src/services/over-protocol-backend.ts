@@ -6,7 +6,7 @@ export class OverProtocolBackend {
   private contractAddress: string;
   
   constructor() {
-    this.apiUrl = 'https://api.over.network'; // Official Over Protocol API
+    this.apiUrl = 'https://rpc.overprotocol.com'; // Over Protocol RPC endpoint
     this.contractAddress = OVER_PROTOCOL_CONFIG.ARCADE_CONTRACT;
   }
 

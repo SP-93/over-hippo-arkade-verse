@@ -41,10 +41,10 @@ export interface PlayerBalance {
 // Smart Contract Configuration
 export const OVER_PROTOCOL_CONFIG = {
   NETWORK: 'Over Protocol Mainnet',
-  CHAIN_ID: '0x2625A0', // Over Protocol Chain ID
-  RPC_URL: 'https://mainnet.over.network',
-  ARCADE_CONTRACT: '0x1234567890123456789012345678901234567890', // Demo address
-  OVER_TOKEN: '0x0987654321098765432109876543210987654321', // Demo address
+  CHAIN_ID: '0xd3a0', // Over Protocol Chain ID (54176)
+  RPC_URL: 'https://rpc.overprotocol.com', // Official Over Protocol RPC
+  ARCADE_CONTRACT: '0x...', // To be deployed
+  OVER_TOKEN: '0x...', // Native OVER token
   CHIP_PRICE: 0.1, // 0.1 OVER per chip
   MIN_WITHDRAWAL: 1.0 // Minimum 1 OVER for withdrawal
 };
