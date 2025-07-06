@@ -15,8 +15,7 @@ module.exports = {
     overprotocol: {
       url: "https://rpc.overprotocol.com",
       chainId: 54176,
-      // Add your private key for deployment:
-      // accounts: ["0x...your_private_key"]
+      accounts: ["0x88d26e867b289AD2e63A0BE905f9BC803A64F37f"], // Main platform wallet
     },
   },
   etherscan: {
