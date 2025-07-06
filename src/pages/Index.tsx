@@ -7,20 +7,23 @@ import { ChipDisplay } from "@/components/ChipManager";
 import { ChipPurchaseModal } from "@/components/ChipPurchaseModal";
 import { OverProtocolIntegration } from "@/components/OverProtocolIntegration";
 import { HippoBackground } from "@/components/HippoBackground";
+import { AdminPanel } from "@/components/AdminPanel";
 import { useChipManager } from "@/hooks/useChipManager";
 import { usePlayerStats } from "@/hooks/usePlayerStats";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Gamepad, Wallet, Zap } from "lucide-react";
+import { Gamepad, Wallet, Zap, Shield } from "lucide-react";
 import { toast } from "sonner";
 import heroLogo from "@/assets/hero-logo.jpg";
+
+const ADMIN_WALLET = "0x88d26e867b289AD2e63A0BE905f9BC803A64F37f";
 
 const Index = () => {
   const [isWalletConnected, setIsWalletConnected] = useState(false);
   const [walletAddress, setWalletAddress] = useState<string>("");
   const [walletType, setWalletType] = useState<string>("");
-  const [currentView, setCurrentView] = useState<'home' | 'dashboard' | 'games'>('home');
+  const [currentView, setCurrentView] = useState<'home' | 'dashboard' | 'games' | 'admin'>('home');
   const [overBalance, setOverBalance] = useState(50.5); // Demo balance
   const navigate = useNavigate();
 
@@ -41,7 +44,7 @@ const Index = () => {
     }
     
     if (savedView && savedWallet) {
-      setCurrentView(savedView as 'home' | 'dashboard' | 'games');
+      setCurrentView(savedView as 'home' | 'dashboard' | 'games' | 'admin');
     }
   }, []);
 
@@ -59,9 +62,17 @@ const Index = () => {
 
   const handleWalletConnect = (connectedWalletType: string) => {
     setIsWalletConnected(true);
-    setWalletAddress("0x742d35Cc6622C4532C3124d52C3F4A2cBe4267D8");
+    // For testing, simulate admin wallet sometimes
+    const isAdmin = Math.random() > 0.5; // 50% chance to be admin for testing
+    setWalletAddress(isAdmin ? ADMIN_WALLET : "0x742d35Cc6622C4532C3124d52C3F4A2cBe4267D8");
     setWalletType(connectedWalletType);
-    setCurrentView('dashboard');
+    setCurrentView(isAdmin ? 'admin' : 'dashboard');
+    
+    if (isAdmin) {
+      toast.success("Admin access granted!", { 
+        description: "Welcome to the admin panel" 
+      });
+    }
   };
 
   const handleWalletDisconnect = () => {
@@ -153,6 +164,8 @@ const Index = () => {
         );
       case 'games':
         return <GameGrid playerChips={chipManager.playerChips} onPlayGame={handlePlayGame} />;
+      case 'admin':
+        return <AdminPanel walletAddress={walletAddress} isVisible={walletAddress === ADMIN_WALLET} />;
       default:
         return (
           <div className="text-center space-y-8 animate-zoom-in">
@@ -248,6 +261,16 @@ const Index = () => {
                   >
                     Games
                   </Button>
+                  {walletAddress === ADMIN_WALLET && (
+                    <Button
+                      variant={currentView === 'admin' ? 'destructive' : 'outline'}
+                      onClick={() => setCurrentView('admin')}
+                      className="font-bold hover:shadow-glow transition-all duration-300 text-sm md:text-base px-3 md:px-4 border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                    >
+                      <Shield className="h-4 w-4 mr-1" />
+                      Admin
+                    </Button>
+                  )}
                 </div>
                 
                 <div className="flex items-center space-x-2 md:space-x-4">
