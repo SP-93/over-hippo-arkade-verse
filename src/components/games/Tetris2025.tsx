@@ -369,6 +369,7 @@ export const Tetris2025 = ({ onScoreChange, onGameEnd, onGameStart }: Tetris2025
   const renderBoard = () => {
     const displayBoard = board.map(row => [...row]);
     
+    // Add current piece to display board with stronger visual distinction
     if (currentPiece) {
       for (let y = 0; y < currentPiece.shape.length; y++) {
         for (let x = 0; x < currentPiece.shape[y].length; x++) {
@@ -376,7 +377,8 @@ export const Tetris2025 = ({ onScoreChange, onGameEnd, onGameStart }: Tetris2025
             const boardY = currentPiece.position.y + y;
             const boardX = currentPiece.position.x + x;
             if (boardY >= 0 && boardY < BOARD_HEIGHT && boardX >= 0 && boardX < BOARD_WIDTH) {
-              displayBoard[boardY][boardX] = currentPiece.color;
+              // Mark falling pieces with special prefix for stronger visual
+              displayBoard[boardY][boardX] = `falling:${currentPiece.color}`;
             }
           }
         }
@@ -456,23 +458,32 @@ export const Tetris2025 = ({ onScoreChange, onGameEnd, onGameStart }: Tetris2025
                 gridTemplateRows: `repeat(${BOARD_HEIGHT}, 1fr)`
               }}>
                 {renderBoard().map((row, y) => 
-                  row.map((cell, x) => (
-                    <div
-                      key={`${x}-${y}`}
-                      className={`border border-white/10 transition-all duration-200 ${
-                        cell ? 'animate-liquid-glow' : ''
-                      }`}
-                      style={{
-                        background: cell 
-                          ? `linear-gradient(135deg, ${cell}, ${cell}aa)`
-                          : 'transparent',
-                        boxShadow: cell 
-                          ? `0 0 10px ${cell}, inset 0 0 5px rgba(255,255,255,0.3)`
-                          : 'none',
-                        borderRadius: cell ? '2px' : '0'
-                      }}
-                    />
-                  ))
+                  row.map((cell, x) => {
+                    const isFalling = cell && typeof cell === 'string' && cell.startsWith('falling:');
+                    const actualColor = isFalling ? cell.replace('falling:', '') : cell;
+                    
+                    return (
+                      <div
+                        key={`${x}-${y}`}
+                        className={`border transition-all duration-200 ${
+                          cell ? 'animate-liquid-glow' : ''
+                        } ${isFalling ? 'border-white/40 animate-pulse' : 'border-white/10'}`}
+                        style={{
+                          background: cell 
+                            ? isFalling
+                              ? `linear-gradient(135deg, ${actualColor}, ${actualColor})`
+                              : `linear-gradient(135deg, ${actualColor}, ${actualColor}aa)`
+                            : 'transparent',
+                          boxShadow: cell 
+                            ? isFalling
+                              ? `0 0 20px ${actualColor}, inset 0 0 10px rgba(255,255,255,0.5), 0 0 5px rgba(255,255,255,0.8)`
+                              : `0 0 10px ${actualColor}, inset 0 0 5px rgba(255,255,255,0.3)`
+                            : 'none',
+                          borderRadius: cell ? '2px' : '0'
+                        }}
+                      />
+                    );
+                  })
                 )}
               </div>
             </div>
