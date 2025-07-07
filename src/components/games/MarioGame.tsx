@@ -13,8 +13,8 @@ interface MarioGameProps {
 const CANVAS_WIDTH = 800;
 const CANVAS_HEIGHT = 400;
 const GRAVITY = 0.5;
-const JUMP_FORCE = -12;
-const PLAYER_SPEED = 4;
+const JUMP_FORCE = -15;
+const PLAYER_SPEED = 6;
 const PLAYER_SIZE = 24;
 
 interface Player {
@@ -355,7 +355,7 @@ export const MarioGame = ({ onScoreChange, onGameEnd, onGameStart, chipCost = 1 
     setPlayer(prevPlayer => {
       let newPlayer = { ...prevPlayer };
       
-      // Handle input
+      // Handle input with instant response
       if (keys['ArrowLeft'] || keys['a']) {
         newPlayer.vx = -PLAYER_SPEED;
         newPlayer.facing = 'left';
@@ -363,7 +363,7 @@ export const MarioGame = ({ onScoreChange, onGameEnd, onGameStart, chipCost = 1 
         newPlayer.vx = PLAYER_SPEED;
         newPlayer.facing = 'right';
       } else {
-        newPlayer.vx *= 0.8; // Friction
+        newPlayer.vx *= 0.85; // Slightly less friction for smoother movement
       }
       
       if ((keys['ArrowUp'] || keys[' ']) && newPlayer.grounded) {
@@ -438,11 +438,11 @@ export const MarioGame = ({ onScoreChange, onGameEnd, onGameStart, chipCost = 1 
       return newPlayer;
     });
 
-    // Update camera
+    // Update camera with smoother interpolation
     setCameraX(prev => {
       const targetX = player.x - CANVAS_WIDTH / 2;
       const clampedX = Math.max(0, Math.min(targetX, 1600 - CANVAS_WIDTH));
-      return prev + (clampedX - prev) * 0.1;
+      return prev + (clampedX - prev) * 0.15;
     });
 
     // Update enemies

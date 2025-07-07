@@ -12,6 +12,8 @@ interface PacManGameProps {
 
 const BOARD_WIDTH = 19;
 const BOARD_HEIGHT = 15;
+const GRID_SIZE = 24;
+const MOVE_SPEED = 0.2;
 
 // Simple maze layout (1 = wall, 0 = empty, 2 = dot, 3 = power pellet)
 const MAZE = [
@@ -33,7 +35,14 @@ const MAZE = [
 ];
 
 export const PacManGame = ({ onScoreChange, onGameEnd, onGameStart }: PacManGameProps) => {
-  const [pacman, setPacman] = useState({ x: 9, y: 11, direction: { x: 0, y: 0 } });
+  const [pacman, setPacman] = useState({ 
+    x: 9, 
+    y: 11, 
+    direction: { x: 0, y: 0 },
+    targetX: 9,
+    targetY: 11,
+    moving: false
+  });
   const [ghosts, setGhosts] = useState([
     { x: 9, y: 7, direction: { x: 1, y: 0 }, color: 'hsl(0 100% 50%)' },
     { x: 8, y: 7, direction: { x: -1, y: 0 }, color: 'hsl(300 100% 50%)' },
@@ -78,33 +87,49 @@ export const PacManGame = ({ onScoreChange, onGameEnd, onGameStart }: PacManGame
 
   const movePacman = useCallback(() => {
     setPacman(currentPacman => {
-      let direction = currentPacman.direction;
-      
-      // Try to change direction if requested
-      if (nextDirection.x !== 0 || nextDirection.y !== 0) {
-        const newX = currentPacman.x + nextDirection.x;
-        const newY = currentPacman.y + nextDirection.y;
-        if (isValidMove(newX, newY)) {
-          direction = nextDirection;
+      // If not moving and have next direction, start moving
+      if (!currentPacman.moving && (nextDirection.x !== 0 || nextDirection.y !== 0)) {
+        const newTargetX = currentPacman.x + nextDirection.x;
+        const newTargetY = currentPacman.y + nextDirection.y;
+        
+        if (isValidMove(newTargetX, newTargetY)) {
+          const finalTargetX = newTargetX < 0 ? BOARD_WIDTH - 1 : newTargetX >= BOARD_WIDTH ? 0 : newTargetX;
           setNextDirection({ x: 0, y: 0 });
+          
+          return {
+            ...currentPacman,
+            targetX: finalTargetX,
+            targetY: newTargetY,
+            direction: nextDirection,
+            moving: true
+          };
         }
       }
-
-      const newX = currentPacman.x + direction.x;
-      const newY = currentPacman.y + direction.y;
-
-      if (!isValidMove(newX, newY)) {
-        return { ...currentPacman, direction: { x: 0, y: 0 } };
+      
+      // If moving, interpolate towards target
+      if (currentPacman.moving) {
+        const deltaX = currentPacman.targetX - currentPacman.x;
+        const deltaY = currentPacman.targetY - currentPacman.y;
+        
+        // If close enough to target, snap to grid
+        if (Math.abs(deltaX) < MOVE_SPEED && Math.abs(deltaY) < MOVE_SPEED) {
+          return {
+            ...currentPacman,
+            x: currentPacman.targetX,
+            y: currentPacman.targetY,
+            moving: false
+          };
+        }
+        
+        // Move towards target
+        return {
+          ...currentPacman,
+          x: currentPacman.x + Math.sign(deltaX) * MOVE_SPEED,
+          y: currentPacman.y + Math.sign(deltaY) * MOVE_SPEED
+        };
       }
-
-      // Tunnel effect for horizontal edges
-      const finalX = newX < 0 ? BOARD_WIDTH - 1 : newX >= BOARD_WIDTH ? 0 : newX;
-
-      return {
-        x: finalX,
-        y: newY,
-        direction
-      };
+      
+      return currentPacman;
     });
   }, [isValidMove, nextDirection]);
 
@@ -154,7 +179,7 @@ export const PacManGame = ({ onScoreChange, onGameEnd, onGameStart }: PacManGame
           onGameEnd(score);
         } else {
           // Reset positions
-          setPacman({ x: 9, y: 11, direction: { x: 0, y: 0 } });
+          setPacman({ x: 9, y: 11, direction: { x: 0, y: 0 }, targetX: 9, targetY: 11, moving: false });
           setGhosts([
             { x: 9, y: 7, direction: { x: 1, y: 0 }, color: 'hsl(0 100% 50%)' },
             { x: 8, y: 7, direction: { x: -1, y: 0 }, color: 'hsl(300 100% 50%)' },
@@ -212,7 +237,7 @@ export const PacManGame = ({ onScoreChange, onGameEnd, onGameStart }: PacManGame
         movePacman();
         moveGhosts();
         checkCollisions();
-      }, 120); // Slower for better control
+      }, 60); // Faster for smoother movement
     } else {
       if (gameLoopRef.current) {
         clearInterval(gameLoopRef.current);
@@ -232,7 +257,7 @@ export const PacManGame = ({ onScoreChange, onGameEnd, onGameStart }: PacManGame
     }
     
     setMaze(MAZE.map(row => [...row]));
-    setPacman({ x: 9, y: 11, direction: { x: 0, y: 0 } });
+    setPacman({ x: 9, y: 11, direction: { x: 0, y: 0 }, targetX: 9, targetY: 11, moving: false });
     setGhosts([
       { x: 9, y: 7, direction: { x: 1, y: 0 }, color: 'hsl(0 100% 50%)' },
       { x: 8, y: 7, direction: { x: -1, y: 0 }, color: 'hsl(300 100% 50%)' },
