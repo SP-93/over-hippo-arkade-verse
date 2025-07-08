@@ -1,6 +1,7 @@
 import { UltraSnake2025 } from "@/components/games/UltraSnake2025";
 import { UltraTetris2025 } from "@/components/games/UltraTetris2025";
 import { PacMan2D } from "@/components/games/PacMan2D";
+import { MarioGame } from "@/components/games/MarioGame";
 import { GameTemplate } from "@/components/GameTemplate";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -116,23 +117,11 @@ export const GameRouter = ({ gameId, onScoreChange, onGameEnd, onGameStart }: Ga
 
   if (gameId === 'mario') {
     return (
-      <Card className="p-8 bg-gradient-card border-arcade-gold min-h-96 animate-glow">
-        <div className="text-center space-y-6">
-          <div className="animate-neon-pulse">🚧</div>
-          <h3 className="text-2xl font-bold text-arcade-gold mb-2 animate-text-glow">UNDER CONSTRUCTION</h3>
-          <p className="text-muted-foreground mb-4">3D Platformer adventure with blockchain integration is being developed!</p>
-          <div className="bg-muted/20 p-4 rounded-lg">
-            <p className="text-sm text-muted-foreground">Coming Features:</p>
-            <ul className="text-xs text-muted-foreground mt-2 space-y-1">
-              <li>• Full 3D platformer levels</li>
-              <li>• Collectible power-up NFTs</li>
-              <li>• Earn OVER tokens for completion</li>
-              <li>• Community-created levels</li>
-            </ul>
-          </div>
-          <Button variant="default" onClick={() => navigate('/')}>Return to Arcade</Button>
-        </div>
-      </Card>
+      <MarioGame 
+        onScoreChange={onScoreChange}
+        onGameEnd={onGameEnd}
+        onGameStart={onGameStart}
+      />
     );
   }
 
