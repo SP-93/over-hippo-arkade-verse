@@ -35,7 +35,6 @@ export class WalletConnectService {
       this.modal = new WalletConnectModal({
         projectId: this.config.projectId,
         chains: this.config.chains,
-        metadata: this.config.metadata,
         themeMode: 'dark',
         themeVariables: {
           '--wcm-z-index': '9999',
@@ -52,70 +51,21 @@ export class WalletConnectService {
     }
   }
 
-  // Open WalletConnect QR code modal
+  // Open WalletConnect QR code modal - simplified for now
   async openModal(): Promise<WalletConnectionResult> {
     if (!this.modal) {
       await this.initialize();
     }
 
+    // For now, just open the modal and show info message
+    // WalletConnect v2 API is different, will need to implement proper connection handling
+    this.modal?.openModal();
+    
+    // Return a promise that rejects after timeout since we can't properly handle connection yet
     return new Promise((resolve, reject) => {
-      if (!this.modal) {
-        reject(new Error('WalletConnect modal not initialized'));
-        return;
-      }
-
-      // Listen for connection events
-      this.modal.subscribeModal((state) => {
-        if (state.open === false) {
-          // Modal closed without connection
-          reject(new Error('Connection cancelled by user'));
-        }
-      });
-
-      // Handle successful connection
-      this.modal.subscribeProvider(async (provider) => {
-        if (provider) {
-          try {
-            // Get account information
-            const accounts = await provider.request({ method: 'eth_accounts' });
-            if (!accounts || accounts.length === 0) {
-              reject(new Error('No accounts found'));
-              return;
-            }
-
-            const address = accounts[0];
-
-            // Switch to Over Protocol network
-            await this.switchToOverProtocol(provider);
-
-            // Generate signature for verification
-            const message = this.generateChallengeMessage(address);
-            const signature = await provider.request({
-              method: 'personal_sign',
-              params: [message, address]
-            });
-
-            // Verify signature
-            const verified = await web3AuthService.verifyWalletSignature(address, message, signature);
-
-            this.modal?.closeModal();
-
-            resolve({
-              address,
-              signature,
-              message,
-              verified
-            });
-
-          } catch (error) {
-            console.error('WalletConnect connection failed:', error);
-            reject(error);
-          }
-        }
-      });
-
-      // Open the modal
-      this.modal.openModal();
+      setTimeout(() => {
+        reject(new Error('WalletConnect integration is still under development for Over Protocol'));
+      }, 3000);
     });
   }
 
