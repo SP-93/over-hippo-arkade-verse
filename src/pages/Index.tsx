@@ -34,6 +34,8 @@ const Index = () => {
   const [isWalletVerified, setIsWalletVerified] = useState(false);
   const [currentView, setCurrentView] = useState<'home' | 'auth' | 'dashboard' | 'games' | 'admin'>('home');
   const [overBalance, setOverBalance] = useState(0);
+  const [isInitialized, setIsInitialized] = useState(false);
+  const [hasRestoredView, setHasRestoredView] = useState(false);
   const navigate = useNavigate();
 
   // Initialize chip manager and player stats
@@ -144,6 +146,7 @@ const Index = () => {
     setWalletType("");
     setIsWalletVerified(false);
     setCurrentView('home');
+    setHasRestoredView(false); // Reset view restoration state
     localStorage.removeItem('wallet_connection');
     localStorage.removeItem('current_view');
     
@@ -227,10 +230,9 @@ const Index = () => {
   }, [walletAddress]);
 
   // Load wallet state from localStorage on component mount - do this synchronously
-  const [isInitialized, setIsInitialized] = useState(false);
-  
   useEffect(() => {
     const savedWallet = localStorage.getItem('wallet_connection');
+    const savedView = localStorage.getItem('current_view');
     
     if (savedWallet) {
       try {
@@ -242,6 +244,11 @@ const Index = () => {
         setWalletAddress(walletData.address);
         setWalletType(walletData.type);
         setIsWalletVerified(walletData.verified || false);
+        
+        // If we have a saved view and wallet is connected, mark as restored
+        if (savedView && walletData.isConnected) {
+          setHasRestoredView(true);
+        }
       } catch (error) {
         console.error('Failed to parse wallet data:', error);
         localStorage.removeItem('wallet_connection');
@@ -256,11 +263,12 @@ const Index = () => {
   useEffect(() => {
     const savedView = localStorage.getItem('current_view');
     
-    if (user && isWalletConnected && savedView) {
+    if (user && isWalletConnected && savedView && !hasRestoredView) {
       console.log('🔄 Restoring view after auth + wallet ready:', savedView);
       setCurrentView(savedView as 'home' | 'dashboard' | 'games' | 'admin');
+      setHasRestoredView(true);
     }
-  }, [user, isWalletConnected]); // Run when both user and wallet state are ready
+  }, [user, isWalletConnected, hasRestoredView]); // Run when both user and wallet state are ready
 
   // Save wallet state to localStorage whenever it changes (backup)
   useEffect(() => {
@@ -295,6 +303,7 @@ const Index = () => {
     setWalletType("");
     setIsWalletVerified(false);
     setCurrentView('home');
+    setHasRestoredView(false); // Reset view restoration state
     localStorage.removeItem('wallet_connection');
     localStorage.removeItem('current_view');
   };
@@ -457,7 +466,7 @@ const Index = () => {
                   </Button>
                 </div>
               </div>
-            ) : (!isWalletConnected && isInitialized) ? (
+            ) : (!isWalletConnected && isInitialized && !hasRestoredView) ? (
               <div className="mt-12 backdrop-glass rounded-2xl p-6 md:p-8 border border-neon shadow-glow animate-pulse-border hover-lift">
                 <WalletConnection 
                   onConnect={handleWalletConnect} 
