@@ -8,37 +8,127 @@ import { ChipPurchaseModal } from "@/components/ChipPurchaseModal";
 import { OverProtocolIntegration } from "@/components/OverProtocolIntegration";
 import { HippoBackground } from "@/components/HippoBackground";
 import { AdminPanel } from "@/components/AdminPanel";
+import { AuthPage } from "@/components/AuthPage";
 import { useChipManager } from "@/hooks/useChipManager";
 import { usePlayerStats } from "@/hooks/usePlayerStats";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Gamepad, Wallet, Zap, Shield } from "lucide-react";
+import { Gamepad, Wallet, Zap, Shield, LogOut } from "lucide-react";
 import { toast } from "sonner";
 import heroLogo from "@/assets/hero-logo.jpg";
 import { useQuery } from "@tanstack/react-query";
 import { secureAdminService } from "@/services/secure-admin";
+import { supabase } from "@/integrations/supabase/client";
 
 // Admin wallet now managed securely in backend
 
 const Index = () => {
+  const [user, setUser] = useState<any>(null);
   const [isWalletConnected, setIsWalletConnected] = useState(false);
   const [walletAddress, setWalletAddress] = useState<string>("");
   const [walletType, setWalletType] = useState<string>("");
   const [isWalletVerified, setIsWalletVerified] = useState(false);
-  const [currentView, setCurrentView] = useState<'home' | 'dashboard' | 'games' | 'admin'>('home');
-  const [overBalance, setOverBalance] = useState(0); // Will be loaded from real balance
+  const [currentView, setCurrentView] = useState<'home' | 'auth' | 'dashboard' | 'games' | 'admin'>('home');
+  const [overBalance, setOverBalance] = useState(0);
   const navigate = useNavigate();
 
   // Initialize chip manager and player stats
   const chipManager = useChipManager();
   const playerStats = usePlayerStats(walletAddress);
 
+  // Check authentication state
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        setUser(session.user);
+        
+        // Check user profile for wallet info
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('verified_wallet_address')
+          .eq('user_id', session.user.id)
+          .single();
+          
+        if (profile?.verified_wallet_address) {
+          setWalletAddress(profile.verified_wallet_address);
+          setIsWalletConnected(true);
+          setIsWalletVerified(true);
+          setWalletType('Verified');
+          setCurrentView('dashboard');
+        }
+      }
+    };
+
+    checkAuth();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        if (session?.user) {
+          setUser(session.user);
+          // Check for wallet connection after auth
+          setTimeout(async () => {
+            const { data: profile } = await supabase
+              .from('profiles')
+              .select('verified_wallet_address')
+              .eq('user_id', session.user.id)
+              .single();
+              
+            if (profile?.verified_wallet_address) {
+              setWalletAddress(profile.verified_wallet_address);
+              setIsWalletConnected(true);
+              setIsWalletVerified(true);
+              setWalletType('Verified');
+              setCurrentView('dashboard');
+            }
+          }, 0);
+        } else {
+          setUser(null);
+          handleAuthDisconnect();
+        }
+      }
+    );
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  // Authentication functions
+  const handleAuthSuccess = () => {
+    // User will be set via onAuthStateChange
+    // If they already have a wallet connected, it will be loaded
+    // Otherwise, show wallet connection
+    setCurrentView('dashboard');
+  };
+
+  const handleAuthDisconnect = () => {
+    setUser(null);
+    setIsWalletConnected(false);
+    setWalletAddress("");
+    setWalletType("");
+    setIsWalletVerified(false);
+    setCurrentView('home');
+    localStorage.removeItem('wallet_connection');
+    localStorage.removeItem('current_view');
+  };
+
+  const handleSignOut = async () => {
+    try {
+      await supabase.auth.signOut({ scope: 'global' });
+      handleAuthDisconnect();
+      toast.success("Signed out successfully");
+    } catch (error) {
+      console.error('Sign out error:', error);
+      toast.error("Failed to sign out");
+    }
+  };
+
   // Admin check via secure backend
   const { data: adminStatus } = useQuery({
-    queryKey: ['admin-check', walletAddress],
+    queryKey: ['admin-check', user?.id],
     queryFn: () => secureAdminService.checkAdminStatus(),
-    enabled: !!walletAddress
+    enabled: !!user?.id
   });
   const isAdmin = adminStatus?.isAdmin || false;
 
@@ -152,6 +242,16 @@ const Index = () => {
   };
 
   const renderCurrentView = () => {
+    // Show auth page if user is not logged in
+    if (!user && currentView === 'auth') {
+      return (
+        <AuthPage 
+          onSuccess={handleAuthSuccess}
+          onBack={() => setCurrentView('home')}
+        />
+      );
+    }
+
     switch (currentView) {
       case 'dashboard':
         return (
@@ -244,18 +344,38 @@ const Index = () => {
               </Card>
             </div>
 
-            {!isWalletConnected && (
+            {/* Authentication Section */}
+            {!user ? (
               <div className="mt-12 backdrop-glass rounded-2xl p-6 md:p-8 border border-neon shadow-glow animate-pulse-border hover-lift">
-                  <WalletConnection 
-                    onConnect={handleWalletConnect} 
-                    onDisconnect={handleWalletDisconnect}
-                    isConnected={isWalletConnected}
-                    walletType={walletType}
-                    walletAddress={walletAddress}
-                    isVerified={isWalletVerified}
-                  />
+                <h3 className="text-xl font-bold text-center text-foreground mb-4">
+                  Get Started
+                </h3>
+                <p className="text-muted-foreground text-center mb-6">
+                  Sign up or sign in to connect your wallet and start playing!
+                </p>
+                <div className="flex justify-center">
+                  <Button 
+                    variant="neon"
+                    size="lg"
+                    onClick={() => setCurrentView('auth')}
+                    className="min-w-48"
+                  >
+                    Sign In / Register
+                  </Button>
+                </div>
               </div>
-            )}
+            ) : !isWalletConnected ? (
+              <div className="mt-12 backdrop-glass rounded-2xl p-6 md:p-8 border border-neon shadow-glow animate-pulse-border hover-lift">
+                <WalletConnection 
+                  onConnect={handleWalletConnect} 
+                  onDisconnect={handleWalletDisconnect}
+                  isConnected={isWalletConnected}
+                  walletType={walletType}
+                  walletAddress={walletAddress}
+                  isVerified={isWalletVerified}
+                />
+              </div>
+            ) : null}
           </div>
         );
     }
@@ -331,6 +451,17 @@ const Index = () => {
                     walletAddress={walletAddress}
                     isVerified={isWalletVerified}
                   />
+                  {user && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={handleSignOut}
+                      className="h-8 px-3 text-xs hover:bg-destructive/10 hover:text-destructive"
+                    >
+                      <LogOut className="h-3 w-3 mr-1" />
+                      Sign Out
+                    </Button>
+                  )}
                 </div>
               </div>
             </div>
