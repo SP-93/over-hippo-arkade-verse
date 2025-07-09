@@ -108,20 +108,31 @@ export const useSecurityHandler = ({
       }
     };
 
-    // Before unload handler (when closing tab/browser)
+    // Before unload handler - only warn, don't cleanup (page refresh safe)
     const handleBeforeUnload = (event: BeforeUnloadEvent) => {
-      console.log('🚪 Before unload - triggering immediate cleanup');
-      onSecurityCleanup(); // Immediate cleanup, no debounce
-      
-      // Optional: Show confirmation dialog
+      console.log('🚪 Before unload - page refresh or navigation detected');
+      // Don't cleanup here - this fires on page refresh too!
+      // Optional: Show confirmation dialog only for actual navigation
       // event.preventDefault();
       // return (event.returnValue = '');
     };
 
-    // Unload handler (final cleanup)
+    // Unload handler (final cleanup) - only for actual page close
     const handleUnload = () => {
-      console.log('🔚 Page unload - final cleanup');
-      onSecurityCleanup();
+      console.log('🔚 Page unload - emergency cleanup only');
+      // Use emergency cleanup for unload (synchronous only)
+      try {
+        // Only clear sensitive data, don't sign out (no async operations)
+        const sensitiveKeys = ['wallet_connection'];
+        sensitiveKeys.forEach(key => {
+          if (localStorage.getItem(key)) {
+            localStorage.removeItem(key);
+          }
+        });
+        console.log('🗑️ Emergency cleanup: cleared sensitive data');
+      } catch (error) {
+        console.error('Emergency cleanup error:', error);
+      }
     };
 
     // Page focus/blur handlers
