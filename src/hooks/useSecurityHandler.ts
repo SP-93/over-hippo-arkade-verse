@@ -96,8 +96,14 @@ export const useSecurityHandler = ({
     // Page visibility change handler
     const handleVisibilityChange = () => {
       if (document.hidden) {
-        console.log('📱 Page hidden - triggering security cleanup');
-        debouncedCleanup();
+        console.log('📱 Page hidden - starting inactivity timer');
+        // Only cleanup after extended inactivity, not immediate page hide
+        setTimeout(() => {
+          if (document.hidden) {
+            console.log('📱 Page still hidden after timeout - triggering cleanup');
+            debouncedCleanup();
+          }
+        }, 30000); // 30 seconds before cleanup
       } else {
         updateActivity();
       }
@@ -125,8 +131,8 @@ export const useSecurityHandler = ({
     };
 
     const handleBlur = () => {
-      console.log('👁️ Page blur - potential security risk');
-      debouncedCleanup();
+      console.log('👁️ Page blur - updating activity');
+      updateActivity(); // Just update activity, don't cleanup on blur
     };
 
     // Activity tracking handlers

@@ -171,24 +171,27 @@ const Index = () => {
     try {
       console.log('🔐 Manual sign out initiated');
       
-      // Use the comprehensive security cleanup
-      await handleSecurityCleanup();
+      // Sign out from Supabase
+      const { error } = await supabase.auth.signOut({ scope: 'global' });
+      if (error) console.warn('Supabase signOut warning:', error);
       
-      toast.success("Signed out and wallet disconnected securely", {
-        description: "All session data has been cleared"
-      });
-    } catch (error) {
-      console.error('Sign out error:', error);
-      toast.error("Sign out completed with some errors");
-      
-      // Fallback cleanup
-      emergencyCleanup();
-      setUser(null);
+      // Clear wallet state
       setIsWalletConnected(false);
       setWalletAddress("");
       setWalletType("");
       setIsWalletVerified(false);
       setCurrentView('home');
+      
+      // Clear localStorage wallet data
+      localStorage.removeItem('wallet_connection');
+      localStorage.removeItem('current_view');
+      
+      toast.success("Successfully signed out", {
+        description: "All session data has been cleared"
+      });
+    } catch (error) {
+      console.error('Sign out error:', error);
+      toast.error("Sign out failed - please try again");
     }
   };
 

@@ -235,14 +235,19 @@ This signature proves you own this wallet and grants access to Over Hippo Arkade
   // Store wallet verification in database
   private async storeWalletVerification(address: string, message: string, signature: string): Promise<void> {
     try {
-      // First store the wallet verification
+      // Use upsert to prevent duplicate key errors
       const { error } = await supabase
         .from('wallet_verifications')
-        .insert({
+        .upsert({
           wallet_address: address, // Already normalized
           message: message,
           signature: signature,
-          user_id: null // Will be updated later when user logs in
+          user_id: null, // Will be updated later when user logs in
+          verified_at: new Date().toISOString(),
+          is_active: true
+        }, { 
+          onConflict: 'wallet_address',
+          ignoreDuplicates: false 
         });
 
       if (error) {
