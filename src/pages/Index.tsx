@@ -226,7 +226,9 @@ const Index = () => {
     loadPlayerBalance();
   }, [walletAddress]);
 
-  // Load wallet state from localStorage on component mount
+  // Load wallet state from localStorage on component mount - do this synchronously
+  const [isWalletStateLoaded, setIsWalletStateLoaded] = useState(false);
+  
   useEffect(() => {
     const savedWallet = localStorage.getItem('wallet_connection');
     
@@ -244,6 +246,7 @@ const Index = () => {
         localStorage.removeItem('wallet_connection');
       }
     }
+    setIsWalletStateLoaded(true);
   }, []); // Run only once on mount
 
   // Restore view when both user and wallet are ready
@@ -451,7 +454,7 @@ const Index = () => {
                   </Button>
                 </div>
               </div>
-            ) : !isWalletConnected ? (
+            ) : (!isWalletConnected && isWalletStateLoaded) ? (
               <div className="mt-12 backdrop-glass rounded-2xl p-6 md:p-8 border border-neon shadow-glow animate-pulse-border hover-lift">
                 <WalletConnection 
                   onConnect={handleWalletConnect} 
