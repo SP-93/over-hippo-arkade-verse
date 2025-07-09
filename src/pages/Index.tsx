@@ -103,6 +103,8 @@ const Index = () => {
     // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log('🔄 Auth state change:', event, session ? 'session exists' : 'no session');
+        
         if (session?.user) {
           setUser(session.user);
           // Keep current view if user is already authenticated
@@ -112,7 +114,15 @@ const Index = () => {
           }
         } else {
           setUser(null);
-          handleAuthDisconnect();
+          // Only clear wallet state on explicit SIGNED_OUT event, not on initial load
+          if (event === 'SIGNED_OUT') {
+            console.log('🚪 User explicitly signed out - clearing wallet state');
+            handleAuthDisconnect();
+          } else {
+            console.log('📄 Page loading/refreshing - keeping wallet state intact');
+            // Just set current view to home but keep wallet state
+            setCurrentView('home');
+          }
         }
       }
     );
