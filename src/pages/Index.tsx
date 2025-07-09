@@ -9,6 +9,7 @@ import { OverProtocolIntegration } from "@/components/OverProtocolIntegration";
 import { HippoBackground } from "@/components/HippoBackground";
 import { AdminPanel } from "@/components/AdminPanel";
 import { AuthPage } from "@/components/AuthPage";
+import { SecurityDebugPanel } from "@/components/SecurityDebugPanel";
 import { useChipManager } from "@/hooks/useChipManager";
 import { usePlayerStats } from "@/hooks/usePlayerStats";
 import { useSecurityHandler } from "@/hooks/useSecurityHandler";

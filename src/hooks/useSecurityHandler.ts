@@ -1,4 +1,11 @@
 import { useEffect, useCallback, useRef } from 'react';
+import { 
+  detectBrowserCapabilities, 
+  getBrowserOptimizedSettings, 
+  fallbackSecurityCleanup, 
+  needsFallbackCleanup,
+  detectWalletExtensions 
+} from '@/utils/browserCompatibility';
 
 interface SecurityHandlerOptions {
   onSecurityCleanup: () => void;
@@ -8,12 +15,53 @@ interface SecurityHandlerOptions {
 
 export const useSecurityHandler = ({
   onSecurityCleanup,
-  sessionTimeoutMs = 30 * 60 * 1000, // 30 minutes default
-  debounceMs = 1000
+  sessionTimeoutMs,
+  debounceMs
 }: SecurityHandlerOptions) => {
   const cleanupTimeoutRef = useRef<NodeJS.Timeout>();
   const lastActivityRef = useRef<number>(Date.now());
   const isCleaningUpRef = useRef<boolean>(false);
+
+  // Get browser-optimized settings
+  const browserSettings = getBrowserOptimizedSettings();
+  const capabilities = detectBrowserCapabilities();
+  
+  // Use browser-optimized values or provided values
+  const finalSessionTimeout = sessionTimeoutMs ?? browserSettings.sessionTimeoutMs;
+  const finalDebounceMs = debounceMs ?? browserSettings.debounceMs;
+
+  // Log browser compatibility on mount
+  useEffect(() => {
+    console.log('🌐 Browser capabilities:', capabilities);
+    console.log('🔧 Optimized security settings:', browserSettings);
+    console.log('🔍 Detected wallets:', detectWalletExtensions());
+    
+    if (needsFallbackCleanup()) {
+      console.warn('⚠️ Browser needs fallback cleanup methods');
+    }
+  }, []);
+
+  // Enhanced cleanup with fallback support
+  const performCleanup = useCallback(() => {
+    if (isCleaningUpRef.current) return;
+    
+    isCleaningUpRef.current = true;
+    console.log('🔒 Enhanced security cleanup triggered');
+    
+    try {
+      if (needsFallbackCleanup()) {
+        console.log('🔄 Using fallback cleanup for browser compatibility');
+        fallbackSecurityCleanup();
+      }
+      
+      // Call the main cleanup function
+      onSecurityCleanup();
+      
+    } catch (error) {
+      console.error('❌ Security cleanup failed, using emergency fallback:', error);
+      fallbackSecurityCleanup();
+    }
+  }, [onSecurityCleanup]);
 
   // Debounced cleanup to prevent multiple rapid calls
   const debouncedCleanup = useCallback(() => {
@@ -24,11 +72,9 @@ export const useSecurityHandler = ({
     }
     
     cleanupTimeoutRef.current = setTimeout(() => {
-      isCleaningUpRef.current = true;
-      console.log('🔒 Security cleanup triggered');
-      onSecurityCleanup();
-    }, debounceMs);
-  }, [onSecurityCleanup, debounceMs]);
+      performCleanup();
+    }, finalDebounceMs);
+  }, [performCleanup, finalDebounceMs]);
 
   // Track user activity
   const updateActivity = useCallback(() => {
@@ -40,11 +86,11 @@ export const useSecurityHandler = ({
     const now = Date.now();
     const timeSinceActivity = now - lastActivityRef.current;
     
-    if (timeSinceActivity > sessionTimeoutMs) {
+    if (timeSinceActivity > finalSessionTimeout) {
       console.log('🕐 Session timeout - triggering cleanup');
       debouncedCleanup();
     }
-  }, [sessionTimeoutMs, debouncedCleanup]);
+  }, [finalSessionTimeout, debouncedCleanup]);
 
   useEffect(() => {
     // Page visibility change handler
