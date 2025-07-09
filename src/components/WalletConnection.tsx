@@ -82,12 +82,31 @@ export const WalletConnection = ({
     }
   };
 
-  const connectWalletCode = () => {
-    setShowQR(true);
-    toast.info("WalletConnect integration coming soon...");
-    setTimeout(() => {
-      setShowQR(false);
-    }, 3000);
+  const connectWalletCode = async () => {
+    if (isConnecting) return;
+    
+    setIsConnecting(true);
+    try {
+      toast.loading("Opening WalletConnect...");
+      const { walletConnectService } = await import('@/services/wallet-connect');
+      const result = await walletConnectService.openModal();
+      
+      if (result.verified) {
+        onConnect('WalletConnect', result.address, true);
+        toast.success("Wallet connected via WalletConnect!");
+      } else {
+        toast.error("Wallet signature verification failed");
+      }
+    } catch (error: any) {
+      console.error('WalletConnect error:', error);
+      if (error.message.includes('development')) {
+        toast.info("WalletConnect integration in development - use browser extensions for now");
+      } else {
+        toast.error("Failed to connect via WalletConnect");
+      }
+    } finally {
+      setIsConnecting(false);
+    }
   };
 
   if (isConnected) {
@@ -167,7 +186,7 @@ export const WalletConnection = ({
             >
               <QrCode className="h-6 w-6" />
               WalletConnect
-              <span className="text-xs opacity-80">Coming soon</span>
+              <span className="text-xs opacity-80">QR code scan</span>
             </Button>
           </DialogTrigger>
           <DialogContent className="bg-card border-primary">

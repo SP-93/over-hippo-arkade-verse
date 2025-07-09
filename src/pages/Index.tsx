@@ -27,7 +27,7 @@ const Index = () => {
   const [walletType, setWalletType] = useState<string>("");
   const [isWalletVerified, setIsWalletVerified] = useState(false);
   const [currentView, setCurrentView] = useState<'home' | 'dashboard' | 'games' | 'admin'>('home');
-  const [overBalance, setOverBalance] = useState(0); // Real balance, no demo data
+  const [overBalance, setOverBalance] = useState(0); // Will be loaded from real balance
   const navigate = useNavigate();
 
   // Initialize chip manager and player stats
@@ -42,7 +42,26 @@ const Index = () => {
   });
   const isAdmin = adminStatus?.isAdmin || false;
 
-  // Load wallet state from localStorage on component mount
+  // Load player balance from database
+  useEffect(() => {
+    if (!walletAddress) return;
+    
+    const loadPlayerBalance = async () => {
+      try {
+        const { securePlayerService } = await import('@/services/secure-player');
+        const balance = await securePlayerService.getPlayerBalance();
+        if (balance) {
+          setOverBalance(balance.overTokens);
+        }
+      } catch (error) {
+        console.error('Failed to load player balance:', error);
+      }
+    };
+
+    loadPlayerBalance();
+  }, [walletAddress]);
+
+  // Load wallet state from localStorage on component mount (backup only)
   useEffect(() => {
     const savedWallet = localStorage.getItem('wallet_connection');
     const savedView = localStorage.getItem('current_view');
@@ -60,7 +79,7 @@ const Index = () => {
     }
   }, []);
 
-  // Save wallet state to localStorage whenever it changes
+  // Save wallet state to localStorage whenever it changes (backup)
   useEffect(() => {
     if (isWalletConnected) {
       localStorage.setItem('wallet_connection', JSON.stringify({
