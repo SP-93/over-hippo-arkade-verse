@@ -232,12 +232,14 @@ This signature proves you own this wallet and grants access to Over Hippo Arkade
   // Store wallet verification in database
   private async storeWalletVerification(address: string, message: string, signature: string): Promise<void> {
     try {
+      // First store the wallet verification
       const { error } = await supabase
         .from('wallet_verifications')
         .insert({
           wallet_address: address,
           message: message,
-          signature: signature
+          signature: signature,
+          user_id: null // Will be updated later when user logs in
         });
 
       if (error) {
@@ -245,17 +247,21 @@ This signature proves you own this wallet and grants access to Over Hippo Arkade
         throw error;
       }
 
-      // Update user profile with verified wallet
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({
-          verified_wallet_address: address,
-          wallet_verified_at: new Date().toISOString()
-        })
-        .eq('user_id', (await supabase.auth.getUser()).data.user?.id);
+      // Try to update user profile if user is authenticated
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .update({
+            verified_wallet_address: address,
+            wallet_verified_at: new Date().toISOString()
+          })
+          .eq('user_id', user.id);
 
-      if (profileError) {
-        console.error('Failed to update profile:', profileError);
+        if (profileError) {
+          console.error('Failed to update profile:', profileError);
+          // Don't throw error here as wallet verification succeeded
+        }
       }
 
     } catch (error) {
