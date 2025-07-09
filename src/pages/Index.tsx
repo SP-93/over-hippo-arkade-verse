@@ -534,14 +534,16 @@ const Index = () => {
                     onPurchaseChips={handleOverPurchaseChips}
                     onWithdrawTokens={handleOverWithdraw}
                   />
-                  <WalletConnection 
-                    onConnect={handleWalletConnect} 
-                    onDisconnect={handleWalletDisconnect}
-                    isConnected={isWalletConnected}
-                    walletType={walletType}
-                    walletAddress={walletAddress}
-                    isVerified={isWalletVerified}
-                  />
+                  {user && (
+                    <WalletConnection 
+                      onConnect={handleWalletConnect} 
+                      onDisconnect={handleWalletDisconnect}
+                      isConnected={isWalletConnected}
+                      walletType={walletType}
+                      walletAddress={walletAddress}
+                      isVerified={isWalletVerified}
+                    />
+                  )}
                   {user && (
                     <Button
                       variant="ghost"

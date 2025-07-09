@@ -30,11 +30,10 @@ export const useSecurityHandler = ({
   const finalSessionTimeout = sessionTimeoutMs ?? browserSettings.sessionTimeoutMs;
   const finalDebounceMs = debounceMs ?? browserSettings.debounceMs;
 
-  // Log browser compatibility on mount
+  // Log browser compatibility on mount (without triggering wallet detection)
   useEffect(() => {
     console.log('🌐 Browser capabilities:', capabilities);
-    console.log('🔧 Optimized security settings:', browserSettings);
-    console.log('🔍 Detected wallets:', detectWalletExtensions());
+    console.log('⚙️ Browser-optimized settings for', capabilities.browserType, ':', browserSettings);
     
     if (needsFallbackCleanup()) {
       console.warn('⚠️ Browser needs fallback cleanup methods');
