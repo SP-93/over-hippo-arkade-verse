@@ -90,20 +90,10 @@ const Index = () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session?.user) {
         setUser(session.user);
-        
-        // Check user profile for wallet info
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('verified_wallet_address')
-          .eq('user_id', session.user.id)
-          .single();
-          
-        if (profile?.verified_wallet_address) {
-          setWalletAddress(profile.verified_wallet_address);
-          setIsWalletConnected(true);
-          setIsWalletVerified(true);
-          setWalletType('Verified');
-          setCurrentView('dashboard');
+        // Keep current view if user is already authenticated
+        // Only set to 'home' if we're on 'auth' view
+        if (currentView === 'auth') {
+          setCurrentView('home');
         }
       }
     };
@@ -115,22 +105,11 @@ const Index = () => {
       async (event, session) => {
         if (session?.user) {
           setUser(session.user);
-          // Check for wallet connection after auth
-          setTimeout(async () => {
-            const { data: profile } = await supabase
-              .from('profiles')
-              .select('verified_wallet_address')
-              .eq('user_id', session.user.id)
-              .single();
-              
-            if (profile?.verified_wallet_address) {
-              setWalletAddress(profile.verified_wallet_address);
-              setIsWalletConnected(true);
-              setIsWalletVerified(true);
-              setWalletType('Verified');
-              setCurrentView('dashboard');
-            }
-          }, 0);
+          // Keep current view if user is already authenticated
+          // Only set to 'home' if we're on 'auth' view
+          if (currentView === 'auth') {
+            setCurrentView('home');
+          }
         } else {
           setUser(null);
           handleAuthDisconnect();
@@ -144,9 +123,8 @@ const Index = () => {
   // Authentication functions
   const handleAuthSuccess = () => {
     // User will be set via onAuthStateChange
-    // If they already have a wallet connected, it will be loaded
-    // Otherwise, show wallet connection
-    setCurrentView('dashboard');
+    // Show home page where user can choose to connect wallet
+    setCurrentView('home');
   };
 
   const handleAuthDisconnect = () => {
@@ -237,12 +215,13 @@ const Index = () => {
       setWalletAddress(walletData.address);
       setWalletType(walletData.type);
       setIsWalletVerified(walletData.verified || false);
+      
+      // Only restore view if user is authenticated and wallet is connected
+      if (savedView && user && walletData.isConnected) {
+        setCurrentView(savedView as 'home' | 'dashboard' | 'games' | 'admin');
+      }
     }
-    
-    if (savedView && savedWallet) {
-      setCurrentView(savedView as 'home' | 'dashboard' | 'games' | 'admin');
-    }
-  }, []);
+  }, [user]); // Add user as dependency
 
   // Save wallet state to localStorage whenever it changes (backup)
   useEffect(() => {
