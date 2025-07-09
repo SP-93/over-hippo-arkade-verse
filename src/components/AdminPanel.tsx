@@ -5,7 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Shield, Settings, Wallet, Users, TrendingUp, Download, DollarSign, Trophy, Database, AlertTriangle, RefreshCw } from "lucide-react";
+import { Shield, Settings, Wallet, Users, TrendingUp, Download, DollarSign, Trophy, Database, AlertTriangle, RefreshCw, Search } from "lucide-react";
+import { BlockchainBalanceChecker } from "./BlockchainBalanceChecker";
 import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { secureAdminService, AdminStats } from "@/services/secure-admin";
@@ -170,10 +171,11 @@ export const AdminPanel = ({ walletAddress, isVisible }: AdminPanelProps) => {
 
       {/* Admin Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-7">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="users">Users</TabsTrigger>
           <TabsTrigger value="transactions">Transactions</TabsTrigger>
+          <TabsTrigger value="blockchain">Blockchain</TabsTrigger>
           <TabsTrigger value="tournaments">Tournaments</TabsTrigger>
           <TabsTrigger value="financial">Financial</TabsTrigger>
           <TabsTrigger value="settings">Settings</TabsTrigger>
@@ -359,6 +361,20 @@ export const AdminPanel = ({ walletAddress, isVisible }: AdminPanelProps) => {
                 </Card>
               ))}
             </div>
+          </Card>
+        </TabsContent>
+
+        {/* Blockchain Tab */}
+        <TabsContent value="blockchain" className="space-y-4">
+          <Card className="p-6">
+            <h3 className="text-lg font-semibold mb-4 flex items-center">
+              <Search className="h-5 w-5 mr-2" />
+              Blockchain Explorer
+            </h3>
+            <p className="text-muted-foreground mb-6">
+              Check real OVER balances and transaction history directly from Over Protocol blockchain
+            </p>
+            <BlockchainBalanceChecker defaultAddress={adminWallet} />
           </Card>
         </TabsContent>
 
