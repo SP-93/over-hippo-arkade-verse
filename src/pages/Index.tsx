@@ -226,24 +226,35 @@ const Index = () => {
     loadPlayerBalance();
   }, [walletAddress]);
 
-  // Load wallet state from localStorage on component mount (backup only)
+  // Load wallet state from localStorage on component mount
   useEffect(() => {
     const savedWallet = localStorage.getItem('wallet_connection');
-    const savedView = localStorage.getItem('current_view');
     
     if (savedWallet) {
-      const walletData = JSON.parse(savedWallet);
-      setIsWalletConnected(walletData.isConnected);
-      setWalletAddress(walletData.address);
-      setWalletType(walletData.type);
-      setIsWalletVerified(walletData.verified || false);
-      
-      // Only restore view if user is authenticated and wallet is connected
-      if (savedView && user && walletData.isConnected) {
-        setCurrentView(savedView as 'home' | 'dashboard' | 'games' | 'admin');
+      try {
+        const walletData = JSON.parse(savedWallet);
+        console.log('📱 Restoring wallet state from localStorage:', walletData);
+        
+        setIsWalletConnected(walletData.isConnected);
+        setWalletAddress(walletData.address);
+        setWalletType(walletData.type);
+        setIsWalletVerified(walletData.verified || false);
+      } catch (error) {
+        console.error('Failed to parse wallet data:', error);
+        localStorage.removeItem('wallet_connection');
       }
     }
-  }, [user]); // Add user as dependency
+  }, []); // Run only once on mount
+
+  // Restore view when both user and wallet are ready
+  useEffect(() => {
+    const savedView = localStorage.getItem('current_view');
+    
+    if (user && isWalletConnected && savedView) {
+      console.log('🔄 Restoring view after auth + wallet ready:', savedView);
+      setCurrentView(savedView as 'home' | 'dashboard' | 'games' | 'admin');
+    }
+  }, [user, isWalletConnected]); // Run when both user and wallet state are ready
 
   // Save wallet state to localStorage whenever it changes (backup)
   useEffect(() => {
