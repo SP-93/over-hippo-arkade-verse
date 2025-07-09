@@ -16,8 +16,10 @@ import { Badge } from "@/components/ui/badge";
 import { Gamepad, Wallet, Zap, Shield } from "lucide-react";
 import { toast } from "sonner";
 import heroLogo from "@/assets/hero-logo.jpg";
+import { useQuery } from "@tanstack/react-query";
+import { secureAdminService } from "@/services/secure-admin";
 
-const ADMIN_WALLET = "0x88d26e867b289AD2e63A0BE905f9BC803A64F37f";
+// Admin wallet now managed securely in backend
 
 const Index = () => {
   const [isWalletConnected, setIsWalletConnected] = useState(false);
@@ -31,6 +33,14 @@ const Index = () => {
   // Initialize chip manager and player stats
   const chipManager = useChipManager();
   const playerStats = usePlayerStats(walletAddress);
+
+  // Admin check via secure backend
+  const { data: adminStatus } = useQuery({
+    queryKey: ['admin-check', walletAddress],
+    queryFn: () => secureAdminService.checkAdminStatus(),
+    enabled: !!walletAddress
+  });
+  const isAdmin = adminStatus?.isAdmin || false;
 
   // Load wallet state from localStorage on component mount
   useEffect(() => {
@@ -69,19 +79,12 @@ const Index = () => {
     setWalletType(connectedWalletType);
     setIsWalletVerified(verified);
     
-    // Check if connected wallet is admin wallet
-    const isAdmin = address.toLowerCase() === ADMIN_WALLET.toLowerCase();
-    setCurrentView(isAdmin ? 'admin' : 'dashboard');
+    // Set initial view to dashboard, admin check will happen via query
+    setCurrentView('dashboard');
     
-    if (isAdmin) {
-      toast.success("Admin access granted!", { 
-        description: "Welcome to the admin panel" 
-      });
-    } else {
-      toast.success("Wallet connected successfully!", {
-        description: `Connected with ${connectedWalletType}`
-      });
-    }
+    toast.success("Wallet connected successfully!", {
+      description: `Connected with ${connectedWalletType}`
+    });
   };
 
   const handleWalletDisconnect = () => {
@@ -175,7 +178,7 @@ const Index = () => {
       case 'games':
         return <GameGrid playerChips={chipManager.playerChips} onPlayGame={handlePlayGame} />;
       case 'admin':
-        return <AdminPanel walletAddress={walletAddress} isVisible={walletAddress === ADMIN_WALLET} />;
+        return <AdminPanel walletAddress={walletAddress} isVisible={isAdmin} />;
       default:
         return (
           <div className="text-center space-y-8 animate-zoom-in">
@@ -273,7 +276,7 @@ const Index = () => {
                   >
                     Games
                   </Button>
-                  {walletAddress === ADMIN_WALLET && (
+                  {isAdmin && (
                     <Button
                       variant={currentView === 'admin' ? 'destructive' : 'outline'}
                       onClick={() => setCurrentView('admin')}

@@ -7,23 +7,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Shield, Settings, Wallet, Users, TrendingUp, Download, DollarSign, Trophy, Database, AlertTriangle, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-
-const ADMIN_WALLET = "0x88d26e867b289AD2e63A0BE905f9BC803A64F37f";
+import { secureAdminService, AdminStats } from "@/services/secure-admin";
 
 interface AdminPanelProps {
   walletAddress: string;
   isVisible: boolean;
 }
 
-interface PlatformStats {
-  totalUsers: number;
-  totalRevenue: number;
-  totalTransactions: number;
-  activeTournaments: number;
-  totalChipsInCirculation: number;
-}
+// Using AdminStats from secure service
 
 interface UserData {
   id: string;
@@ -52,107 +44,55 @@ interface TransactionData {
 export const AdminPanel = ({ walletAddress, isVisible }: AdminPanelProps) => {
   const [activeTab, setActiveTab] = useState("overview");
   const [withdrawAmount, setWithdrawAmount] = useState("");
+  const [adminWallet, setAdminWallet] = useState("");
   const queryClient = useQueryClient();
+
+  // Check admin status and get admin wallet
+  const { data: adminStatus, isLoading: adminLoading } = useQuery({
+    queryKey: ['admin-status'],
+    queryFn: () => secureAdminService.checkAdminStatus(),
+    enabled: isVisible
+  });
+
+  // Update admin wallet when status is loaded
+  useEffect(() => {
+    if (adminStatus?.wallet) {
+      setAdminWallet(adminStatus.wallet);
+    }
+  }, [adminStatus]);
 
   // Fetch platform statistics
   const { data: stats, isLoading: statsLoading } = useQuery({
     queryKey: ['admin-stats'],
-    queryFn: async (): Promise<PlatformStats> => {
-      const [usersResult, transactionsResult, tournamentsResult] = await Promise.all([
-        supabase.from('profiles').select('*', { count: 'exact' }),
-        supabase.from('chip_transactions').select('chip_amount, over_amount'),
-        supabase.from('tournaments').select('*', { count: 'exact' }).eq('status', 'active')
-      ]);
-
-      const totalUsers = usersResult.count || 0;
-      const totalRevenue = transactionsResult.data?.reduce((sum, t) => sum + (t.over_amount || 0), 0) || 0;
-      const totalTransactions = transactionsResult.data?.length || 0;
-      const activeTournaments = tournamentsResult.count || 0;
-      
-      const chipsResult = await supabase.from('profiles').select('total_chips');
-      const totalChipsInCirculation = chipsResult.data?.reduce((sum, p) => sum + (p.total_chips || 0), 0) || 0;
-
-      return {
-        totalUsers,
-        totalRevenue,
-        totalTransactions,
-        activeTournaments,
-        totalChipsInCirculation
-      };
-    },
-    enabled: isVisible
+    queryFn: () => secureAdminService.getPlatformStats(),
+    enabled: isVisible && adminStatus?.isAdmin
   });
 
   // Fetch users
   const { data: users, isLoading: usersLoading } = useQuery({
     queryKey: ['admin-users'],
-    queryFn: async (): Promise<UserData[]> => {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      return data || [];
-    },
-    enabled: isVisible && activeTab === 'users'
+    queryFn: () => secureAdminService.getUsers(),
+    enabled: isVisible && activeTab === 'users' && adminStatus?.isAdmin
   });
 
   // Fetch transactions
   const { data: transactions, isLoading: transactionsLoading } = useQuery({
     queryKey: ['admin-transactions'],
-    queryFn: async (): Promise<TransactionData[]> => {
-      const { data, error } = await supabase
-        .from('chip_transactions')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(100);
-      
-      if (error) throw error;
-      
-      // Fetch user profiles for each transaction
-      const transactionsWithProfiles = await Promise.all(
-        (data || []).map(async (tx) => {
-          const { data: profile } = await supabase
-            .from('profiles')
-            .select('display_name, wallet_address')
-            .eq('user_id', tx.user_id)
-            .single();
-          
-          return {
-            ...tx,
-            profiles: profile || { display_name: 'Unknown', wallet_address: 'Unknown' }
-          };
-        })
-      );
-      
-      return transactionsWithProfiles;
-    },
-    enabled: isVisible && activeTab === 'transactions'
+    queryFn: () => secureAdminService.getAllTransactions(),
+    enabled: isVisible && activeTab === 'transactions' && adminStatus?.isAdmin
   });
 
   // Withdraw to admin wallet mutation
   const withdrawMutation = useMutation({
-    mutationFn: async (amount: number) => {
-      // This would normally call an edge function to handle withdrawal
-      // For now, we'll just record the transaction
-      const { error } = await supabase
-        .from('chip_transactions')
-        .insert({
-          user_id: (await supabase.auth.getUser()).data.user?.id,
-          transaction_type: 'admin_withdrawal',
-          chip_amount: 0,
-          over_amount: amount,
-          status: 'completed'
-        });
-      
-      if (error) throw error;
-      return amount;
-    },
-    onSuccess: (amount) => {
-      toast.success(`Successfully withdrew ${amount} OVER to admin wallet`);
-      queryClient.invalidateQueries({ queryKey: ['admin-stats'] });
-      setWithdrawAmount("");
+    mutationFn: (amount: number) => secureAdminService.withdrawFunds(amount),
+    onSuccess: (result) => {
+      if (result.success) {
+        toast.success(`Successfully withdrew funds. TX: ${result.txHash}`);
+        queryClient.invalidateQueries({ queryKey: ['admin-stats'] });
+        setWithdrawAmount("");
+      } else {
+        toast.error("Withdrawal failed");
+      }
     },
     onError: (error) => {
       toast.error(`Withdrawal failed: ${error.message}`);
@@ -161,22 +101,16 @@ export const AdminPanel = ({ walletAddress, isVisible }: AdminPanelProps) => {
 
   // Update user balance mutation
   const updateUserMutation = useMutation({
-    mutationFn: async ({ userId, chips, over }: { userId: string, chips?: number, over?: number }) => {
-      const updates: any = {};
-      if (chips !== undefined) updates.total_chips = chips;
-      if (over !== undefined) updates.over_balance = over;
-      
-      const { error } = await supabase
-        .from('profiles')
-        .update(updates)
-        .eq('user_id', userId);
-      
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      toast.success("User balance updated successfully");
-      queryClient.invalidateQueries({ queryKey: ['admin-users'] });
-      queryClient.invalidateQueries({ queryKey: ['admin-stats'] });
+    mutationFn: ({ userId, chips, over }: { userId: string, chips?: number, over?: number }) => 
+      secureAdminService.updateUserBalance(userId, chips, over),
+    onSuccess: (success) => {
+      if (success) {
+        toast.success("User balance updated successfully");
+        queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+        queryClient.invalidateQueries({ queryKey: ['admin-stats'] });
+      } else {
+        toast.error("Update failed");
+      }
     },
     onError: (error) => {
       toast.error(`Update failed: ${error.message}`);
@@ -184,6 +118,36 @@ export const AdminPanel = ({ walletAddress, isVisible }: AdminPanelProps) => {
   });
 
   if (!isVisible) return null;
+
+  // Show loading while checking admin status
+  if (adminLoading) {
+    return (
+      <Card className="p-6 bg-gradient-card border-primary">
+        <div className="flex items-center space-x-3">
+          <Shield className="h-8 w-8 text-primary animate-pulse" />
+          <div>
+            <h2 className="text-xl font-bold">Verifying Admin Access...</h2>
+            <p className="text-sm text-muted-foreground">Checking credentials</p>
+          </div>
+        </div>
+      </Card>
+    );
+  }
+
+  // Show access denied if not admin
+  if (!adminStatus?.isAdmin) {
+    return (
+      <Card className="p-6 bg-gradient-card border-destructive">
+        <div className="flex items-center space-x-3">
+          <AlertTriangle className="h-8 w-8 text-destructive" />
+          <div>
+            <h2 className="text-xl font-bold text-destructive">Access Denied</h2>
+            <p className="text-sm text-muted-foreground">Admin privileges required</p>
+          </div>
+        </div>
+      </Card>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -195,7 +159,7 @@ export const AdminPanel = ({ walletAddress, isVisible }: AdminPanelProps) => {
             <div>
               <h2 className="text-2xl font-bold text-destructive">Admin Panel</h2>
               <p className="text-sm text-muted-foreground">Platform Management Interface</p>
-              <p className="text-xs text-muted-foreground">Admin Wallet: {ADMIN_WALLET}</p>
+              <p className="text-xs text-muted-foreground">Admin Wallet: {adminWallet}</p>
             </div>
           </div>
           <Badge variant="destructive" className="animate-pulse">
@@ -385,9 +349,9 @@ export const AdminPanel = ({ walletAddress, isVisible }: AdminPanelProps) => {
                       </p>
                     </div>
                     <div className="text-right">
-                      <p className="text-sm">{tx.chip_amount} Chips</p>
-                      <p className="text-sm text-neon-green">{tx.over_amount || 0} OVER</p>
-                      <Badge variant={tx.status === 'completed' ? 'default' : 'secondary'} className="text-xs">
+                      <p className="text-sm">{tx.amount_chips || 0} Chips</p>
+                      <p className="text-sm text-neon-green">{tx.amount_over || 0} OVER</p>
+                      <Badge variant={tx.status === 'confirmed' ? 'default' : 'secondary'} className="text-xs">
                         {tx.status}
                       </Badge>
                     </div>
@@ -447,7 +411,7 @@ export const AdminPanel = ({ walletAddress, isVisible }: AdminPanelProps) => {
                   <div className="flex items-center space-x-2">
                     <AlertTriangle className="h-4 w-4 text-destructive" />
                     <p className="text-sm text-muted-foreground">
-                      Funds will be sent to: {ADMIN_WALLET}
+                      Funds will be sent to: {adminWallet}
                     </p>
                   </div>
                   <Button
@@ -481,7 +445,7 @@ export const AdminPanel = ({ walletAddress, isVisible }: AdminPanelProps) => {
               <div className="p-4 bg-muted/20 rounded-lg">
                 <h4 className="font-medium mb-2">Admin Wallet Configuration</h4>
                 <p className="text-sm text-muted-foreground mb-2">Current admin wallet:</p>
-                <code className="text-xs bg-background p-2 rounded block">{ADMIN_WALLET}</code>
+                <code className="text-xs bg-background p-2 rounded block">{adminWallet}</code>
               </div>
               
               <div className="p-4 bg-muted/20 rounded-lg">

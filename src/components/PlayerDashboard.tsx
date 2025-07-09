@@ -5,6 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Coins, Timer, Zap, ShoppingCart } from "lucide-react";
 import { toast } from "sonner";
+import { securePlayerService } from "@/services/secure-player";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 interface PlayerDashboardProps {
   playerAddress?: string;
@@ -12,23 +14,26 @@ interface PlayerDashboardProps {
 }
 
 export const PlayerDashboard = ({ playerAddress, playerChips }: PlayerDashboardProps) => {
-  const [chips, setChips] = useState(playerChips || 5);
-  const [points, setPoints] = useState(1250);
   const [timeUntilReset, setTimeUntilReset] = useState(18 * 3600 + 45 * 60); // 18h 45m in seconds
+  const queryClient = useQueryClient();
 
-  // Update chips when prop changes
-  useEffect(() => {
-    if (playerChips !== undefined) {
-      setChips(playerChips);
-    }
-  }, [playerChips]);
+  // Fetch real player balance
+  const { data: balance, isLoading } = useQuery({
+    queryKey: ['player-balance'],
+    queryFn: () => securePlayerService.getPlayerBalance(),
+    refetchInterval: 30000 // Refresh every 30 seconds
+  });
+
+  const chips = balance?.gameChips || playerChips || 5;
+  const overBalance = balance?.overTokens || 0;
 
   useEffect(() => {
     const timer = setInterval(() => {
       setTimeUntilReset(prev => {
         if (prev <= 0) {
-          setChips(5); // Reset chips
+          // Chips will be reset via backend query refresh
           toast.success("Your chips have been refilled!");
+          queryClient.invalidateQueries({ queryKey: ['player-balance'] });
           return 24 * 3600; // Reset to 24 hours
         }
         return prev - 1;
@@ -36,7 +41,7 @@ export const PlayerDashboard = ({ playerAddress, playerChips }: PlayerDashboardP
     }, 1000);
 
     return () => clearInterval(timer);
-  }, []);
+  }, [queryClient]);
 
   const formatTime = (seconds: number) => {
     const hours = Math.floor(seconds / 3600);
@@ -44,6 +49,23 @@ export const PlayerDashboard = ({ playerAddress, playerChips }: PlayerDashboardP
     const secs = seconds % 60;
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
+
+  // Purchase chips mutation
+  const purchaseMutation = useMutation({
+    mutationFn: ({ chipAmount, overCost }: { chipAmount: number; overCost: number }) =>
+      securePlayerService.purchaseChips(chipAmount, overCost),
+    onSuccess: (result) => {
+      if (result) {
+        toast.success(`Successfully purchased ${result.chipAmount} chips! TX: ${result.txHash}`);
+        queryClient.invalidateQueries({ queryKey: ['player-balance'] });
+      } else {
+        toast.error("Purchase failed");
+      }
+    },
+    onError: (error) => {
+      toast.error(`Purchase failed: ${error.message}`);
+    }
+  });
 
   const purchaseChips = (packageType: 'small' | 'medium' | 'large') => {
     const packages = {
@@ -53,13 +75,15 @@ export const PlayerDashboard = ({ playerAddress, playerChips }: PlayerDashboardP
     };
 
     const selected = packages[packageType];
-    toast.info(`Purchasing ${selected.chips} chips for ${selected.cost} Over Coins...`);
     
-    // Simulate blockchain transaction
-    setTimeout(() => {
-      setChips(prev => prev + selected.chips);
-      toast.success(`Successfully purchased ${selected.chips} chips!`);
-    }, 2000);
+    // Check sufficient OVER balance
+    if (overBalance < selected.cost) {
+      toast.error(`Insufficient OVER balance. Need ${selected.cost} OVER.`);
+      return;
+    }
+    
+    toast.info(`Purchasing ${selected.chips} chips for ${selected.cost} OVER...`);
+    purchaseMutation.mutate({ chipAmount: selected.chips, overCost: selected.cost });
   };
 
   return (
@@ -80,8 +104,8 @@ export const PlayerDashboard = ({ playerAddress, playerChips }: PlayerDashboardP
           <div className="flex items-center gap-3">
             <Zap className="h-8 w-8 text-neon-green animate-neon-pulse" />
             <div>
-              <p className="text-sm text-muted-foreground">Total Points</p>
-              <p className="text-3xl font-black text-neon-green">{points.toLocaleString()}</p>
+              <p className="text-sm text-muted-foreground">OVER Balance</p>
+              <p className="text-3xl font-black text-neon-green">{overBalance.toFixed(3)}</p>
             </div>
           </div>
         </Card>
@@ -127,9 +151,10 @@ export const PlayerDashboard = ({ playerAddress, playerChips }: PlayerDashboardP
             <Button 
               variant="arcade"
               onClick={() => purchaseChips('small')}
+              disabled={purchaseMutation.isPending || overBalance < 5}
               className="w-full"
             >
-              Purchase
+              {purchaseMutation.isPending ? 'Processing...' : 'Purchase'}
             </Button>
           </div>
 
@@ -140,9 +165,10 @@ export const PlayerDashboard = ({ playerAddress, playerChips }: PlayerDashboardP
             <Button 
               variant="secondary"
               onClick={() => purchaseChips('medium')}
+              disabled={purchaseMutation.isPending || overBalance < 10}
               className="w-full"
             >
-              Purchase
+              {purchaseMutation.isPending ? 'Processing...' : 'Purchase'}
             </Button>
           </div>
 
@@ -156,9 +182,10 @@ export const PlayerDashboard = ({ playerAddress, playerChips }: PlayerDashboardP
             <Button 
               variant="neon"
               onClick={() => purchaseChips('large')}
+              disabled={purchaseMutation.isPending || overBalance < 17}
               className="w-full"
             >
-              Purchase
+              {purchaseMutation.isPending ? 'Processing...' : 'Purchase'}
             </Button>
           </div>
         </div>

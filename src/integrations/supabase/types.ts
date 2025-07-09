@@ -14,6 +14,81 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_config: {
+        Row: {
+          admin_role: string
+          admin_wallet_address: string
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          permissions: Json | null
+        }
+        Insert: {
+          admin_role?: string
+          admin_wallet_address: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          permissions?: Json | null
+        }
+        Update: {
+          admin_role?: string
+          admin_wallet_address?: string
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          permissions?: Json | null
+        }
+        Relationships: []
+      }
+      blockchain_transactions: {
+        Row: {
+          amount_chips: number | null
+          amount_over: number | null
+          block_number: number | null
+          confirmed_at: string | null
+          created_at: string | null
+          game_type: string | null
+          gas_price: number | null
+          gas_used: number | null
+          id: string
+          status: string | null
+          transaction_hash: string
+          transaction_type: string
+          wallet_address: string
+        }
+        Insert: {
+          amount_chips?: number | null
+          amount_over?: number | null
+          block_number?: number | null
+          confirmed_at?: string | null
+          created_at?: string | null
+          game_type?: string | null
+          gas_price?: number | null
+          gas_used?: number | null
+          id?: string
+          status?: string | null
+          transaction_hash: string
+          transaction_type: string
+          wallet_address: string
+        }
+        Update: {
+          amount_chips?: number | null
+          amount_over?: number | null
+          block_number?: number | null
+          confirmed_at?: string | null
+          created_at?: string | null
+          game_type?: string | null
+          gas_price?: number | null
+          gas_used?: number | null
+          id?: string
+          status?: string | null
+          transaction_hash?: string
+          transaction_type?: string
+          wallet_address?: string
+        }
+        Relationships: []
+      }
       chip_transactions: {
         Row: {
           chip_amount: number
@@ -80,6 +155,36 @@ export type Database = {
           score?: number
           time_played?: number | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      player_balances: {
+        Row: {
+          created_at: string | null
+          game_chips: number | null
+          id: string
+          last_updated: string | null
+          over_balance: number | null
+          total_earnings: number | null
+          wallet_address: string
+        }
+        Insert: {
+          created_at?: string | null
+          game_chips?: number | null
+          id?: string
+          last_updated?: string | null
+          over_balance?: number | null
+          total_earnings?: number | null
+          wallet_address: string
+        }
+        Update: {
+          created_at?: string | null
+          game_chips?: number | null
+          id?: string
+          last_updated?: string | null
+          over_balance?: number | null
+          total_earnings?: number | null
+          wallet_address?: string
         }
         Relationships: []
       }
@@ -240,6 +345,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      is_admin_wallet: {
+        Args: { wallet_address: string }
+        Returns: boolean
+      }
       verify_wallet_signature: {
         Args: {
           p_wallet_address: string
