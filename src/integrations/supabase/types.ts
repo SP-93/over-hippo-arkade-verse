@@ -345,6 +345,22 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      decrement_over: {
+        Args: { wallet_addr: string; amount: number }
+        Returns: number
+      }
+      increment_chips: {
+        Args: { wallet_addr: string; amount: number }
+        Returns: number
+      }
+      increment_earnings: {
+        Args: { wallet_addr: string; amount: number }
+        Returns: number
+      }
+      increment_over: {
+        Args: { wallet_addr: string; amount: number }
+        Returns: number
+      }
       is_admin_wallet: {
         Args: { wallet_address: string }
         Returns: boolean
