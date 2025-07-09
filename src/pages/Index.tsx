@@ -23,8 +23,9 @@ const Index = () => {
   const [isWalletConnected, setIsWalletConnected] = useState(false);
   const [walletAddress, setWalletAddress] = useState<string>("");
   const [walletType, setWalletType] = useState<string>("");
+  const [isWalletVerified, setIsWalletVerified] = useState(false);
   const [currentView, setCurrentView] = useState<'home' | 'dashboard' | 'games' | 'admin'>('home');
-  const [overBalance, setOverBalance] = useState(50.5); // Demo balance
+  const [overBalance, setOverBalance] = useState(0); // Real balance, no demo data
   const navigate = useNavigate();
 
   // Initialize chip manager and player stats
@@ -41,6 +42,7 @@ const Index = () => {
       setIsWalletConnected(walletData.isConnected);
       setWalletAddress(walletData.address);
       setWalletType(walletData.type);
+      setIsWalletVerified(walletData.verified || false);
     }
     
     if (savedView && savedWallet) {
@@ -54,23 +56,30 @@ const Index = () => {
       localStorage.setItem('wallet_connection', JSON.stringify({
         isConnected: isWalletConnected,
         address: walletAddress,
-        type: walletType
+        type: walletType,
+        verified: isWalletVerified
       }));
       localStorage.setItem('current_view', currentView);
     }
-  }, [isWalletConnected, walletAddress, walletType, currentView]);
+  }, [isWalletConnected, walletAddress, walletType, isWalletVerified, currentView]);
 
-  const handleWalletConnect = (connectedWalletType: string) => {
+  const handleWalletConnect = (connectedWalletType: string, address: string, verified: boolean) => {
     setIsWalletConnected(true);
-    // For testing, simulate admin wallet sometimes
-    const isAdmin = Math.random() > 0.5; // 50% chance to be admin for testing
-    setWalletAddress(isAdmin ? ADMIN_WALLET : "0x742d35Cc6622C4532C3124d52C3F4A2cBe4267D8");
+    setWalletAddress(address);
     setWalletType(connectedWalletType);
+    setIsWalletVerified(verified);
+    
+    // Check if connected wallet is admin wallet
+    const isAdmin = address.toLowerCase() === ADMIN_WALLET.toLowerCase();
     setCurrentView(isAdmin ? 'admin' : 'dashboard');
     
     if (isAdmin) {
       toast.success("Admin access granted!", { 
         description: "Welcome to the admin panel" 
+      });
+    } else {
+      toast.success("Wallet connected successfully!", {
+        description: `Connected with ${connectedWalletType}`
       });
     }
   };
@@ -79,6 +88,7 @@ const Index = () => {
     setIsWalletConnected(false);
     setWalletAddress("");
     setWalletType("");
+    setIsWalletVerified(false);
     setCurrentView('home');
     localStorage.removeItem('wallet_connection');
     localStorage.removeItem('current_view');
@@ -214,12 +224,14 @@ const Index = () => {
 
             {!isWalletConnected && (
               <div className="mt-12 backdrop-glass rounded-2xl p-6 md:p-8 border border-neon shadow-glow animate-pulse-border hover-lift">
-                <WalletConnection 
-                  onConnect={handleWalletConnect} 
-                  onDisconnect={handleWalletDisconnect}
-                  isConnected={isWalletConnected}
-                  walletType={walletType}
-                />
+                  <WalletConnection 
+                    onConnect={handleWalletConnect} 
+                    onDisconnect={handleWalletDisconnect}
+                    isConnected={isWalletConnected}
+                    walletType={walletType}
+                    walletAddress={walletAddress}
+                    isVerified={isWalletVerified}
+                  />
               </div>
             )}
           </div>
@@ -294,6 +306,8 @@ const Index = () => {
                     onDisconnect={handleWalletDisconnect}
                     isConnected={isWalletConnected}
                     walletType={walletType}
+                    walletAddress={walletAddress}
+                    isVerified={isWalletVerified}
                   />
                 </div>
               </div>

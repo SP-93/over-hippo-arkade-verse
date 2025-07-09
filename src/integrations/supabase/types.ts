@@ -93,7 +93,9 @@ export type Database = {
           total_chips: number | null
           updated_at: string
           user_id: string
+          verified_wallet_address: string | null
           wallet_address: string | null
+          wallet_verified_at: string | null
         }
         Insert: {
           avatar_url?: string | null
@@ -104,7 +106,9 @@ export type Database = {
           total_chips?: number | null
           updated_at?: string
           user_id: string
+          verified_wallet_address?: string | null
           wallet_address?: string | null
+          wallet_verified_at?: string | null
         }
         Update: {
           avatar_url?: string | null
@@ -115,7 +119,9 @@ export type Database = {
           total_chips?: number | null
           updated_at?: string
           user_id?: string
+          verified_wallet_address?: string | null
           wallet_address?: string | null
+          wallet_verified_at?: string | null
         }
         Relationships: []
       }
@@ -196,12 +202,52 @@ export type Database = {
         }
         Relationships: []
       }
+      wallet_verifications: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          message: string
+          signature: string
+          user_id: string | null
+          verified_at: string | null
+          wallet_address: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          message: string
+          signature: string
+          user_id?: string | null
+          verified_at?: string | null
+          wallet_address: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          message?: string
+          signature?: string
+          user_id?: string | null
+          verified_at?: string | null
+          wallet_address?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      verify_wallet_signature: {
+        Args: {
+          p_wallet_address: string
+          p_message: string
+          p_signature: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never

@@ -2,65 +2,113 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { QrCode, Wallet, LogOut } from "lucide-react";
+import { QrCode, Wallet, LogOut, CheckCircle, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
+import { web3AuthService, WalletConnectionResult } from "@/services/web3-auth";
 
 interface WalletConnectionProps {
-  onConnect: (walletType: string) => void;
+  onConnect: (walletType: string, address: string, verified: boolean) => void;
   onDisconnect?: () => void;
   isConnected: boolean;
   walletType?: string;
+  walletAddress?: string;
+  isVerified?: boolean;
 }
 
-export const WalletConnection = ({ onConnect, onDisconnect, isConnected, walletType }: WalletConnectionProps) => {
+export const WalletConnection = ({ 
+  onConnect, 
+  onDisconnect, 
+  isConnected, 
+  walletType, 
+  walletAddress, 
+  isVerified 
+}: WalletConnectionProps) => {
   const [showQR, setShowQR] = useState(false);
+  const [isConnecting, setIsConnecting] = useState(false);
 
   const connectMetaMask = async () => {
+    if (isConnecting) return;
+    
+    setIsConnecting(true);
     try {
-      if (typeof window.ethereum !== 'undefined') {
-        await window.ethereum.request({ method: 'eth_requestAccounts' });
-        onConnect('MetaMask');
-        toast.success("MetaMask wallet connected!");
+      toast.loading("Connecting to MetaMask...");
+      const result: WalletConnectionResult = await web3AuthService.connectMetaMask();
+      
+      if (result.verified) {
+        onConnect('MetaMask', result.address, true);
+        toast.success("MetaMask wallet connected and verified!");
       } else {
-        toast.error("MetaMask not found. Please install MetaMask extension.");
+        toast.error("Wallet signature verification failed");
       }
-    } catch (error) {
-      toast.error("Failed to connect to MetaMask");
+    } catch (error: any) {
+      console.error('MetaMask connection error:', error);
+      if (error.message.includes('not installed')) {
+        toast.error("MetaMask not found. Please install MetaMask extension.");
+      } else if (error.message.includes('rejected')) {
+        toast.error("Connection rejected by user");
+      } else {
+        toast.error("Failed to connect to MetaMask");
+      }
+    } finally {
+      setIsConnecting(false);
     }
   };
 
   const connectOKX = async () => {
+    if (isConnecting) return;
+    
+    setIsConnecting(true);
     try {
-      if (typeof window.okxwallet !== 'undefined') {
-        await window.okxwallet.request({ method: 'eth_requestAccounts' });
-        onConnect('OKX Web3');
-        toast.success("OKX Web3 wallet connected!");
+      toast.loading("Connecting to OKX Wallet...");
+      const result: WalletConnectionResult = await web3AuthService.connectOKX();
+      
+      if (result.verified) {
+        onConnect('OKX Web3', result.address, true);
+        toast.success("OKX wallet connected and verified!");
       } else {
-        toast.error("OKX Web3 not found. Please install OKX Web3 extension.");
+        toast.error("Wallet signature verification failed");
       }
-    } catch (error) {
-      toast.error("Failed to connect to OKX Web3");
+    } catch (error: any) {
+      console.error('OKX connection error:', error);
+      if (error.message.includes('not installed')) {
+        toast.error("OKX Wallet not found. Please install OKX Wallet extension.");
+      } else if (error.message.includes('rejected')) {
+        toast.error("Connection rejected by user");
+      } else {
+        toast.error("Failed to connect to OKX Wallet");
+      }
+    } finally {
+      setIsConnecting(false);
     }
   };
 
   const connectWalletCode = () => {
     setShowQR(true);
-    // Simulate QR code connection
+    toast.info("WalletConnect integration coming soon...");
     setTimeout(() => {
-      onConnect('WalletConnect');
       setShowQR(false);
-      toast.success("Wallet connected via QR code!");
     }, 3000);
   };
 
   if (isConnected) {
     return (
-      <Card className="p-4 bg-gradient-card border-primary animate-glow">
+      <Card className={`p-4 ${isVerified ? 'bg-gradient-card border-neon-green' : 'bg-gradient-card border-arcade-gold'} animate-glow`}>
         <div className="flex items-center gap-3">
-          <Wallet className="h-5 w-5 text-neon-green" />
+          {isVerified ? (
+            <CheckCircle className="h-5 w-5 text-neon-green" />
+          ) : (
+            <AlertCircle className="h-5 w-5 text-arcade-gold" />
+          )}
           <div className="flex flex-col">
-            <span className="text-neon-green font-bold text-sm">Connected</span>
+            <span className={`font-bold text-sm ${isVerified ? 'text-neon-green' : 'text-arcade-gold'}`}>
+              {isVerified ? 'Verified' : 'Connected'}
+            </span>
             <span className="text-xs text-muted-foreground">{walletType}</span>
+            {walletAddress && (
+              <span className="text-xs text-muted-foreground font-mono">
+                {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}
+              </span>
+            )}
           </div>
           {onDisconnect && (
             <Button
@@ -90,19 +138,23 @@ export const WalletConnection = ({ onConnect, onDisconnect, isConnected, walletT
         <Button
           variant="neon"
           onClick={connectMetaMask}
+          disabled={isConnecting}
           className="h-16 flex-col gap-2"
         >
           <Wallet className="h-6 w-6" />
           MetaMask
+          <span className="text-xs opacity-80">Sign to verify</span>
         </Button>
         
         <Button
           variant="secondary"
           onClick={connectOKX}
+          disabled={isConnecting}
           className="h-16 flex-col gap-2"
         >
           <Wallet className="h-6 w-6" />
           OKX Web3
+          <span className="text-xs opacity-80">Sign to verify</span>
         </Button>
         
         <Dialog open={showQR} onOpenChange={setShowQR}>
@@ -110,10 +162,12 @@ export const WalletConnection = ({ onConnect, onDisconnect, isConnected, walletT
             <Button
               variant="outline"
               onClick={connectWalletCode}
+              disabled={isConnecting}
               className="h-16 flex-col gap-2"
             >
               <QrCode className="h-6 w-6" />
-              Wallet Code
+              WalletConnect
+              <span className="text-xs opacity-80">Coming soon</span>
             </Button>
           </DialogTrigger>
           <DialogContent className="bg-card border-primary">
@@ -126,7 +180,7 @@ export const WalletConnection = ({ onConnect, onDisconnect, isConnected, walletT
               </div>
             </div>
             <p className="text-center text-muted-foreground">
-              Scan this QR code with your mobile wallet app
+              WalletConnect integration coming soon. Use browser extensions for now.
             </p>
           </DialogContent>
         </Dialog>
