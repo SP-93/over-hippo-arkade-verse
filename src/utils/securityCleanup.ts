@@ -91,17 +91,17 @@ const disconnectWalletExtensions = async () => {
   try {
     console.log('🔌 Disconnecting wallet extensions...');
     
-    // MetaMask disconnect
+    // MetaMask disconnect - only clear without triggering dialogs
     if (window.ethereum && window.ethereum.isMetaMask) {
       try {
-        // Clear MetaMask permissions (if supported)
+        // Try to clear permissions silently (newer MetaMask versions)
         if (window.ethereum.request) {
           await window.ethereum.request({
             method: 'wallet_revokePermissions',
             params: [{ eth_accounts: {} }]
           }).catch(() => {
-            // Fallback: request accounts to trigger disconnect
-            window.ethereum.request({ method: 'eth_requestAccounts' }).catch(() => {});
+            // If revoke fails, just log - don't trigger account requests
+            console.log('🦊 MetaMask permission revoke not available');
           });
         }
         console.log('🦊 MetaMask disconnected');
@@ -110,13 +110,16 @@ const disconnectWalletExtensions = async () => {
       }
     }
     
-    // OKX Wallet disconnect
+    // OKX Wallet disconnect - only clear without triggering dialogs
     if (window.okxwallet) {
       try {
         await window.okxwallet.request({
           method: 'wallet_revokePermissions',
           params: [{ eth_accounts: {} }]
-        }).catch(() => {});
+        }).catch(() => {
+          // If revoke fails, just log - don't trigger account requests
+          console.log('🔶 OKX Wallet permission revoke not available');
+        });
         console.log('🔶 OKX Wallet disconnected');
       } catch (error) {
         console.log('OKX disconnect error (expected):', error);

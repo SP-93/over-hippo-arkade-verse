@@ -159,12 +159,8 @@ const Index = () => {
     localStorage.removeItem('wallet_connection');
     localStorage.removeItem('current_view');
     
-    // Disconnect wallet from browser extension
-    if (window.ethereum) {
-      window.ethereum.request({ method: 'eth_requestAccounts' }).catch(() => {
-        // Ignore errors during disconnect
-      });
-    }
+    // Clear wallet session data without triggering wallet dialogs
+    console.log('🔌 Clearing wallet session data...');
   };
 
   const handleSignOut = async () => {
