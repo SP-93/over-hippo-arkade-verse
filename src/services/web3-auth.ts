@@ -204,9 +204,12 @@ This signature proves you own this wallet and grants access to Over Hippo Arkade
   // Verify wallet signature and store in database
   async verifyWalletSignature(address: string, message: string, signature: string): Promise<boolean> {
     try {
+      // Normalize address to lowercase for consistent storage
+      const normalizedAddress = address.toLowerCase();
+      
       // Call Supabase function to verify signature
       const { data, error } = await supabase.rpc('verify_wallet_signature', {
-        p_wallet_address: address,
+        p_wallet_address: normalizedAddress,
         p_message: message,
         p_signature: signature
       });
@@ -218,7 +221,7 @@ This signature proves you own this wallet and grants access to Over Hippo Arkade
 
       if (data) {
         // Store verification in database
-        await this.storeWalletVerification(address, message, signature);
+        await this.storeWalletVerification(normalizedAddress, message, signature);
         return true;
       }
 
@@ -236,7 +239,7 @@ This signature proves you own this wallet and grants access to Over Hippo Arkade
       const { error } = await supabase
         .from('wallet_verifications')
         .insert({
-          wallet_address: address,
+          wallet_address: address, // Already normalized
           message: message,
           signature: signature,
           user_id: null // Will be updated later when user logs in
@@ -253,7 +256,7 @@ This signature proves you own this wallet and grants access to Over Hippo Arkade
         const { error: profileError } = await supabase
           .from('profiles')
           .update({
-            verified_wallet_address: address,
+            verified_wallet_address: address, // Already normalized
             wallet_verified_at: new Date().toISOString()
           })
           .eq('user_id', user.id);
