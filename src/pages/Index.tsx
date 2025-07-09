@@ -124,11 +124,18 @@ const Index = () => {
     }
   };
 
-  // Admin check via secure backend
-  const { data: adminStatus } = useQuery({
-    queryKey: ['admin-check', user?.id],
-    queryFn: () => secureAdminService.checkAdminStatus(),
-    enabled: !!user?.id
+  // Admin check via secure backend - check when both user and wallet are connected
+  const { data: adminStatus, isLoading: adminLoading } = useQuery({
+    queryKey: ['admin-check', user?.id, walletAddress],
+    queryFn: async () => {
+      console.log('Checking admin status for:', { userId: user?.id, walletAddress });
+      const result = await secureAdminService.checkAdminStatus();
+      console.log('Admin check result:', result);
+      return result;
+    },
+    enabled: !!user?.id && !!walletAddress && isWalletVerified,
+    retry: 1,
+    refetchOnWindowFocus: false
   });
   const isAdmin = adminStatus?.isAdmin || false;
 
@@ -415,6 +422,12 @@ const Index = () => {
                   >
                     Games
                   </Button>
+                  {/* Debug admin status */}
+                  {adminLoading && (
+                    <Badge variant="secondary" className="animate-pulse">
+                      Checking Admin...
+                    </Badge>
+                  )}
                   {isAdmin && (
                     <Button
                       variant={currentView === 'admin' ? 'destructive' : 'outline'}
@@ -424,6 +437,12 @@ const Index = () => {
                       <Shield className="h-4 w-4 mr-1" />
                       Admin
                     </Button>
+                  )}
+                  {/* Debug info - remove in production */}
+                  {process.env.NODE_ENV === 'development' && (
+                    <Badge variant="secondary" className="text-xs">
+                      Admin: {isAdmin ? 'YES' : 'NO'} | Wallet: {walletAddress ? 'Connected' : 'None'}
+                    </Badge>
                   )}
                 </div>
                 

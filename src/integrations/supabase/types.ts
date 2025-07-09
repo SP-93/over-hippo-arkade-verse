@@ -365,6 +365,10 @@ export type Database = {
         Args: { wallet_address: string }
         Returns: boolean
       }
+      log_admin_check: {
+        Args: { wallet_address: string }
+        Returns: boolean
+      }
       verify_wallet_signature: {
         Args: {
           p_wallet_address: string
