@@ -155,6 +155,18 @@ const Index = () => {
     try {
       console.log('🔐 Manual sign out initiated');
       
+      // Clean up all auth state
+      Object.keys(localStorage).forEach((key) => {
+        if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+          localStorage.removeItem(key);
+        }
+      });
+      Object.keys(sessionStorage || {}).forEach((key) => {
+        if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+          sessionStorage.removeItem(key);
+        }
+      });
+      
       // Sign out from Supabase
       const { error } = await supabase.auth.signOut({ scope: 'global' });
       if (error) console.warn('Supabase signOut warning:', error);

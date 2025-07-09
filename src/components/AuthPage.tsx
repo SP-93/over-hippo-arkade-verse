@@ -43,16 +43,6 @@ export const AuthPage = ({ onSuccess, onBack }: AuthPageProps) => {
 
     setIsLoading(true);
     try {
-      // Clean up existing state
-      cleanupAuthState();
-      
-      // Attempt global sign out first
-      try {
-        await supabase.auth.signOut({ scope: 'global' });
-      } catch (err) {
-        // Continue even if this fails
-      }
-
       toast.loading("Signing in...");
       
       const { data, error } = await supabase.auth.signInWithPassword({
@@ -85,16 +75,6 @@ export const AuthPage = ({ onSuccess, onBack }: AuthPageProps) => {
 
     setIsLoading(true);
     try {
-      // Clean up existing state
-      cleanupAuthState();
-      
-      // Attempt global sign out first
-      try {
-        await supabase.auth.signOut({ scope: 'global' });
-      } catch (err) {
-        // Continue even if this fails
-      }
-
       toast.loading("Creating account...");
       
       const redirectUrl = `${window.location.origin}/`;
