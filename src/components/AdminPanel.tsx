@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Shield, Settings, Wallet, Users, TrendingUp, Download, DollarSign, Trophy, Database, AlertTriangle, RefreshCw, Search } from "lucide-react";
 import { BlockchainBalanceChecker } from "./BlockchainBalanceChecker";
+import { WalletAdminPanel } from "./WalletAdminPanel";
 import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { secureAdminService, AdminStats } from "@/services/secure-admin";
@@ -171,9 +172,10 @@ export const AdminPanel = ({ walletAddress, isVisible }: AdminPanelProps) => {
 
       {/* Admin Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-7">
+        <TabsList className="grid w-full grid-cols-8">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="users">Users</TabsTrigger>
+          <TabsTrigger value="wallets">Wallets</TabsTrigger>
           <TabsTrigger value="transactions">Transactions</TabsTrigger>
           <TabsTrigger value="blockchain">Blockchain</TabsTrigger>
           <TabsTrigger value="tournaments">Tournaments</TabsTrigger>
@@ -315,6 +317,11 @@ export const AdminPanel = ({ walletAddress, isVisible }: AdminPanelProps) => {
               ))}
             </div>
           </Card>
+        </TabsContent>
+
+        {/* Wallets Tab */}
+        <TabsContent value="wallets" className="space-y-4">
+          <WalletAdminPanel isAdmin={adminStatus?.isAdmin || false} />
         </TabsContent>
 
         {/* Transactions Tab */}

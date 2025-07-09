@@ -42,6 +42,12 @@ This signature proves you own this wallet and grants access to Over Hippo Arkade
   // Connect MetaMask wallet
   async connectMetaMask(): Promise<WalletConnectionResult> {
     try {
+      // First check if user is authenticated
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('User must be logged in to connect wallet');
+      }
+
       if (typeof window.ethereum === 'undefined') {
         throw new Error('MetaMask not installed');
       }
@@ -56,6 +62,22 @@ This signature proves you own this wallet and grants access to Over Hippo Arkade
       }
 
       const address = accounts[0];
+      const normalizedAddress = address.toLowerCase();
+
+      // Check wallet exclusivity and ban status
+      const { data: canUse, error: checkError } = await supabase.rpc('check_wallet_exclusivity', {
+        p_wallet_address: normalizedAddress,
+        p_user_id: user.id
+      });
+
+      if (checkError) {
+        console.error('Wallet exclusivity check failed:', checkError);
+        throw new Error('Wallet verification failed');
+      }
+
+      if (!canUse) {
+        throw new Error('This wallet is banned or already used by another user');
+      }
 
       // Switch to Over Protocol network
       await this.switchToOverProtocol();
@@ -83,6 +105,12 @@ This signature proves you own this wallet and grants access to Over Hippo Arkade
   // Connect OKX Wallet
   async connectOKX(): Promise<WalletConnectionResult> {
     try {
+      // First check if user is authenticated
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('User must be logged in to connect wallet');
+      }
+
       if (typeof window.okxwallet === 'undefined') {
         throw new Error('OKX Wallet not installed');
       }
@@ -97,6 +125,22 @@ This signature proves you own this wallet and grants access to Over Hippo Arkade
       }
 
       const address = accounts[0];
+      const normalizedAddress = address.toLowerCase();
+
+      // Check wallet exclusivity and ban status
+      const { data: canUse, error: checkError } = await supabase.rpc('check_wallet_exclusivity', {
+        p_wallet_address: normalizedAddress,
+        p_user_id: user.id
+      });
+
+      if (checkError) {
+        console.error('Wallet exclusivity check failed:', checkError);
+        throw new Error('Wallet verification failed');
+      }
+
+      if (!canUse) {
+        throw new Error('This wallet is banned or already used by another user');
+      }
 
       // Switch to Over Protocol network
       await this.switchToOverProtocolOKX();
@@ -235,6 +279,12 @@ This signature proves you own this wallet and grants access to Over Hippo Arkade
   // Store wallet verification in database
   private async storeWalletVerification(address: string, message: string, signature: string): Promise<void> {
     try {
+      // Get current user (must be authenticated at this point)
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        throw new Error('User must be authenticated to store wallet verification');
+      }
+
       // Use upsert to prevent duplicate key errors
       const { error } = await supabase
         .from('wallet_verifications')
@@ -242,9 +292,10 @@ This signature proves you own this wallet and grants access to Over Hippo Arkade
           wallet_address: address, // Already normalized
           message: message,
           signature: signature,
-          user_id: null, // Will be updated later when user logs in
+          user_id: user.id, // Set user_id immediately
           verified_at: new Date().toISOString(),
-          is_active: true
+          is_active: true,
+          is_banned: false
         }, { 
           onConflict: 'wallet_address',
           ignoreDuplicates: false 
@@ -255,21 +306,18 @@ This signature proves you own this wallet and grants access to Over Hippo Arkade
         throw error;
       }
 
-      // Try to update user profile if user is authenticated
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { error: profileError } = await supabase
-          .from('profiles')
-          .update({
-            verified_wallet_address: address, // Already normalized
-            wallet_verified_at: new Date().toISOString()
-          })
-          .eq('user_id', user.id);
+      // Update user profile with verified wallet
+      const { error: profileError } = await supabase
+        .from('profiles')
+        .update({
+          verified_wallet_address: address, // Already normalized
+          wallet_verified_at: new Date().toISOString()
+        })
+        .eq('user_id', user.id);
 
-        if (profileError) {
-          console.error('Failed to update profile:', profileError);
-          // Don't throw error here as wallet verification succeeded
-        }
+      if (profileError) {
+        console.error('Failed to update profile:', profileError);
+        throw new Error('Failed to update user profile with wallet');
       }
 
     } catch (error) {

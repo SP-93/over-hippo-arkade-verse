@@ -309,9 +309,13 @@ export type Database = {
       }
       wallet_verifications: {
         Row: {
+          ban_reason: string | null
+          banned_at: string | null
+          banned_by_admin_id: string | null
           created_at: string | null
           id: string
           is_active: boolean | null
+          is_banned: boolean | null
           message: string
           signature: string
           user_id: string | null
@@ -319,9 +323,13 @@ export type Database = {
           wallet_address: string
         }
         Insert: {
+          ban_reason?: string | null
+          banned_at?: string | null
+          banned_by_admin_id?: string | null
           created_at?: string | null
           id?: string
           is_active?: boolean | null
+          is_banned?: boolean | null
           message: string
           signature: string
           user_id?: string | null
@@ -329,9 +337,13 @@ export type Database = {
           wallet_address: string
         }
         Update: {
+          ban_reason?: string | null
+          banned_at?: string | null
+          banned_by_admin_id?: string | null
           created_at?: string | null
           id?: string
           is_active?: boolean | null
+          is_banned?: boolean | null
           message?: string
           signature?: string
           user_id?: string | null
@@ -345,6 +357,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_wallet_exclusivity: {
+        Args: { p_wallet_address: string; p_user_id: string }
+        Returns: boolean
+      }
       decrement_over: {
         Args: { wallet_addr: string; amount: number }
         Returns: number
@@ -367,6 +383,10 @@ export type Database = {
       }
       log_admin_check: {
         Args: { wallet_address: string }
+        Returns: boolean
+      }
+      unban_wallet: {
+        Args: { p_wallet_address: string; p_admin_user_id: string }
         Returns: boolean
       }
       verify_wallet_signature: {

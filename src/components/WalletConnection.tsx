@@ -52,6 +52,10 @@ export const WalletConnection = ({
         toast.error("Connection rejected by user");
       } else if (error.message.includes('not installed')) {
         toast.error("MetaMask not found. Please install MetaMask extension.");
+      } else if (error.message.includes('logged in')) {
+        toast.error("Please sign in first before connecting your wallet");
+      } else if (error.message.includes('banned') || error.message.includes('already used')) {
+        toast.error("This wallet is banned or already used by another user");
       } else {
         toast.error("Failed to connect to MetaMask");
       }
@@ -80,6 +84,10 @@ export const WalletConnection = ({
         toast.error("OKX Wallet not found. Please install OKX Wallet extension.");
       } else if (error.message.includes('rejected')) {
         toast.error("Connection rejected by user");
+      } else if (error.message.includes('logged in')) {
+        toast.error("Please sign in first before connecting your wallet");
+      } else if (error.message.includes('banned') || error.message.includes('already used')) {
+        toast.error("This wallet is banned or already used by another user");
       } else {
         toast.error("Failed to connect to OKX Wallet");
       }
