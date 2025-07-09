@@ -227,7 +227,7 @@ const Index = () => {
   }, [walletAddress]);
 
   // Load wallet state from localStorage on component mount - do this synchronously
-  const [isWalletStateLoaded, setIsWalletStateLoaded] = useState(false);
+  const [isInitialized, setIsInitialized] = useState(false);
   
   useEffect(() => {
     const savedWallet = localStorage.getItem('wallet_connection');
@@ -237,6 +237,7 @@ const Index = () => {
         const walletData = JSON.parse(savedWallet);
         console.log('📱 Restoring wallet state from localStorage:', walletData);
         
+        // Set all wallet state synchronously 
         setIsWalletConnected(walletData.isConnected);
         setWalletAddress(walletData.address);
         setWalletType(walletData.type);
@@ -246,7 +247,9 @@ const Index = () => {
         localStorage.removeItem('wallet_connection');
       }
     }
-    setIsWalletStateLoaded(true);
+    
+    // Only mark as initialized after wallet state is set
+    setIsInitialized(true);
   }, []); // Run only once on mount
 
   // Restore view when both user and wallet are ready
@@ -454,7 +457,7 @@ const Index = () => {
                   </Button>
                 </div>
               </div>
-            ) : (!isWalletConnected && isWalletStateLoaded) ? (
+            ) : (!isWalletConnected && isInitialized) ? (
               <div className="mt-12 backdrop-glass rounded-2xl p-6 md:p-8 border border-neon shadow-glow animate-pulse-border hover-lift">
                 <WalletConnection 
                   onConnect={handleWalletConnect} 
