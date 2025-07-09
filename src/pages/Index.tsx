@@ -111,13 +111,24 @@ const Index = () => {
     setCurrentView('home');
     localStorage.removeItem('wallet_connection');
     localStorage.removeItem('current_view');
+    
+    // Disconnect wallet from browser extension
+    if (window.ethereum) {
+      window.ethereum.request({ method: 'eth_requestAccounts' }).catch(() => {
+        // Ignore errors during disconnect
+      });
+    }
   };
 
   const handleSignOut = async () => {
     try {
+      // First disconnect wallet
+      handleWalletDisconnect();
+      
+      // Then sign out from auth
       await supabase.auth.signOut({ scope: 'global' });
       handleAuthDisconnect();
-      toast.success("Signed out successfully");
+      toast.success("Signed out and wallet disconnected");
     } catch (error) {
       console.error('Sign out error:', error);
       toast.error("Failed to sign out");
@@ -128,14 +139,15 @@ const Index = () => {
   const { data: adminStatus, isLoading: adminLoading } = useQuery({
     queryKey: ['admin-check', user?.id, walletAddress],
     queryFn: async () => {
-      console.log('Checking admin status for:', { userId: user?.id, walletAddress });
+      console.log('🔍 Checking admin status for:', { userId: user?.id, walletAddress });
       const result = await secureAdminService.checkAdminStatus();
-      console.log('Admin check result:', result);
+      console.log('🔍 Admin check result:', result);
       return result;
     },
     enabled: !!user?.id && !!walletAddress && isWalletVerified,
-    retry: 1,
-    refetchOnWindowFocus: false
+    retry: 3,
+    refetchOnWindowFocus: true,
+    staleTime: 0 // Always refetch to ensure fresh data
   });
   const isAdmin = adminStatus?.isAdmin || false;
 
