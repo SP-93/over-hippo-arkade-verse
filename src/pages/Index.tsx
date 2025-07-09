@@ -11,6 +11,7 @@ import { AdminPanel } from "@/components/AdminPanel";
 import { AuthPage } from "@/components/AuthPage";
 import { useChipManager } from "@/hooks/useChipManager";
 import { usePlayerStats } from "@/hooks/usePlayerStats";
+import { useSecurityHandler } from "@/hooks/useSecurityHandler";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -20,6 +21,7 @@ import heroLogo from "@/assets/hero-logo.jpg";
 import { useQuery } from "@tanstack/react-query";
 import { secureAdminService } from "@/services/secure-admin";
 import { supabase } from "@/integrations/supabase/client";
+import { performSecurityCleanup, emergencyCleanup } from "@/utils/securityCleanup";
 
 // Admin wallet now managed securely in backend
 
@@ -36,6 +38,50 @@ const Index = () => {
   // Initialize chip manager and player stats
   const chipManager = useChipManager();
   const playerStats = usePlayerStats(walletAddress);
+
+  // Enhanced security cleanup handler
+  const handleSecurityCleanup = async () => {
+    console.log('🔒 Comprehensive security cleanup initiated');
+    
+    try {
+      // Perform comprehensive cleanup
+      await performSecurityCleanup();
+      
+      // Reset all local state
+      setUser(null);
+      setIsWalletConnected(false);
+      setWalletAddress("");
+      setWalletType("");
+      setIsWalletVerified(false);
+      setCurrentView('home');
+      setOverBalance(0);
+      
+      // Show security toast (if user is still on page)
+      if (document.visibilityState === 'visible') {
+        toast.success("Session secured - automatic logout completed", {
+          description: "Your account has been safely disconnected"
+        });
+      }
+      
+    } catch (error) {
+      console.error('Security cleanup error:', error);
+      // Still perform basic cleanup even if full cleanup fails
+      emergencyCleanup();
+      setUser(null);
+      setIsWalletConnected(false);
+      setWalletAddress("");
+      setWalletType("");
+      setIsWalletVerified(false);
+      setCurrentView('home');
+    }
+  };
+
+  // Initialize security handler with 15-minute timeout
+  const { triggerCleanup, updateActivity } = useSecurityHandler({
+    onSecurityCleanup: handleSecurityCleanup,
+    sessionTimeoutMs: 15 * 60 * 1000, // 15 minutes
+    debounceMs: 500 // 500ms debounce
+  });
 
   // Check authentication state
   useEffect(() => {
@@ -122,16 +168,26 @@ const Index = () => {
 
   const handleSignOut = async () => {
     try {
-      // First disconnect wallet
-      handleWalletDisconnect();
+      console.log('🔐 Manual sign out initiated');
       
-      // Then sign out from auth
-      await supabase.auth.signOut({ scope: 'global' });
-      handleAuthDisconnect();
-      toast.success("Signed out and wallet disconnected");
+      // Use the comprehensive security cleanup
+      await handleSecurityCleanup();
+      
+      toast.success("Signed out and wallet disconnected securely", {
+        description: "All session data has been cleared"
+      });
     } catch (error) {
       console.error('Sign out error:', error);
-      toast.error("Failed to sign out");
+      toast.error("Sign out completed with some errors");
+      
+      // Fallback cleanup
+      emergencyCleanup();
+      setUser(null);
+      setIsWalletConnected(false);
+      setWalletAddress("");
+      setWalletType("");
+      setIsWalletVerified(false);
+      setCurrentView('home');
     }
   };
 
