@@ -8,18 +8,26 @@ export const useChipManager = () => {
   const [firstChipConsumed, setFirstChipConsumed] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Load real chip balance from database
+  // Load chip balance (only after authentication)
   useEffect(() => {
     const loadChipBalance = async () => {
       setIsLoading(true);
       try {
-        const balance = await securePlayerService.getPlayerBalance();
-        if (balance) {
-          setPlayerChips(balance.gameChips);
+        // Check if user is authenticated first
+        const { supabase } = await import('@/integrations/supabase/client');
+        const { data: { session } } = await supabase.auth.getSession();
+        
+        if (session?.user) {
+          // Only try to load from backend if authenticated
+          const balance = await securePlayerService.getPlayerBalance();
+          if (balance) {
+            setPlayerChips(balance.gameChips);
+            setIsLoading(false);
+            return;
+          }
         }
-      } catch (error) {
-        console.error('Failed to load chip balance:', error);
-        // Fallback to localStorage
+        
+        // Fallback to localStorage (for non-authenticated users)
         const savedChips = localStorage.getItem('player_chips');
         const savedResetTime = localStorage.getItem('chip_reset_time');
         const chipConsumed = localStorage.getItem('first_chip_consumed') === 'true';
@@ -49,6 +57,10 @@ export const useChipManager = () => {
             setLastResetTime(savedResetTime);
           }
         }
+      } catch (error) {
+        console.error('Failed to load chip balance:', error);
+        // Set default values
+        setPlayerChips(5);
       } finally {
         setIsLoading(false);
       }

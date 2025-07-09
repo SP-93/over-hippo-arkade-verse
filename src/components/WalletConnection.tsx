@@ -31,10 +31,16 @@ export const WalletConnection = ({
     
     setIsConnecting(true);
     try {
+      // Check if MetaMask is available
+      if (typeof window.ethereum === 'undefined') {
+        toast.error("MetaMask not found. Please install MetaMask extension.");
+        return;
+      }
+      
       toast.loading("Connecting to MetaMask...");
       const result: WalletConnectionResult = await web3AuthService.connectMetaMask();
       
-      if (result.verified) {
+      if (result && result.verified) {
         onConnect('MetaMask', result.address, true);
         toast.success("MetaMask wallet connected and verified!");
       } else {
@@ -42,10 +48,10 @@ export const WalletConnection = ({
       }
     } catch (error: any) {
       console.error('MetaMask connection error:', error);
-      if (error.message.includes('not installed')) {
-        toast.error("MetaMask not found. Please install MetaMask extension.");
-      } else if (error.message.includes('rejected')) {
+      if (error.code === 4001 || error.message.includes('rejected')) {
         toast.error("Connection rejected by user");
+      } else if (error.message.includes('not installed')) {
+        toast.error("MetaMask not found. Please install MetaMask extension.");
       } else {
         toast.error("Failed to connect to MetaMask");
       }

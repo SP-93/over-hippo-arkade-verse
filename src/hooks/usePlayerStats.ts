@@ -34,45 +34,59 @@ export const usePlayerStats = (walletAddress: string) => {
 
   const [isLoading, setIsLoading] = useState(false);
 
-  // Load real player stats from database
+  // Load real player stats from database (only when authenticated)
   useEffect(() => {
     if (!walletAddress) return;
     
     const loadPlayerStats = async () => {
       setIsLoading(true);
       try {
-        // Get real balance
-        const balance = await securePlayerService.getPlayerBalance();
+        // Check if user is authenticated first
+        const { data: { session } } = await supabase.auth.getSession();
         
-        // Get game scores
-        const scores = await securePlayerService.getGameScores();
-        
-        if (balance) {
-          const gameStats = scores.reduce((acc, score) => {
-            acc.totalScore += score.score;
-            acc.gamesPlayed += 1;
-            
-            // Track high scores
-            if (score.score > acc.highScores[score.game_type as keyof typeof acc.highScores]) {
-              acc.highScores[score.game_type as keyof typeof acc.highScores] = score.score;
-            }
-            
-            return acc;
-          }, {
-            totalScore: 0,
-            gamesPlayed: 0,
-            highScores: { tetris: 0, snake: 0, pacman: 0 }
-          });
+        if (session?.user) {
+          // Only try to load from backend if authenticated
+          const balance = await securePlayerService.getPlayerBalance();
+          const scores = await securePlayerService.getGameScores();
+          
+          if (balance) {
+            const gameStats = scores.reduce((acc, score) => {
+              acc.totalScore += score.score;
+              acc.gamesPlayed += 1;
+              
+              // Track high scores
+              if (score.score > acc.highScores[score.game_type as keyof typeof acc.highScores]) {
+                acc.highScores[score.game_type as keyof typeof acc.highScores] = score.score;
+              }
+              
+              return acc;
+            }, {
+              totalScore: 0,
+              gamesPlayed: 0,
+              highScores: { tetris: 0, snake: 0, pacman: 0 }
+            });
 
-          setPlayerStats({
-            walletAddress,
-            totalScore: gameStats.totalScore,
-            gamesPlayed: gameStats.gamesPlayed,
-            highScores: gameStats.highScores,
-            achievements: [], // TODO: Implement achievements system
-            overTokens: balance.overTokens,
-            lastPlayed: scores[0]?.created_at || new Date().toISOString()
-          });
+            setPlayerStats({
+              walletAddress,
+              totalScore: gameStats.totalScore,
+              gamesPlayed: gameStats.gamesPlayed,
+              highScores: gameStats.highScores,
+              achievements: [], // TODO: Implement achievements system
+              overTokens: balance.overTokens,
+              lastPlayed: scores[0]?.created_at || new Date().toISOString()
+            });
+          }
+        } else {
+          // Not authenticated, load from localStorage
+          const savedStats = localStorage.getItem(`player_stats_${walletAddress}`);
+          if (savedStats) {
+            try {
+              const parsedStats = JSON.parse(savedStats);
+              setPlayerStats(parsedStats);
+            } catch (e) {
+              console.error("Failed to parse saved stats:", e);
+            }
+          }
         }
       } catch (error) {
         console.error("Failed to load player stats:", error);
