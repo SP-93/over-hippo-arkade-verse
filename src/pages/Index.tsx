@@ -229,35 +229,56 @@ const Index = () => {
     loadPlayerBalance();
   }, [walletAddress]);
 
-  // Load wallet state from localStorage on component mount - do this synchronously
+  // Load wallet state from localStorage and verify actual connection
   useEffect(() => {
-    const savedWallet = localStorage.getItem('wallet_connection');
-    const savedView = localStorage.getItem('current_view');
-    
-    if (savedWallet) {
-      try {
-        const walletData = JSON.parse(savedWallet);
-        console.log('📱 Restoring wallet state from localStorage:', walletData);
-        
-        // Set all wallet state synchronously 
-        setIsWalletConnected(walletData.isConnected);
-        setWalletAddress(walletData.address);
-        setWalletType(walletData.type);
-        setIsWalletVerified(walletData.verified || false);
-        
-        // If we have a saved view and wallet is connected, mark as restored
-        if (savedView && walletData.isConnected) {
-          setHasRestoredView(true);
+    const initializeWallet = async () => {
+      const savedWallet = localStorage.getItem('wallet_connection');
+      const savedView = localStorage.getItem('current_view');
+      
+      if (savedWallet) {
+        try {
+          const walletData = JSON.parse(savedWallet);
+          console.log('🔄 Loading wallet from localStorage:', walletData);
+          
+          // Check if wallet is actually still connected
+          if (walletData.isConnected && typeof window.ethereum !== 'undefined') {
+            try {
+              // Check if MetaMask is still connected without prompting user
+              const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+              const isStillConnected = accounts.length > 0 && accounts[0].toLowerCase() === walletData.address?.toLowerCase();
+              
+              if (isStillConnected) {
+                // Wallet is actually still connected
+                setIsWalletConnected(true);
+                setWalletAddress(walletData.address);
+                setWalletType(walletData.type);
+                setIsWalletVerified(walletData.verified || false);
+                
+                if (savedView) {
+                  setHasRestoredView(true);
+                }
+              } else {
+                // Wallet was disconnected, clear localStorage
+                console.log('🔌 Wallet was disconnected, clearing localStorage');
+                localStorage.removeItem('wallet_connection');
+                localStorage.removeItem('current_view');
+              }
+            } catch (error) {
+              console.error('Failed to verify wallet connection:', error);
+              localStorage.removeItem('wallet_connection');
+            }
+          }
+        } catch (error) {
+          console.error('Failed to parse wallet data:', error);
+          localStorage.removeItem('wallet_connection');
         }
-      } catch (error) {
-        console.error('Failed to parse wallet data:', error);
-        localStorage.removeItem('wallet_connection');
       }
-    }
+      
+      setIsInitialized(true);
+    };
     
-    // Only mark as initialized after wallet state is set
-    setIsInitialized(true);
-  }, []); // Run only once on mount
+    initializeWallet();
+  }, []);
 
   // Restore view when both user and wallet are ready
   useEffect(() => {
