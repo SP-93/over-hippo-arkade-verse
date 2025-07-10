@@ -1,5 +1,7 @@
 import { useChipBalance } from "./useChipBalance";
 import { useGameSession } from "./useGameSession";
+import { secureBalanceService } from "@/services/secure-balance";
+import { toast } from "sonner";
 
 export const useChipManager = () => {
   const {
@@ -19,14 +21,41 @@ export const useChipManager = () => {
     getCurrentSession
   } = useGameSession();
 
-  // Enhanced startGameSession that refreshes chips after consumption
+  // Enhanced startGameSession with secure balance operations
   const startGameSession = async (gameType: string) => {
+    console.log(`🎮 Starting game session for: ${gameType}`);
+    
+    // First check if user can afford the game
+    const canAfford = await secureBalanceService.canAfford(1);
+    if (!canAfford) {
+      console.log('❌ Cannot afford game - insufficient chips');
+      toast.error("Not enough chips to play!");
+      return null;
+    }
+
+    // Spend chip securely before starting session
+    const spendResult = await secureBalanceService.spendChip(1, gameType);
+    if (!spendResult.success) {
+      console.error('❌ Failed to spend chip:', spendResult.error);
+      
+      if (spendResult.error_type === 'insufficient_funds') {
+        toast.error("Not enough chips to play!");
+      } else if (spendResult.error_type === 'operation_locked') {
+        toast.error("Another operation in progress, please wait");
+      } else {
+        toast.error("Failed to start game: " + spendResult.error);
+      }
+      return null;
+    }
+
+    console.log('✅ Chip spent successfully:', spendResult);
+    toast.success(`Chip consumed! Previous: ${spendResult.previous_chips}, New: ${spendResult.new_chips}`);
+
+    // Now start the actual game session
     const result = await originalStartGameSession(gameType);
     
-    // If chip was consumed, refresh balance from backend
-    if (result && result.livesRemaining === 2 && !result.resumed) {
-      await refreshChips(); // Use the new refresh function
-    }
+    // Refresh balance to sync UI
+    await refreshChips();
     
     return result;
   };

@@ -1,13 +1,13 @@
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { securePlayerService } from "@/services/secure-player";
+import { secureBalanceService } from "@/services/secure-balance";
 import { supabase } from "@/integrations/supabase/client";
 
 export const useChipBalance = () => {
   const [playerChips, setPlayerChips] = useState(3);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Load chip balance with new simplified logic
+  // Load chip balance using secure service
   useEffect(() => {
     const loadChipBalance = async () => {
       setIsLoading(true);
@@ -16,30 +16,35 @@ export const useChipBalance = () => {
         const { data: { session } } = await supabase.auth.getSession();
         
         if (session?.user) {
-          // For authenticated users: ONLY use backend data from player_balances
-          console.log('Authenticated user - loading chips from backend');
-          const balance = await securePlayerService.getPlayerBalance();
-          if (balance) {
-            console.log('Backend chips loaded:', balance.gameChips);
-            setPlayerChips(balance.gameChips);
+          // For authenticated users: use secure balance service
+          console.log('🔐 Authenticated user - loading chips from secure service');
+          const balance = await secureBalanceService.getBalance();
+          
+          if (balance.success && balance.has_wallet) {
+            console.log('✅ Secure chips loaded:', balance.game_chips);
+            setPlayerChips(balance.game_chips);
             // Clear any old localStorage data to prevent conflicts
             localStorage.removeItem('player_chips');
             localStorage.removeItem('chip_reset_time');
             localStorage.removeItem('first_chip_consumed');
           } else {
-            // If backend fails, default to 3 chips
-            console.log('Backend failed, defaulting to 3 chips');
+            // If secure service fails, default to 3 chips
+            console.log('⚠️ Secure service failed, defaulting to 3 chips:', balance.error);
             setPlayerChips(3);
+            if (balance.error) {
+              toast.error("Failed to load balance: " + balance.error);
+            }
           }
         } else {
           // For non-authenticated users: use localStorage with 3 chip default
-          console.log('Non-authenticated user - using localStorage');
+          console.log('👤 Non-authenticated user - using localStorage');
           const savedChips = localStorage.getItem('player_chips');
           setPlayerChips(savedChips ? parseInt(savedChips) : 3);
         }
       } catch (error) {
-        console.error('Failed to load chip balance:', error);
+        console.error('💥 Failed to load chip balance:', error);
         setPlayerChips(3); // Always default to 3 chips
+        toast.error("Error loading balance");
       } finally {
         setIsLoading(false);
       }
@@ -85,14 +90,17 @@ export const useChipBalance = () => {
     return 2;
   };
 
-  // Refresh function to reload chips from backend
+  // Refresh function to reload chips from secure service
   const refreshChips = async () => {
     const { data: { session } } = await supabase.auth.getSession();
     if (session?.user) {
-      const balance = await securePlayerService.getPlayerBalance();
-      if (balance) {
-        console.log('Chips refreshed:', balance.gameChips);
-        setPlayerChips(balance.gameChips);
+      console.log('🔄 Refreshing chips via secure service');
+      const balance = await secureBalanceService.getBalance();
+      if (balance.success && balance.has_wallet) {
+        console.log('✅ Chips refreshed:', balance.game_chips);
+        setPlayerChips(balance.game_chips);
+      } else {
+        console.error('❌ Chip refresh failed:', balance.error);
       }
     }
   };

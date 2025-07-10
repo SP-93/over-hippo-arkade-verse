@@ -10,6 +10,7 @@ import { HippoBackground } from "@/components/HippoBackground";
 
 import { AuthPage } from "@/components/AuthPage";
 import { SecurityDebugPanel } from "@/components/SecurityDebugPanel";
+import { secureBalanceService } from "@/services/secure-balance";
 import { useChipManager } from "@/hooks/useChipManager";
 import { usePlayerStats } from "@/hooks/usePlayerStats";
 import { useSecurityHandler } from "@/hooks/useSecurityHandler";
@@ -333,21 +334,46 @@ const Index = () => {
     console.log('🔌 Wallet disconnected and all data cleared');
   };
 
-  const handleChipPurchase = (chips: number) => {
-    chipManager.setPlayerChips(prev => prev + chips);
-    toast.success(`Added ${chips} chips to your account!`);
-  };
-
-  const handleOverPurchaseChips = (chipAmount: number, overCost: number) => {
-    if (overBalance >= overCost) {
-      setOverBalance(prev => prev - overCost);
-      chipManager.setPlayerChips(prev => prev + chipAmount);
+  const handleChipPurchase = async (chips: number) => {
+    console.log(`🛒 Purchasing ${chips} chips securely`);
+    
+    const addResult = await secureBalanceService.addChips(chips, `purchase_${Date.now()}`);
+    if (addResult.success) {
+      toast.success(`Added ${chips} chips to your account! New balance: ${addResult.new_chips}`);
+      await chipManager.refreshChips(); // Refresh UI
+    } else {
+      console.error('❌ Chip purchase failed:', addResult.error);
+      toast.error("Failed to add chips: " + addResult.error);
     }
   };
 
-  const handleOverWithdraw = (amount: number) => {
-    setOverBalance(prev => prev - amount);
-    // In real implementation, this would trigger blockchain transaction
+  const handleOverPurchaseChips = async (chipAmount: number, overCost: number) => {
+    console.log(`🛒 Purchasing ${chipAmount} chips with ${overCost} OVER`);
+    
+    // First spend OVER tokens
+    const spendOverResult = await secureBalanceService.spendOver(overCost, `chip_purchase_${Date.now()}`);
+    if (!spendOverResult.success) {
+      console.error('❌ OVER spend failed:', spendOverResult.error);
+      toast.error("Failed to spend OVER: " + spendOverResult.error);
+      return;
+    }
+
+    // Then add chips
+    const addChipsResult = await secureBalanceService.addChips(chipAmount, `over_purchase_${Date.now()}`);
+    if (addChipsResult.success) {
+      toast.success(`Purchased ${chipAmount} chips for ${overCost} OVER! New chip balance: ${addChipsResult.new_chips}`);
+      setOverBalance(spendOverResult.new_over || 0); // Update UI
+      await chipManager.refreshChips(); // Refresh UI
+    } else {
+      console.error('❌ Chip add failed after OVER spend:', addChipsResult.error);
+      toast.error("OVER spent but chip add failed: " + addChipsResult.error);
+    }
+  };
+
+  const handleOverWithdraw = async (amount: number) => {
+    console.log(`💸 Withdrawing ${amount} OVER tokens`);
+    // This would trigger actual blockchain withdrawal
+    toast.info(`Withdrawal of ${amount} OVER tokens initiated`);
   };
 
   const handlePlayGame = (gameId: string) => {

@@ -5,8 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Coins, Timer, Zap, ShoppingCart, Crown, Star } from "lucide-react";
 import { toast } from "sonner";
-import { securePlayerService } from "@/services/secure-player";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useSecureBalance } from "@/hooks/useSecureBalance";
 import { WatchVideoButton } from "@/components/WatchVideoButton";
 import { usePremiumFeatures } from "@/hooks/usePremiumFeatures";
 
@@ -17,25 +16,30 @@ interface PlayerDashboardProps {
 
 export const PlayerDashboard = ({ playerAddress, playerChips }: PlayerDashboardProps) => {
   const [timeUntilReset, setTimeUntilReset] = useState(18 * 3600 + 45 * 60); // 18h 45m in seconds
-  const queryClient = useQueryClient();
   const { isVipActive, vipTimeRemaining, purchasePremiumChips, purchaseVipStatus } = usePremiumFeatures();
+  
+  // Use secure balance hook
+  const { 
+    balance, 
+    isLoading, 
+    gameChips, 
+    overBalance, 
+    totalEarnings,
+    hasWallet,
+    refreshBalance,
+    spendOver,
+    addChips
+  } = useSecureBalance();
 
-  // Fetch real player balance
-  const { data: balance, isLoading } = useQuery({
-    queryKey: ['player-balance'],
-    queryFn: () => securePlayerService.getPlayerBalance(),
-    refetchInterval: 30000 // Refresh every 30 seconds
-  });
-
-  const chips = balance?.gameChips || playerChips || 3;
-  const overBalance = balance?.overTokens || 0;
+  const chips = hasWallet ? gameChips : (playerChips || 3);
+  const displayOverBalance = hasWallet ? overBalance : 0;
 
   useEffect(() => {
     const timer = setInterval(() => {
       setTimeUntilReset(prev => {
         if (prev <= 0) {
-          // Timer reset - chips are managed by backend now
-          queryClient.invalidateQueries({ queryKey: ['player-balance'] });
+          // Timer reset - refresh balance
+          refreshBalance();
           return 24 * 3600; // Reset to 24 hours
         }
         return prev - 1;
@@ -43,7 +47,7 @@ export const PlayerDashboard = ({ playerAddress, playerChips }: PlayerDashboardP
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [queryClient]);
+  }, [refreshBalance]);
 
   const formatTime = (seconds: number) => {
     const hours = Math.floor(seconds / 3600);
@@ -52,24 +56,8 @@ export const PlayerDashboard = ({ playerAddress, playerChips }: PlayerDashboardP
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // Purchase chips mutation
-  const purchaseMutation = useMutation({
-    mutationFn: ({ chipAmount, overCost }: { chipAmount: number; overCost: number }) =>
-      securePlayerService.purchaseChips(chipAmount, overCost),
-    onSuccess: (result) => {
-      if (result) {
-        toast.success(`Successfully purchased ${result.chipAmount} chips! TX: ${result.txHash}`);
-        queryClient.invalidateQueries({ queryKey: ['player-balance'] });
-      } else {
-        toast.error("Purchase failed");
-      }
-    },
-    onError: (error) => {
-      toast.error(`Purchase failed: ${error.message}`);
-    }
-  });
-
-  const purchaseChips = (packageType: 'small' | 'medium' | 'large' | 'premium') => {
+  // Purchase chips using secure balance service
+  const purchaseChips = async (packageType: 'small' | 'medium' | 'large' | 'premium') => {
     const packages = {
       small: { chips: 3, cost: 3, type: 'standard' as const },
       medium: { chips: 7, cost: 7, type: 'standard' as const },
@@ -80,7 +68,7 @@ export const PlayerDashboard = ({ playerAddress, playerChips }: PlayerDashboardP
     const selected = packages[packageType];
     
     // Check sufficient OVER balance
-    if (overBalance < selected.cost) {
+    if (displayOverBalance < selected.cost) {
       toast.error(`Insufficient OVER balance. Need ${selected.cost} OVER.`);
       return;
     }
@@ -88,19 +76,39 @@ export const PlayerDashboard = ({ playerAddress, playerChips }: PlayerDashboardP
     const livesInfo = selected.type === 'premium' ? ' (3 lives each!)' : ' (2 lives each)';
     toast.info(`Purchasing ${selected.chips} ${selected.type} chips for ${selected.cost} OVER...${livesInfo}`);
     
-    if (selected.type === 'premium') {
-      purchasePremiumChips.mutate({ 
-        chipAmount: selected.chips, 
-        overCost: selected.cost, 
-        premiumType: 'premium' 
-      });
-    } else {
-      purchaseMutation.mutate({ chipAmount: selected.chips, overCost: selected.cost });
+    try {
+      if (selected.type === 'premium') {
+        // Use premium features for premium chips
+        await purchasePremiumChips.mutateAsync({ 
+          chipAmount: selected.chips, 
+          overCost: selected.cost, 
+          premiumType: 'premium' 
+        });
+      } else {
+        // Use secure balance service for standard chips
+        const spendResult = await spendOver(selected.cost, `chip_purchase_${packageType}`);
+        if (!spendResult.success) {
+          toast.error("Failed to spend OVER: " + spendResult.error);
+          return;
+        }
+        
+        const addResult = await addChips(selected.chips, `purchase_${packageType}_${Date.now()}`);
+        if (!addResult.success) {
+          toast.error("Failed to add chips: " + addResult.error);
+          return;
+        }
+        
+        toast.success(`Successfully purchased ${selected.chips} chips! New balance: ${addResult.new_chips}`);
+      }
+    } catch (error) {
+      console.error('Purchase error:', error);
+      toast.error("Purchase failed");
     }
   };
 
+
   const handleVipPurchase = () => {
-    if (overBalance < 10) {
+    if (displayOverBalance < 10) {
       toast.error("Insufficient OVER balance. Need 10 OVER for VIP status.");
       return;
     }
@@ -110,7 +118,7 @@ export const PlayerDashboard = ({ playerAddress, playerChips }: PlayerDashboardP
   const handleVideoReward = (reward: number) => {
     // This would call the backend to add chips
     toast.success(`You earned ${reward} chip from watching the video!`);
-    queryClient.invalidateQueries({ queryKey: ['player-balance'] });
+    refreshBalance(); // Refresh balance instead of query invalidation
   };
 
   return (
@@ -132,7 +140,7 @@ export const PlayerDashboard = ({ playerAddress, playerChips }: PlayerDashboardP
             <Zap className="h-8 w-8 text-neon-green animate-neon-pulse" />
             <div>
               <p className="text-sm text-muted-foreground">OVER Balance</p>
-              <p className="text-3xl font-black text-neon-green">{overBalance.toFixed(3)}</p>
+              <p className="text-3xl font-black text-neon-green">{displayOverBalance.toFixed(3)}</p>
             </div>
           </div>
         </Card>
@@ -211,7 +219,7 @@ export const PlayerDashboard = ({ playerAddress, playerChips }: PlayerDashboardP
             
             <Button 
               onClick={handleVipPurchase}
-              disabled={purchaseVipStatus.isPending || overBalance < 10}
+              disabled={purchaseVipStatus.isPending || displayOverBalance < 10}
               className="w-full bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700"
             >
               {purchaseVipStatus.isPending ? 'Processing...' : 'Become VIP'}
@@ -236,10 +244,10 @@ export const PlayerDashboard = ({ playerAddress, playerChips }: PlayerDashboardP
             <Button 
               variant="arcade"
               onClick={() => purchaseChips('small')}
-              disabled={purchaseMutation.isPending || overBalance < 3}
+              disabled={isLoading || displayOverBalance < 3}
               className="w-full"
             >
-              {purchaseMutation.isPending ? 'Processing...' : 'Purchase'}
+              {isLoading ? 'Loading...' : 'Purchase'}
             </Button>
           </div>
 
@@ -251,10 +259,10 @@ export const PlayerDashboard = ({ playerAddress, playerChips }: PlayerDashboardP
             <Button 
               variant="secondary"
               onClick={() => purchaseChips('medium')}
-              disabled={purchaseMutation.isPending || overBalance < 7}
+              disabled={isLoading || displayOverBalance < 7}
               className="w-full"
             >
-              {purchaseMutation.isPending ? 'Processing...' : 'Purchase'}
+              {isLoading ? 'Loading...' : 'Purchase'}
             </Button>
           </div>
 
@@ -269,10 +277,10 @@ export const PlayerDashboard = ({ playerAddress, playerChips }: PlayerDashboardP
             <Button 
               variant="neon"
               onClick={() => purchaseChips('large')}
-              disabled={purchaseMutation.isPending || overBalance < 12}
+              disabled={isLoading || displayOverBalance < 12}
               className="w-full"
             >
-              {purchaseMutation.isPending ? 'Processing...' : 'Purchase'}
+              {isLoading ? 'Loading...' : 'Purchase'}
             </Button>
           </div>
 
@@ -286,7 +294,7 @@ export const PlayerDashboard = ({ playerAddress, playerChips }: PlayerDashboardP
             <p className="text-xs text-yellow-500 font-bold mb-4">3 lives each!</p>
             <Button 
               onClick={() => purchaseChips('premium')}
-              disabled={purchasePremiumChips.isPending || overBalance < 8}
+              disabled={purchasePremiumChips.isPending || displayOverBalance < 8}
               className="w-full bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700"
             >
               {purchasePremiumChips.isPending ? 'Processing...' : 'Purchase'}
