@@ -1,11 +1,11 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useFrame } from "@react-three/fiber";
-import { Box, Sphere } from "@react-three/drei";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useGameManager } from "@/hooks/useGameManager";
 import { toast } from "sonner";
 import Game3DEngine from "./engine/Game3DEngine";
+import { EnhancedSnakeSegment, EnhancedFood, SnakeTrail, GameBoundaries } from "./snake/EnhancedSnake3DComponents";
 import * as THREE from "three";
 
 const GRID_SIZE = 20;
@@ -23,71 +23,7 @@ interface SnakeSegmentProps {
   isHead?: boolean;
 }
 
-const SnakeSegment = ({ position, isHead }: SnakeSegmentProps) => {
-  const meshRef = useRef<THREE.Mesh>(null);
-  
-  useFrame((state) => {
-    if (meshRef.current) {
-      meshRef.current.rotation.x = state.clock.elapsedTime * 0.5;
-      meshRef.current.rotation.y = state.clock.elapsedTime * 0.3;
-    }
-  });
-
-  return (
-    <Box
-      ref={meshRef}
-      position={position}
-      args={[0.8, 0.8, 0.8]}
-    >
-      <meshStandardMaterial 
-        color={isHead ? "#00ff41" : "#00cc33"} 
-        metalness={0.3}
-        roughness={0.2}
-        emissive={isHead ? "#004411" : "#002211"}
-      />
-    </Box>
-  );
-};
-
-const Food = ({ position }: { position: [number, number, number] }) => {
-  const meshRef = useRef<THREE.Mesh>(null);
-  
-  useFrame((state) => {
-    if (meshRef.current) {
-      meshRef.current.rotation.y = state.clock.elapsedTime * 2;
-      meshRef.current.position.y = position[1] + Math.sin(state.clock.elapsedTime * 3) * 0.2;
-    }
-  });
-
-  return (
-    <Sphere
-      ref={meshRef}
-      position={position}
-      args={[0.4, 16, 16]}
-    >
-      <meshStandardMaterial 
-        color="#ff3366" 
-        metalness={0.5}
-        roughness={0.1}
-        emissive="#441122"
-      />
-    </Sphere>
-  );
-};
-
-const GameGrid = () => {
-  return (
-    <group>
-      {/* Grid lines */}
-      <gridHelper args={[GRID_SIZE, GRID_SIZE, "#333333", "#111111"]} />
-      {/* Game boundaries */}
-      <lineSegments>
-        <edgesGeometry args={[new THREE.BoxGeometry(GRID_SIZE, 0.1, GRID_SIZE)]} />
-        <lineBasicMaterial color="#666666" />
-      </lineSegments>
-    </group>
-  );
-};
+// Legacy components replaced with enhanced versions
 
 export const Snake3DGame = ({ onScoreChange, onGameEnd, onGameStart }: Snake3DGameProps = {}) => {
   console.log("Snake3DGame loaded - real 3D version active!");
@@ -258,19 +194,22 @@ export const Snake3DGame = ({ onScoreChange, onGameEnd, onGameStart }: Snake3DGa
           environment="abstract"
           enableOrbitControls={true}
         >
-          <GameGrid />
+          <GameBoundaries size={GRID_SIZE} />
           
           {/* Snake segments */}
           {snake.map((segment, index) => (
-            <SnakeSegment
+            <EnhancedSnakeSegment
               key={index}
               position={[segment.x, segment.y, segment.z]}
               isHead={index === 0}
             />
           ))}
           
+          {/* Snake trail */}
+          <SnakeTrail positions={snake.slice(1, 6).map(seg => [seg.x, seg.y, seg.z])} />
+          
           {/* Food */}
-          <Food position={[food.x, food.y, food.z]} />
+          <EnhancedFood position={[food.x, food.y, food.z]} />
         </Game3DEngine>
         
         <div className="mt-4 text-sm text-muted-foreground text-center">

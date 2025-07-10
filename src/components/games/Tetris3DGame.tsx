@@ -6,6 +6,7 @@ import { useGameManager } from "@/hooks/useGameManager";
 import { toast } from "sonner";
 import Game3DEngine from "./engine/Game3DEngine";
 import { GameFloor3D, ParticleSystem3D } from "./engine/Game3DComponents";
+import { EnhancedTetrisBlock, EnhancedTetrisGameField, LineCompleteEffect, NextPieceDisplay } from "./tetris/EnhancedTetris3DComponents";
 import { Box } from "@react-three/drei";
 import * as THREE from "three";
 
