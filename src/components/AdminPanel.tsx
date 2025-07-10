@@ -11,6 +11,7 @@ import { WalletAdminPanel } from "./WalletAdminPanel";
 import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { secureAdminService, AdminStats } from "@/services/secure-admin";
+import { supabase } from "@/integrations/supabase/client";
 
 interface AdminPanelProps {
   walletAddress: string;
@@ -24,9 +25,15 @@ interface UserData {
   user_id: string;
   display_name: string;
   wallet_address: string;
+  verified_wallet_address: string;
   total_chips: number;
   over_balance: number;
   created_at: string;
+  player_balances?: Array<{
+    game_chips: number;
+    over_balance: number;
+    total_earnings: number;
+  }>;
 }
 
 interface TransactionData {
@@ -70,10 +77,37 @@ export const AdminPanel = ({ walletAddress, isVisible }: AdminPanelProps) => {
     enabled: isVisible && adminStatus?.isAdmin
   });
 
-  // Fetch users
+  // Fetch users with enhanced query to get both profile and balance data
   const { data: users, isLoading: usersLoading } = useQuery({
     queryKey: ['admin-users'],
-    queryFn: () => secureAdminService.getUsers(),
+    queryFn: async () => {
+      // Try to get users with their player_balances joined
+      const { data: profiles, error } = await supabase
+        .from('profiles')
+        .select(`
+          *,
+          player_balances (
+            game_chips,
+            over_balance,
+            total_earnings
+          )
+        `)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Enhanced users query failed, using fallback:', error);
+        // Fallback to basic query
+        const { data: basicProfiles, error: basicError } = await supabase
+          .from('profiles')
+          .select('*')
+          .order('created_at', { ascending: false });
+        
+        if (basicError) throw basicError;
+        return basicProfiles || [];
+      }
+      
+      return profiles || [];
+    },
     enabled: isVisible && activeTab === 'users' && adminStatus?.isAdmin
   });
 
@@ -312,16 +346,32 @@ export const AdminPanel = ({ walletAddress, isVisible }: AdminPanelProps) => {
                 <Card key={user.id} className="p-4 bg-muted/20">
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
-                      <p className="font-medium">{user.display_name || 'Anonymous'}</p>
-                      <p className="text-sm text-muted-foreground">{user.wallet_address || 'No wallet'}</p>
+                      <p className="font-medium">{user.display_name || `Player_${user.id.slice(-4)}`}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {user.verified_wallet_address || user.wallet_address || 'No wallet'}
+                      </p>
                       <p className="text-xs text-muted-foreground">
                         Joined: {new Date(user.created_at).toLocaleDateString()}
                       </p>
                     </div>
                     <div className="flex items-center space-x-4">
                       <div className="text-right">
-                        <p className="text-sm font-medium">{user.total_chips} Chips</p>
-                        <p className="text-sm text-neon-green">{user.over_balance} OVER</p>
+                        <div className="space-y-1">
+                          <p className="text-sm font-medium">Profile: {user.total_chips || 0} Chips</p>
+                          {(user as any).player_balances?.[0] && (
+                            <p className="text-xs text-muted-foreground">
+                              Game: {(user as any).player_balances[0].game_chips || 0} Chips
+                            </p>
+                          )}
+                          <p className="text-sm text-neon-green">
+                            Profile: {user.over_balance || 0} OVER
+                          </p>
+                          {(user as any).player_balances?.[0] && (
+                            <p className="text-xs text-muted-foreground">
+                              Game: {(user as any).player_balances[0].over_balance || 0} OVER
+                            </p>
+                          )}
+                        </div>
                       </div>
                       <div className="flex space-x-2">
                         <Button 

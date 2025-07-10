@@ -171,14 +171,49 @@ serve(async (req) => {
           })
         }
 
-        const { error: addChipsError } = await supabaseClient
+        // Get user's current profile and balances
+        const { data: userProfile, error: profileError } = await supabaseClient
+          .from('profiles')
+          .select('verified_wallet_address, total_chips')
+          .eq('user_id', user.id)
+          .single()
+
+        if (profileError || !userProfile?.verified_wallet_address) {
+          throw new Error('No verified wallet found for user')
+        }
+
+        const newChipAmount = (userProfile.total_chips || 0) + chip_amount;
+
+        // Update profiles table
+        const { error: profileUpdateError } = await supabaseClient
           .from('profiles')
           .update({ 
-            total_chips: supabaseClient.raw(`COALESCE(total_chips, 0) + ${chip_amount}`) 
+            total_chips: newChipAmount,
+            updated_at: new Date().toISOString()
           })
           .eq('user_id', user.id)
 
-        if (addChipsError) throw addChipsError
+        if (profileUpdateError) throw profileUpdateError
+
+        // Get current player_balances to preserve other values
+        const { data: currentBalance } = await supabaseClient
+          .from('player_balances')
+          .select('*')
+          .eq('wallet_address', userProfile.verified_wallet_address)
+          .single()
+
+        // Upsert player_balances table
+        const { error: balanceUpdateError } = await supabaseClient
+          .from('player_balances')
+          .upsert({
+            wallet_address: userProfile.verified_wallet_address,
+            game_chips: newChipAmount,
+            over_balance: currentBalance?.over_balance || 0,
+            total_earnings: currentBalance?.total_earnings || 0,
+            last_updated: new Date().toISOString()
+          })
+
+        if (balanceUpdateError) throw balanceUpdateError
 
         // Record the admin action
         await supabaseClient
@@ -191,7 +226,11 @@ serve(async (req) => {
             status: 'completed'
           })
 
-        return new Response(JSON.stringify({ success: true }), {
+        return new Response(JSON.stringify({ 
+          success: true,
+          message: `Successfully added ${chip_amount} chips. New balance: ${newChipAmount}`,
+          new_balance: newChipAmount
+        }), {
           status: 200,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         })
