@@ -63,9 +63,21 @@ export const Game3DFallback = ({
                 </Button>
               )}
               {fallbackMode && (
-                <Button variant="outline" size="sm" onClick={() => window.location.href = '/game'}>
-                  Try 2D Games
-                </Button>
+                <>
+                  <Button variant="outline" size="sm" onClick={() => window.location.href = '/game'}>
+                    Try 2D Games
+                  </Button>
+                  <Button 
+                    variant="destructive" 
+                    size="sm" 
+                    onClick={() => {
+                      localStorage.setItem('force3D', 'true');
+                      window.location.reload();
+                    }}
+                  >
+                    🚀 Force 3D Mode (Debug)
+                  </Button>
+                </>
               )}
               <Button variant="outline" size="sm" onClick={onBackToArcade}>
                 Back to Arcade

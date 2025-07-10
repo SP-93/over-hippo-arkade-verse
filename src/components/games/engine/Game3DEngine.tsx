@@ -48,14 +48,42 @@ const Game3DEngine = ({
         const capabilities = webglDetector.detect();
         const canUse3D = webglDetector.shouldUse3D();
         
-        console.log(`🔍 WebGL capabilities:`, capabilities);
-        console.log(`🎯 3D engine enabled: ${canUse3D}`);
+        // DEBUG: Enhanced logging for WebGL detection
+        console.log(`🔍 DETAILED WebGL capabilities for ${gameId}:`, {
+          webgl1: capabilities.webgl1,
+          webgl2: capabilities.webgl2,
+          maxTextureSize: capabilities.maxTextureSize,
+          maxVertices: capabilities.maxVertices,
+          vendor: capabilities.vendor,
+          renderer: capabilities.renderer,
+          version: capabilities.version,
+          performanceLevel: capabilities.performanceLevel,
+          extensions: capabilities.extensions.slice(0, 5) // Show first 5 extensions
+        });
         
-        setShouldUse3D(canUse3D);
-        setPerformanceSettings(webglDetector.getRecommendedSettings());
+        // DEBUG: Force 3D mode for debugging (remove this in production)
+        const force3D = localStorage.getItem('force3D') === 'true';
+        if (force3D) {
+          console.log(`🚀 FORCE 3D MODE ENABLED for ${gameId}`);
+          setShouldUse3D(true);
+          setPerformanceSettings({
+            antialias: false,
+            shadows: false,
+            particles: false,
+            maxLights: 1,
+            textureQuality: 'low',
+            renderScale: 0.8
+          });
+        } else {
+          setShouldUse3D(canUse3D);
+          setPerformanceSettings(webglDetector.getRecommendedSettings());
+        }
         
-        if (!canUse3D) {
+        console.log(`🎯 3D engine enabled: ${force3D ? 'FORCED' : canUse3D}`);
+        
+        if (!canUse3D && !force3D) {
           console.log(`⚠️ Falling back to 2D mode for ${gameId}`);
+          console.log(`💡 To force 3D mode, run: localStorage.setItem('force3D', 'true'); location.reload();`);
         }
         
         setIsLoading(false);
