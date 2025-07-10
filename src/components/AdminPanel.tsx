@@ -308,19 +308,23 @@ export const AdminPanel = ({ walletAddress, isVisible }: AdminPanelProps) => {
             <div className="flex flex-wrap gap-4">
               <Button
                 variant="destructive"
-                onClick={() => {
-                  const amount = prompt("Enter chips to add (current logic: current + new = total):");
+                onClick={async () => {
+                  const amount = prompt("Unesite broj cipova za dodavanje (trenutno: 2):");
                   const numAmount = Number(amount);
                   if (amount && !isNaN(numAmount) && numAmount > 0) {
-                    console.log('Adding chips:', numAmount);
-                    addChipsMutation.mutate(numAmount);
+                    console.log('🎯 UI: User wants to add chips:', numAmount);
+                    try {
+                      await addChipsMutation.mutateAsync(numAmount);
+                    } catch (error) {
+                      console.error('🚨 UI: Mutation failed:', error);
+                    }
                   } else if (amount !== null) {
-                    toast.error("Please enter a valid positive number");
+                    toast.error("Molimo unesite valjan pozitivan broj");
                   }
                 }}
                 disabled={addChipsMutation.isPending}
               >
-                {addChipsMutation.isPending ? '🔄 Adding...' : '🎯 Add Chips (1+1=2)'}
+                {addChipsMutation.isPending ? '🔄 Dodajem...' : '🎯 Dodaj Cipove'}
               </Button>
             </div>
           </Card>

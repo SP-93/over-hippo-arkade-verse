@@ -116,31 +116,43 @@ export class SecureAdminService {
   // Add chips to admin's own account
   async addChipsToSelf(chipAmount: number): Promise<boolean> {
     try {
-      console.log('🎯 Adding chips to self:', chipAmount);
+      console.log('🎯 FRONTEND: Starting addChipsToSelf with amount:', chipAmount);
+      
+      // First check session
+      const { data: session } = await supabase.auth.getSession();
+      console.log('🔐 FRONTEND: Current session:', !!session.session, session.session?.user?.id);
+      
+      if (!session.session) {
+        throw new Error('No authenticated session found');
+      }
+      
+      const requestData = { 
+        action: 'add_chips_to_self',
+        chip_amount: chipAmount
+      };
+      
+      console.log('📤 FRONTEND: Calling edge function with data:', requestData);
       
       const { data, error } = await supabase.functions.invoke('admin-operations', {
-        body: { 
-          action: 'add_chips_to_self',
-          chip_amount: chipAmount
-        }
+        body: requestData
       });
 
-      console.log('🔍 Edge function response:', { data, error });
+      console.log('📥 FRONTEND: Edge function response:', { data, error });
 
       if (error) {
-        console.error('❌ Add chips edge function error:', error);
+        console.error('❌ FRONTEND: Edge function error:', error);
         throw new Error(`Edge function error: ${error.message || 'Unknown error'}`);
       }
 
       if (data?.success) {
-        console.log('✅ Chips added successfully:', data);
+        console.log('✅ FRONTEND: Chips added successfully:', data);
         return true;
       } else {
-        console.error('❌ Add chips failed - invalid response:', data);
+        console.error('❌ FRONTEND: Add chips failed - invalid response:', data);
         throw new Error(data?.error || data?.message || 'Failed to add chips - invalid response');
       }
     } catch (error) {
-      console.error('💥 Add chips operation failed:', error);
+      console.error('💥 FRONTEND: Add chips operation failed:', error);
       throw error;
     }
   }
