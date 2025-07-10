@@ -251,6 +251,12 @@ This signature proves you own this wallet and grants access to Over Hippo Arkade
       // Normalize address to lowercase for consistent storage
       const normalizedAddress = address.toLowerCase();
       
+      console.log('🔐 Starting wallet signature verification:', { 
+        address: normalizedAddress, 
+        messageLength: message.length,
+        signatureLength: signature.length 
+      });
+      
       // Call Supabase function to verify signature
       const { data, error } = await supabase.rpc('verify_wallet_signature', {
         p_wallet_address: normalizedAddress,
@@ -259,9 +265,11 @@ This signature proves you own this wallet and grants access to Over Hippo Arkade
       });
 
       if (error) {
-        console.error('Signature verification failed:', error);
+        console.error('❌ Signature verification RPC failed:', error);
         return false;
       }
+
+      console.log('✅ Signature verification result:', data);
 
       if (data) {
         // Store verification in database
@@ -269,9 +277,16 @@ This signature proves you own this wallet and grants access to Over Hippo Arkade
         return true;
       }
 
+      console.log('❌ Signature verification returned false');
       return false;
-    } catch (error) {
-      console.error('Verification process failed:', error);
+    } catch (error: any) {
+      console.error('💥 Verification process failed:', {
+        error: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code,
+        stack: error.stack
+      });
       return false;
     }
   }
