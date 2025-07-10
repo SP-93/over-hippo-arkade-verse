@@ -113,6 +113,24 @@ export class SecureAdminService {
     }
   }
 
+  // Add chips to admin's own account
+  async addChipsToSelf(amount: number): Promise<boolean> {
+    try {
+      const { data, error } = await supabase.functions.invoke('admin-operations', {
+        body: { 
+          action: 'add_chips_to_self',
+          chip_amount: amount
+        }
+      });
+
+      if (error) throw error;
+      return data.success;
+    } catch (error) {
+      console.error('Add chips to self failed:', error);
+      return false;
+    }
+  }
+
   // Get users list for admin panel
   async getUsers() {
     try {

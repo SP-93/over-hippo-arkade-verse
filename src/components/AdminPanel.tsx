@@ -119,6 +119,22 @@ export const AdminPanel = ({ walletAddress, isVisible }: AdminPanelProps) => {
     }
   });
 
+  // Add chips to self mutation
+  const addChipsMutation = useMutation({
+    mutationFn: (amount: number) => secureAdminService.addChipsToSelf(amount),
+    onSuccess: (success) => {
+      if (success) {
+        toast.success("Chips added to your account successfully!");
+        queryClient.invalidateQueries({ queryKey: ['admin-stats'] });
+      } else {
+        toast.error("Failed to add chips");
+      }
+    },
+    onError: (error) => {
+      toast.error(`Failed to add chips: ${error.message}`);
+    }
+  });
+
   if (!isVisible) return null;
 
   // Show loading while checking admin status
@@ -246,6 +262,28 @@ export const AdminPanel = ({ walletAddress, isVisible }: AdminPanelProps) => {
               </div>
             </Card>
           </div>
+
+          {/* Admin Quick Actions */}
+          <Card className="p-6 bg-gradient-card border-destructive/50">
+            <h3 className="text-lg font-semibold mb-4 flex items-center text-destructive">
+              <Settings className="h-5 w-5 mr-2" />
+              Admin Quick Actions
+            </h3>
+            <div className="flex flex-wrap gap-4">
+              <Button
+                variant="destructive"
+                onClick={() => {
+                  const amount = prompt("Enter number of chips to add to your account:");
+                  if (amount && !isNaN(Number(amount)) && Number(amount) > 0) {
+                    addChipsMutation.mutate(Number(amount));
+                  }
+                }}
+                disabled={addChipsMutation.isPending}
+              >
+                {addChipsMutation.isPending ? 'Adding...' : 'Add Chips to Self'}
+              </Button>
+            </div>
+          </Card>
         </TabsContent>
 
         {/* Users Tab */}

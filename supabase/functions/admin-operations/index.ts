@@ -7,7 +7,7 @@ const corsHeaders = {
 }
 
 interface AdminRequest {
-  action: 'check_admin' | 'get_stats' | 'update_user_balance' | 'withdraw_funds' | 'get_transactions';
+  action: 'check_admin' | 'get_stats' | 'update_user_balance' | 'withdraw_funds' | 'get_transactions' | 'add_chips_to_self';
   wallet_address?: string;
   user_id?: string;
   chip_amount?: number;
@@ -159,6 +159,39 @@ serve(async (req) => {
           .limit(100)
 
         return new Response(JSON.stringify(transactions), {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+
+      case 'add_chips_to_self':
+        if (!chip_amount || chip_amount <= 0) {
+          return new Response(JSON.stringify({ error: 'Valid chip amount required' }), {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          })
+        }
+
+        const { error: addChipsError } = await supabaseClient
+          .from('profiles')
+          .update({ 
+            total_chips: supabaseClient.raw(`COALESCE(total_chips, 0) + ${chip_amount}`) 
+          })
+          .eq('user_id', user.id)
+
+        if (addChipsError) throw addChipsError
+
+        // Record the admin action
+        await supabaseClient
+          .from('blockchain_transactions')
+          .insert({
+            wallet_address: profile.verified_wallet_address,
+            transaction_hash: `admin_chips_${Date.now()}`,
+            transaction_type: 'admin_chip_grant',
+            amount_chips: chip_amount,
+            status: 'completed'
+          })
+
+        return new Response(JSON.stringify({ success: true }), {
           status: 200,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         })

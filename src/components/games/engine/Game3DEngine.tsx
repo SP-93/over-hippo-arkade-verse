@@ -1,7 +1,8 @@
-import { ReactNode } from "react";
+import { ReactNode, useState, useEffect, useCallback } from "react";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls, Environment, Lightformer } from "@react-three/drei";
 import * as THREE from "three";
+import { Game3DFallback } from "@/components/Game3DFallback";
 
 interface Game3DEngineProps {
   children: ReactNode;
@@ -27,6 +28,63 @@ const Game3DEngine = ({
   gameId,
   onRendererReady
 }: Game3DEngineProps) => {
+  const [isLoading, setIsLoading] = useState(true);
+  const [hasError, setHasError] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
+
+  // Check WebGL support
+  useEffect(() => {
+    const checkWebGL = () => {
+      try {
+        const canvas = document.createElement('canvas');
+        const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+        if (!gl) {
+          throw new Error('WebGL not supported');
+        }
+        setIsLoading(false);
+      } catch (error) {
+        console.error('WebGL check failed:', error);
+        setHasError(true);
+        setIsLoading(false);
+      }
+    };
+
+    checkWebGL();
+  }, [retryCount]);
+
+  const handleRetry = useCallback(() => {
+    if (retryCount < 3) {
+      setRetryCount(prev => prev + 1);
+      setHasError(false);
+      setIsLoading(true);
+    }
+  }, [retryCount]);
+
+  const handleBackToArcade = useCallback(() => {
+    window.location.href = '/';
+  }, []);
+
+  // Handle Canvas errors
+  const handleCanvasError = useCallback((error: any) => {
+    console.error('Canvas error:', error);
+    setHasError(true);
+    setIsLoading(false);
+  }, []);
+
+  if (isLoading) {
+    return <Game3DFallback loading={true} />;
+  }
+
+  if (hasError) {
+    return (
+      <Game3DFallback 
+        error={true} 
+        retryCount={retryCount}
+        onRetry={handleRetry}
+        onBackToArcade={handleBackToArcade}
+      />
+    );
+  }
   
   const getLighting = () => {
     switch (lighting) {
@@ -97,7 +155,7 @@ const Game3DEngine = ({
   return (
     <div className="h-[600px] bg-black rounded-lg overflow-hidden border-2 border-neon-green shadow-lg shadow-neon-green/20">
       <Canvas
-        key={`${gameId}-3d-canvas`}
+        key={`${gameId}-3d-canvas-${retryCount}`}
         camera={{ 
           position: camera.position, 
           fov: camera.fov || 75,
@@ -105,28 +163,31 @@ const Game3DEngine = ({
           far: camera.far || 1000
         }}
         onCreated={({ gl, scene }) => {
-          gl.setSize(600, 600);
-          gl.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-          gl.shadowMap.enabled = true;
-          gl.shadowMap.type = THREE.PCFSoftShadowMap;
-          gl.toneMapping = THREE.ACESFilmicToneMapping;
-          gl.toneMappingExposure = 1.2;
-          
-          scene.background = new THREE.Color('#000814');
-          onRendererReady?.(gl);
+          try {
+            gl.setSize(600, 600);
+            gl.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            gl.shadowMap.enabled = true;
+            gl.shadowMap.type = THREE.PCFSoftShadowMap;
+            gl.toneMapping = THREE.ACESFilmicToneMapping;
+            gl.toneMappingExposure = 1.2;
+            
+            scene.background = new THREE.Color('#000814');
+            onRendererReady?.(gl);
+            setIsLoading(false);
+          } catch (error) {
+            handleCanvasError(error);
+          }
         }}
+        onError={handleCanvasError}
         gl={{ 
           antialias: true, 
           alpha: false,
-          powerPreference: "high-performance"
+          powerPreference: "high-performance",
+          failIfMajorPerformanceCaveat: false
         }}
         dpr={[1, 2]}
         shadows
-        fallback={
-          <div className="flex items-center justify-center h-full text-neon-green">
-            Loading 3D Engine...
-          </div>
-        }
+        fallback={<Game3DFallback loading={true} />}
       >
         {getLighting()}
         {getEnvironment()}
