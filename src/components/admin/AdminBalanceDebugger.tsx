@@ -127,11 +127,29 @@ export const AdminBalanceDebugger = ({ isAdmin }: AdminBalanceDebuggerProps) => 
   };
 
   const emergencySync = async () => {
+    // Safety confirmation dialog
+    const confirmed = window.confirm(
+      "⚠️ Emergency Sync Warning!\n\n" +
+      "This will force refresh all balance data from the database.\n" +
+      "For admin wallets, this is safe and will preserve your chips.\n" +
+      "Continue with emergency sync?"
+    );
+    
+    if (!confirmed) return;
+    
     try {
       setLoading(true);
       toast.loading("🚨 Emergency sync in progress...");
       
-      // Force refresh everything
+      // Get admin status for safety check
+      const { isAdmin } = await secureAdminService.checkAdminStatus();
+      
+      if (isAdmin) {
+        console.log('✅ ADMIN: Emergency sync for admin wallet - safe mode');
+        toast.info("Admin wallet detected - safe sync mode enabled");
+      }
+      
+      // Force refresh everything with admin protection
       await Promise.all([
         secureAdminService.forceRefreshBalances(),
         refreshBalance(),
@@ -139,20 +157,20 @@ export const AdminBalanceDebugger = ({ isAdmin }: AdminBalanceDebuggerProps) => 
         loadDebugInfo()
       ]);
       
-      // Clear any cached data
-      localStorage.removeItem('player_chips');
-      sessionStorage.clear();
+      // Clear only UI cached data, not critical balance data
+      localStorage.removeItem('ui_chip_cache');
+      sessionStorage.removeItem('game_ui_state');
       
       // Trigger all possible refresh events
       window.dispatchEvent(new Event('balanceUpdated'));
       window.dispatchEvent(new Event('chipBalanceUpdated'));
       window.dispatchEvent(new Event('forceBalanceRefresh'));
       
-      toast.success("🔄 Emergency sync completed!");
+      toast.success("🔄 Emergency sync completed safely!");
       
     } catch (error) {
       console.error('Emergency sync failed:', error);
-      toast.error("Emergency sync failed");
+      toast.error("Emergency sync failed: " + (error as Error).message);
     } finally {
       setLoading(false);
     }

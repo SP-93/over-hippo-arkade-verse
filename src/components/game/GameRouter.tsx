@@ -14,6 +14,8 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { webglDetector } from "@/utils/webglDetector";
+import { game3DDetection } from "@/utils/game3DDetection";
+import { Game3DFallback } from "@/components/Game3DFallback";
 import { toast } from "sonner";
 
 interface GameRouterProps {
@@ -25,24 +27,50 @@ interface GameRouterProps {
 
 export const GameRouter = ({ gameId, onScoreChange, onGameEnd, onGameStart }: GameRouterProps) => {
   const navigate = useNavigate();
+  const [gameCapabilities, setGameCapabilities] = React.useState<any>(null);
+  const [fallbackMode, setFallbackMode] = React.useState(false);
 
   const availableGames = ['tetris', 'snake', 'pacman', 'breakout', 'asteroids', 'flipper', 'mario', 'kingkong', 'frogger'];
 
-  // Check WebGL support on component mount
+  // Enhanced 3D detection and browser compatibility check
   useEffect(() => {
-    const webglCapabilities = webglDetector.detect();
-    if (!webglCapabilities.webgl1) {
-      toast.error("WebGL not supported. 3D games may not work properly.");
-      console.warn("WebGL Detection:", webglCapabilities);
+    const capabilities = game3DDetection.detect();
+    setGameCapabilities(capabilities);
+    
+    console.log("🎮 Game Capabilities:", capabilities);
+    
+    const message = game3DDetection.getRecommendationMessage(capabilities);
+    
+    if (!capabilities.webglSupported || capabilities.recommendedMode === '2d') {
+      setFallbackMode(true);
+      toast.warning(message);
     } else {
-      console.log("✅ WebGL supported:", webglCapabilities);
-      toast.success(`3D Games Ready! Performance: ${webglCapabilities.performanceLevel}`);
+      toast.success(message);
+    }
+    
+    // Force 3D mode for debugging (if localStorage flag is set)
+    if (localStorage.getItem('force3D') === 'true') {
+      setFallbackMode(false);
+      toast.info("🚀 Force 3D mode enabled (Debug)");
     }
   }, []);
 
+  // Show fallback if WebGL not supported or forced
+  if (fallbackMode && gameCapabilities) {
+    return (
+      <Game3DFallback 
+        fallbackMode={true}
+        onBackToArcade={() => navigate('/')}
+      />
+    );
+  }
+
   if (gameId === 'tetris') {
     return (
-      <Game3DErrorBoundary gameId={gameId}>
+      <Game3DErrorBoundary 
+        gameId={gameId}
+        onRetry={() => window.location.reload()}
+      >
         <Tetris3DGame 
           onScoreChange={onScoreChange}
           onGameEnd={onGameEnd}

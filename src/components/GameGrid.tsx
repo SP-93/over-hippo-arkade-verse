@@ -162,7 +162,7 @@ export const GameGrid = ({ playerChips, onPlayGame }: GameGridProps) => {
           </p>
           <div className="flex items-center justify-center gap-4 text-cyan-400">
             <span className="animate-pulse">●</span>
-            <span>1 CHIP = 1 LIFE</span>
+            <span>1 CHIP = 2 LIVES</span>
             <span className="animate-pulse">●</span>
           </div>
         </div>

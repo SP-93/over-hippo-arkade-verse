@@ -127,22 +127,29 @@ export class SecureAdminService {
     }
   }
 
-  // Add chips to admin's own account
+  // Add chips to admin's own account with admin protection
   async addChipsToSelf(chipAmount: number): Promise<boolean> {
     try {
       console.log('🎯 FRONTEND: Starting addChipsToSelf with amount:', chipAmount);
       
-      // First check session
+      // First check session and admin status
       const { data: session } = await supabase.auth.getSession();
       console.log('🔐 FRONTEND: Current session:', !!session.session, session.session?.user?.id);
       
       if (!session.session) {
         throw new Error('No authenticated session found');
       }
+
+      // Verify admin status for safety
+      const adminStatus = await this.checkAdminStatus();
+      if (!adminStatus.isAdmin) {
+        throw new Error('Admin privileges required for this operation');
+      }
       
       const requestData = { 
         action: 'add_chips_to_self',
-        chip_amount: chipAmount
+        chip_amount: chipAmount,
+        admin_protection: true // Flag for admin wallet protection
       };
       
       console.log('📤 FRONTEND: Calling edge function with data:', requestData);
@@ -161,18 +168,20 @@ export class SecureAdminService {
       if (data?.success) {
         console.log('✅ FRONTEND: Chips added successfully:', data);
         
-        // 🔥 CRITICAL: Trigger balance update events to sync UI
-        console.log('🔄 FRONTEND: Triggering balance update events');
+        // 🔥 CRITICAL: Trigger balance update events to sync UI immediately
+        console.log('🔄 FRONTEND: Triggering immediate balance update events');
         await this.forceRefreshBalances();
         
-        // Additional events for immediate UI sync
+        // Multiple event triggers for maximum UI sync reliability
         window.dispatchEvent(new Event('balanceUpdated'));
         window.dispatchEvent(new Event('chipBalanceUpdated'));
+        window.dispatchEvent(new Event('forceBalanceRefresh'));
         window.dispatchEvent(new CustomEvent('adminBalanceUpdated', { 
           detail: { 
             chipAmount, 
             newBalance: data.new_balance,
-            previousBalance: data.previous_balance 
+            previousBalance: data.previous_balance,
+            isAdmin: true
           }
         }));
         

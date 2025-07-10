@@ -8,7 +8,7 @@ export const useGameManager = () => {
   const [currentScore, setCurrentScore] = useState(0);
   const [gameStatus, setGameStatus] = useState<'playing' | 'paused' | 'finished'>('playing');
   const [hasGameStarted, setHasGameStarted] = useState(false);
-  const [currentLives, setCurrentLives] = useState(2);
+  const [currentLives, setCurrentLives] = useState(2); // 1 chip = 2 lives
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
 
   // Initialize chip manager and global balance
@@ -101,7 +101,7 @@ export const useGameManager = () => {
   };
 
   const resetLives = () => {
-    setCurrentLives(2);
+    setCurrentLives(2); // Reset to 2 lives per chip
   };
 
   const pauseGame = () => {
