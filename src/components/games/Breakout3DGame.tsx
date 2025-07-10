@@ -6,6 +6,13 @@ import { useGameManager } from "@/hooks/useGameManager";
 import { toast } from "sonner";
 import Game3DEngine from "./engine/Game3DEngine";
 import { GameFloor3D, ParticleSystem3D } from "./engine/Game3DComponents";
+import { 
+  EnhancedBall3D, 
+  EnhancedPaddle3D, 
+  EnhancedBrick3D, 
+  EnhancedPowerUp3D, 
+  BrickDestructionEffect3D 
+} from "./engine/EnhancedBreakout3DComponents";
 import { Box, Sphere } from "@react-three/drei";
 import * as THREE from "three";
 
@@ -513,8 +520,8 @@ export const Breakout3DGame = ({ onScoreChange, onGameEnd, onGameStart }: Breako
     }
   }, [lives, balls, bricks, score, level, onGameEnd, onScoreChange]);
 
-  const startGame = () => {
-    if (onGameStart && !onGameStart()) return;
+  const startGame = async () => {
+    if (onGameStart && !(await onGameStart())) return;
     if (!handleGameStart('breakout')) return;
     
     setScore(0);
@@ -588,21 +595,41 @@ export const Breakout3DGame = ({ onScoreChange, onGameEnd, onGameStart }: Breako
           <GameFloor3D size={25} color="#1a1a2e" pattern="grid" />
           
           {/* Paddle */}
-          <Paddle3D paddle={paddle} />
+          <EnhancedPaddle3D 
+            position={paddle.position.toArray() as [number, number, number]}
+            size={paddle.size.toArray() as [number, number, number]}
+          />
           
           {/* Balls */}
           {balls.map((ball, index) => (
-            <Ball3D key={index} ball={ball} />
+            <EnhancedBall3D 
+              key={index} 
+              position={ball.position.toArray() as [number, number, number]}
+              radius={ball.radius}
+            />
           ))}
           
           {/* Bricks */}
           {bricks.map(brick => (
-            <Brick3D key={brick.id} brick={brick} />
+            <EnhancedBrick3D 
+              key={brick.id} 
+              position={brick.position.toArray() as [number, number, number]}
+              size={brick.size.toArray() as [number, number, number]}
+              color={brick.color}
+              health={brick.health}
+              maxHealth={brick.maxHealth}
+              destroyed={brick.destroyed}
+            />
           ))}
           
           {/* Power-ups */}
           {powerUps.map(powerUp => (
-            <PowerUp3D key={powerUp.id} powerUp={powerUp} />
+            <EnhancedPowerUp3D 
+              key={powerUp.id} 
+              position={powerUp.position.toArray() as [number, number, number]}
+              type={powerUp.type}
+              collected={powerUp.collected}
+            />
           ))}
           
           {/* Particle effects */}
