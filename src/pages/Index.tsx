@@ -7,7 +7,7 @@ import { ChipDisplay } from "@/components/ChipManager";
 import { ChipPurchaseModal } from "@/components/ChipPurchaseModal";
 import { OverProtocolIntegration } from "@/components/OverProtocolIntegration";
 import { HippoBackground } from "@/components/HippoBackground";
-import { AdminPanel } from "@/components/AdminPanel";
+
 import { AuthPage } from "@/components/AuthPage";
 import { SecurityDebugPanel } from "@/components/SecurityDebugPanel";
 import { useChipManager } from "@/hooks/useChipManager";
@@ -16,7 +16,7 @@ import { useSecurityHandler } from "@/hooks/useSecurityHandler";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Gamepad, Wallet, Zap, Shield, LogOut } from "lucide-react";
+import { Gamepad, Wallet, Zap, Shield, LogOut, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import heroLogo from "@/assets/hero-logo.jpg";
 import { useQuery } from "@tanstack/react-query";
@@ -33,7 +33,7 @@ const Index = () => {
   const [walletAddress, setWalletAddress] = useState<string>("");
   const [walletType, setWalletType] = useState<string>("");
   const [isWalletVerified, setIsWalletVerified] = useState(false);
-  const [currentView, setCurrentView] = useState<'home' | 'auth' | 'dashboard' | 'games' | 'admin'>('home');
+  const [currentView, setCurrentView] = useState<'home' | 'auth' | 'dashboard' | 'games'>('home');
   const [overBalance, setOverBalance] = useState(0);
   const [isInitialized, setIsInitialized] = useState(false);
   const [hasRestoredView, setHasRestoredView] = useState(false);
@@ -231,9 +231,9 @@ const Index = () => {
           setIsWalletVerified(walletData.verified || false);
           
           // Restore view if available
-          if (viewData?.currentView && viewData.currentView !== 'home') {
+          if (viewData?.currentView && viewData.currentView !== 'home' && viewData.currentView !== 'admin') {
             console.log('✅ Restoring view after refresh:', viewData.currentView);
-            setCurrentView(viewData.currentView as 'home' | 'dashboard' | 'games' | 'admin');
+            setCurrentView(viewData.currentView as 'home' | 'dashboard' | 'games');
             setHasRestoredView(true);
           }
           
@@ -268,9 +268,9 @@ const Index = () => {
   useEffect(() => {
     const savedView = localStorage.getItem('current_view');
     
-    if (user && isWalletConnected && savedView && !hasRestoredView) {
+    if (user && isWalletConnected && savedView && !hasRestoredView && savedView !== 'admin') {
       console.log('🔄 Restoring view after auth + wallet ready:', savedView);
-      setCurrentView(savedView as 'home' | 'dashboard' | 'games' | 'admin');
+      setCurrentView(savedView as 'home' | 'dashboard' | 'games');
       setHasRestoredView(true);
     }
   }, [user, isWalletConnected, hasRestoredView]); // Run when both user and wallet state are ready
@@ -423,8 +423,6 @@ const Index = () => {
         );
       case 'games':
         return <GameGrid playerChips={chipManager.playerChips} onPlayGame={handlePlayGame} />;
-      case 'admin':
-        return <AdminPanel walletAddress={walletAddress} isVisible={isAdmin} />;
       default:
         return (
           <div className="text-center space-y-8 animate-zoom-in">
@@ -550,12 +548,13 @@ const Index = () => {
                   )}
                   {isAdmin && (
                     <Button
-                      variant={currentView === 'admin' ? 'destructive' : 'outline'}
-                      onClick={() => setCurrentView('admin')}
+                      variant="outline"
+                      onClick={() => navigate('/admin')}
                       className="font-bold hover:shadow-glow transition-all duration-300 text-sm md:text-base px-3 md:px-4 border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground"
                     >
                       <Shield className="h-4 w-4 mr-1" />
-                      Admin
+                      <ExternalLink className="h-3 w-3 ml-1" />
+                      Admin Panel
                     </Button>
                   )}
                   {/* Debug info - remove in production */}
