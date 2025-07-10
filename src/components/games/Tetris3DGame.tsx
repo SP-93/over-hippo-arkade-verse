@@ -1,15 +1,13 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Canvas, useFrame } from "@react-three/fiber";
-import { OrbitControls, Box } from "@react-three/drei";
+import { useFrame } from "@react-three/fiber";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useGameManager } from "@/hooks/useGameManager";
 import { toast } from "sonner";
+import Game3DEngine from "./engine/Game3DEngine";
+import { GameFloor3D, ParticleSystem3D } from "./engine/Game3DComponents";
+import { Box } from "@react-three/drei";
 import * as THREE from "three";
-
-const BOARD_WIDTH = 10;
-const BOARD_HEIGHT = 20;
-const BOARD_DEPTH = 1;
 
 interface Tetris3DGameProps {
   onScoreChange?: (score: number) => void;
@@ -17,280 +15,337 @@ interface Tetris3DGameProps {
   onGameStart?: () => boolean;
 }
 
-// Tetris pieces
-const PIECES = {
-  I: { blocks: [[0,0,0],[1,0,0],[2,0,0],[3,0,0]], color: "#00ffff" },
-  O: { blocks: [[0,0,0],[1,0,0],[0,1,0],[1,1,0]], color: "#ffff00" },
-  T: { blocks: [[1,0,0],[0,1,0],[1,1,0],[2,1,0]], color: "#800080" },
-  S: { blocks: [[1,0,0],[2,0,0],[0,1,0],[1,1,0]], color: "#00ff00" },
-  Z: { blocks: [[0,0,0],[1,0,0],[1,1,0],[2,1,0]], color: "#ff0000" },
-  J: { blocks: [[0,0,0],[0,1,0],[1,1,0],[2,1,0]], color: "#0000ff" },
-  L: { blocks: [[2,0,0],[0,1,0],[1,1,0],[2,1,0]], color: "#ffa500" }
-};
-
-interface BlockProps {
-  position: [number, number, number];
+interface Block3D {
+  x: number;
+  y: number;
+  z: number;
   color: string;
-  isActive?: boolean;
+  type: string;
+  falling?: boolean;
 }
 
-const Block = ({ position, color, isActive }: BlockProps) => {
-  const meshRef = useRef<THREE.Mesh>(null);
+interface Piece3D {
+  blocks: Block3D[];
+  position: THREE.Vector3;
+  rotation: THREE.Euler;
+  type: string;
+  color: string;
+}
+
+// 3D Tetris Piece Shapes
+const TETRIS_PIECES = {
+  I: {
+    blocks: [
+      { x: 0, y: 0, z: 0 }, { x: 0, y: 1, z: 0 }, 
+      { x: 0, y: 2, z: 0 }, { x: 0, y: 3, z: 0 }
+    ],
+    color: "#00FFFF"
+  },
+  O: {
+    blocks: [
+      { x: 0, y: 0, z: 0 }, { x: 1, y: 0, z: 0 },
+      { x: 0, y: 1, z: 0 }, { x: 1, y: 1, z: 0 }
+    ],
+    color: "#FFFF00"
+  },
+  T: {
+    blocks: [
+      { x: 1, y: 0, z: 0 }, { x: 0, y: 1, z: 0 },
+      { x: 1, y: 1, z: 0 }, { x: 2, y: 1, z: 0 }
+    ],
+    color: "#AA00FF"
+  },
+  S: {
+    blocks: [
+      { x: 1, y: 0, z: 0 }, { x: 2, y: 0, z: 0 },
+      { x: 0, y: 1, z: 0 }, { x: 1, y: 1, z: 0 }
+    ],
+    color: "#00FF00"
+  },
+  Z: {
+    blocks: [
+      { x: 0, y: 0, z: 0 }, { x: 1, y: 0, z: 0 },
+      { x: 1, y: 1, z: 0 }, { x: 2, y: 1, z: 0 }
+    ],
+    color: "#FF0000"
+  },
+  J: {
+    blocks: [
+      { x: 0, y: 0, z: 0 }, { x: 0, y: 1, z: 0 },
+      { x: 0, y: 2, z: 0 }, { x: -1, y: 2, z: 0 }
+    ],
+    color: "#0000FF"
+  },
+  L: {
+    blocks: [
+      { x: 0, y: 0, z: 0 }, { x: 0, y: 1, z: 0 },
+      { x: 0, y: 2, z: 0 }, { x: 1, y: 2, z: 0 }
+    ],
+    color: "#FF7F00"
+  }
+};
+
+// 3D Block Component
+const Block3D = ({ block, isGhost = false }: { block: Block3D, isGhost?: boolean }) => {
+  const blockRef = useRef<THREE.Mesh>(null);
   
   useFrame((state) => {
-    if (meshRef.current && isActive) {
-      meshRef.current.rotation.y = Math.sin(state.clock.elapsedTime * 2) * 0.1;
+    if (blockRef.current && block.falling) {
+      const glow = Math.sin(state.clock.elapsedTime * 8) * 0.1 + 1;
+      blockRef.current.scale.setScalar(glow);
     }
   });
 
   return (
     <Box
-      ref={meshRef}
-      position={position}
+      ref={blockRef}
+      position={[block.x, block.y, block.z]}
       args={[0.9, 0.9, 0.9]}
+      castShadow
+      receiveShadow
     >
       <meshStandardMaterial 
-        color={color}
-        metalness={0.4}
-        roughness={0.3}
-        emissive={color}
-        emissiveIntensity={isActive ? 0.2 : 0.1}
+        color={block.color}
+        metalness={0.3}
+        roughness={0.2}
+        transparent={isGhost}
+        opacity={isGhost ? 0.3 : 1}
+        emissive={block.color}
+        emissiveIntensity={isGhost ? 0.1 : 0.2}
       />
     </Box>
   );
 };
 
-const GameBoard = () => {
+// 3D Tetris Piece Component
+const TetrisPiece3D = ({ piece, isGhost = false }: { piece: Piece3D, isGhost?: boolean }) => {
+  const pieceRef = useRef<THREE.Group>(null);
+  
+  useFrame((state) => {
+    if (pieceRef.current && !isGhost) {
+      pieceRef.current.position.copy(piece.position);
+      pieceRef.current.rotation.copy(piece.rotation);
+    }
+  });
+
   return (
-    <group>
-      {/* Board outline */}
-      <lineSegments position={[BOARD_WIDTH/2 - 0.5, BOARD_HEIGHT/2 - 0.5, 0]}>
-        <edgesGeometry args={[new THREE.BoxGeometry(BOARD_WIDTH, BOARD_HEIGHT, BOARD_DEPTH)]} />
-        <lineBasicMaterial color="#666666" linewidth={2} />
-      </lineSegments>
-      
-      {/* Grid lines */}
-      {Array.from({ length: BOARD_WIDTH + 1 }, (_, i) => (
-        <line key={`v-${i}`}>
-          <bufferGeometry>
-            <bufferAttribute
-              attach="attributes-position"
-              count={2}
-              array={new Float32Array([
-                i, 0, 0,
-                i, BOARD_HEIGHT, 0
-              ])}
-              itemSize={3}
-            />
-          </bufferGeometry>
-          <lineBasicMaterial color="#333333" />
-        </line>
-      ))}
-      
-      {Array.from({ length: BOARD_HEIGHT + 1 }, (_, i) => (
-        <line key={`h-${i}`}>
-          <bufferGeometry>
-            <bufferAttribute
-              attach="attributes-position"
-              count={2}
-              array={new Float32Array([
-                0, i, 0,
-                BOARD_WIDTH, i, 0
-              ])}
-              itemSize={3}
-            />
-          </bufferGeometry>
-          <lineBasicMaterial color="#333333" />
-        </line>
+    <group ref={pieceRef}>
+      {piece.blocks.map((block, index) => (
+        <Block3D key={index} block={block} isGhost={isGhost} />
       ))}
     </group>
   );
 };
 
 export const Tetris3DGame = ({ onScoreChange, onGameEnd, onGameStart }: Tetris3DGameProps = {}) => {
-  console.log("Tetris3DGame loaded - real 3D version active!");
-  const [board, setBoard] = useState<(string | null)[][]>(() => 
-    Array(BOARD_HEIGHT).fill(null).map(() => Array(BOARD_WIDTH).fill(null))
-  );
-  const [currentPiece, setCurrentPiece] = useState<any>(null);
-  const [currentPosition, setCurrentPosition] = useState({ x: 4, y: 0 });
   const [score, setScore] = useState(0);
   const [level, setLevel] = useState(1);
   const [lines, setLines] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [gameOver, setGameOver] = useState(false);
-  const gameLoopRef = useRef<NodeJS.Timeout>();
-  const [dropTime, setDropTime] = useState(500);
+  const [dropSpeed, setDropSpeed] = useState(1000);
   
   const { handleGameStart } = useGameManager();
+  
+  // Game state
+  const [board, setBoard] = useState<(Block3D | null)[][][]>(() => 
+    Array(10).fill(null).map(() => 
+      Array(20).fill(null).map(() => 
+        Array(10).fill(null)
+      )
+    )
+  );
+  
+  const [currentPiece, setCurrentPiece] = useState<Piece3D | null>(null);
+  const [nextPiece, setNextPiece] = useState<Piece3D | null>(null);
 
-  const getRandomPiece = useCallback(() => {
-    const pieceKeys = Object.keys(PIECES) as Array<keyof typeof PIECES>;
-    const randomKey = pieceKeys[Math.floor(Math.random() * pieceKeys.length)];
-    return PIECES[randomKey];
+  // Create a new piece
+  const createPiece = useCallback((type?: string): Piece3D => {
+    const pieceTypes = Object.keys(TETRIS_PIECES) as Array<keyof typeof TETRIS_PIECES>;
+    const pieceType = type || pieceTypes[Math.floor(Math.random() * pieceTypes.length)];
+    const template = TETRIS_PIECES[pieceType];
+    
+    return {
+      blocks: template.blocks.map(block => ({
+        ...block,
+        color: template.color,
+        type: pieceType,
+        falling: true
+      })),
+      position: new THREE.Vector3(0, 18, 0),
+      rotation: new THREE.Euler(0, 0, 0),
+      type: pieceType,
+      color: template.color
+    };
   }, []);
 
-  const checkCollision = useCallback((piece: any, position: { x: number; y: number }) => {
-    return piece.blocks.some(([x, y]: [number, number]) => {
-      const newX = position.x + x;
-      const newY = position.y + y;
+  // Check collision
+  const checkCollision = useCallback((piece: Piece3D, deltaPos = new THREE.Vector3(0, 0, 0)): boolean => {
+    const testPos = piece.position.clone().add(deltaPos);
+    
+    return piece.blocks.some(block => {
+      const worldX = Math.floor(testPos.x + block.x);
+      const worldY = Math.floor(testPos.y + block.y);
+      const worldZ = Math.floor(testPos.z + block.z);
       
-      return (
-        newX < 0 || 
-        newX >= BOARD_WIDTH || 
-        newY >= BOARD_HEIGHT ||
-        (newY >= 0 && board[newY][newX] !== null)
-      );
+      // Check boundaries
+      if (worldX < -5 || worldX >= 5 || worldY < 0 || worldZ < -5 || worldZ >= 5) {
+        return true;
+      }
+      
+      // Check collision with placed blocks
+      const boardX = worldX + 5;
+      const boardZ = worldZ + 5;
+      if (board[boardX] && board[boardX][worldY] && board[boardX][worldY][boardZ]) {
+        return true;
+      }
+      
+      return false;
     });
   }, [board]);
 
-  const placePiece = useCallback(() => {
-    if (!currentPiece) return;
-    
-    const newBoard = board.map(row => [...row]);
-    
-    currentPiece.blocks.forEach(([x, y]: [number, number]) => {
-      const newX = currentPosition.x + x;
-      const newY = currentPosition.y + y;
+  // Place piece on board
+  const placePiece = useCallback((piece: Piece3D) => {
+    setBoard(prevBoard => {
+      const newBoard = prevBoard.map(layer => 
+        layer.map(row => [...row])
+      );
       
-      if (newY >= 0 && newY < BOARD_HEIGHT && newX >= 0 && newX < BOARD_WIDTH) {
-        newBoard[newY][newX] = currentPiece.color;
-      }
+      piece.blocks.forEach(block => {
+        const worldX = Math.floor(piece.position.x + block.x) + 5;
+        const worldY = Math.floor(piece.position.y + block.y);
+        const worldZ = Math.floor(piece.position.z + block.z) + 5;
+        
+        if (worldX >= 0 && worldX < 10 && worldY >= 0 && worldY < 20 && worldZ >= 0 && worldZ < 10) {
+          newBoard[worldX][worldY][worldZ] = {
+            x: worldX - 5,
+            y: worldY,
+            z: worldZ - 5,
+            color: piece.color,
+            type: piece.type,
+            falling: false
+          };
+        }
+      });
+      
+      return newBoard;
     });
-    
-    setBoard(newBoard);
-    
-    // Check for completed lines
-    const completedLines: number[] = [];
-    newBoard.forEach((row, index) => {
-      if (row.every(cell => cell !== null)) {
-        completedLines.push(index);
-      }
-    });
-    
-    if (completedLines.length > 0) {
-      // Remove completed lines
-      const filteredBoard = newBoard.filter((_, index) => !completedLines.includes(index));
-      const newEmptyLines = Array(completedLines.length).fill(null).map(() => Array(BOARD_WIDTH).fill(null));
-      setBoard([...newEmptyLines, ...filteredBoard]);
-      
-      const newLines = lines + completedLines.length;
-      setLines(newLines);
-      const newScore = score + completedLines.length * 100 * level;
-      setScore(newScore);
-      onScoreChange?.(newScore);
-      setLevel(Math.floor(newLines / 10) + 1);
-      setDropTime(Math.max(50, 500 - (level * 50)));
-      
-      toast.success(`${completedLines.length} line${completedLines.length > 1 ? 's' : ''} cleared!`);
-    }
-    
-    // Spawn new piece
-    const newPiece = getRandomPiece();
-    const newPosition = { x: 4, y: 0 };
-    
-    if (checkCollision(newPiece, newPosition)) {
-      setGameOver(true);
-      setIsPlaying(false);
-      onGameEnd?.();
-      toast.error("Game Over!");
-    } else {
-      setCurrentPiece(newPiece);
-      setCurrentPosition(newPosition);
-    }
-  }, [currentPiece, currentPosition, board, lines, level, getRandomPiece, checkCollision]);
+  }, []);
 
-  const movePiece = useCallback((direction: { x: number; y: number }) => {
-    if (!currentPiece || gameOver || isPaused) return;
-    
-    const newPosition = {
-      x: currentPosition.x + direction.x,
-      y: currentPosition.y + direction.y
-    };
-    
-    if (!checkCollision(currentPiece, newPosition)) {
-      setCurrentPosition(newPosition);
-    } else if (direction.y > 0) {
-      // Piece hit bottom
-      placePiece();
-    }
-  }, [currentPiece, currentPosition, gameOver, isPaused, checkCollision, placePiece]);
-
-  const rotatePiece = useCallback(() => {
-    if (!currentPiece || gameOver || isPaused) return;
-    
-    const rotatedBlocks = currentPiece.blocks.map(([x, y]: [number, number]) => [-y, x]);
-    const rotatedPiece = { ...currentPiece, blocks: rotatedBlocks };
-    
-    if (!checkCollision(rotatedPiece, currentPosition)) {
-      setCurrentPiece(rotatedPiece);
-    }
-  }, [currentPiece, currentPosition, gameOver, isPaused, checkCollision]);
-
+  // Input handling
   useEffect(() => {
-    if (isPlaying && !isPaused && !gameOver) {
-      gameLoopRef.current = setInterval(() => {
-        movePiece({ x: 0, y: 1 });
-      }, dropTime);
-    } else {
-      if (gameLoopRef.current) {
-        clearInterval(gameLoopRef.current);
-      }
-    }
-    
-    return () => {
-      if (gameLoopRef.current) {
-        clearInterval(gameLoopRef.current);
-      }
-    };
-  }, [isPlaying, isPaused, gameOver, dropTime, movePiece]);
-
-  useEffect(() => {
-    const handleKeyPress = (e: KeyboardEvent) => {
-      if (!isPlaying || gameOver) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!isPlaying || isPaused || gameOver || !currentPiece) return;
       
       switch (e.key) {
         case 'ArrowLeft':
         case 'a':
-          movePiece({ x: -1, y: 0 });
+          if (!checkCollision(currentPiece, new THREE.Vector3(-1, 0, 0))) {
+            setCurrentPiece(prev => prev ? {
+              ...prev,
+              position: prev.position.clone().add(new THREE.Vector3(-1, 0, 0))
+            } : null);
+          }
           break;
         case 'ArrowRight':
         case 'd':
-          movePiece({ x: 1, y: 0 });
-          break;
-        case 'ArrowDown':
-        case 's':
-          movePiece({ x: 0, y: 1 });
+          if (!checkCollision(currentPiece, new THREE.Vector3(1, 0, 0))) {
+            setCurrentPiece(prev => prev ? {
+              ...prev,
+              position: prev.position.clone().add(new THREE.Vector3(1, 0, 0))
+            } : null);
+          }
           break;
         case 'ArrowUp':
         case 'w':
-          rotatePiece();
+          if (!checkCollision(currentPiece, new THREE.Vector3(0, 0, -1))) {
+            setCurrentPiece(prev => prev ? {
+              ...prev,
+              position: prev.position.clone().add(new THREE.Vector3(0, 0, -1))
+            } : null);
+          }
+          break;
+        case 'ArrowDown':
+        case 's':
+          if (!checkCollision(currentPiece, new THREE.Vector3(0, 0, 1))) {
+            setCurrentPiece(prev => prev ? {
+              ...prev,
+              position: prev.position.clone().add(new THREE.Vector3(0, 0, 1))
+            } : null);
+          }
           break;
         case ' ':
-          setIsPaused(!isPaused);
+          // Hard drop
+          let testPiece = { ...currentPiece };
+          while (!checkCollision(testPiece, new THREE.Vector3(0, -1, 0))) {
+            testPiece.position.y--;
+          }
+          setCurrentPiece(testPiece);
           break;
       }
     };
 
-    window.addEventListener('keydown', handleKeyPress);
-    return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [isPlaying, gameOver, isPaused, movePiece, rotatePiece]);
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isPlaying, isPaused, gameOver, currentPiece, checkCollision]);
 
+  // Game loop - piece falling
+  useEffect(() => {
+    if (!isPlaying || isPaused || gameOver || !currentPiece) return;
+
+    const dropInterval = setInterval(() => {
+      if (checkCollision(currentPiece, new THREE.Vector3(0, -1, 0))) {
+        // Piece can't fall further - place it
+        placePiece(currentPiece);
+        
+        // Create new piece
+        const newPiece = nextPiece || createPiece();
+        setCurrentPiece(newPiece);
+        setNextPiece(createPiece());
+        
+        // Check game over
+        if (checkCollision(newPiece)) {
+          setGameOver(true);
+          setIsPlaying(false);
+          onGameEnd?.();
+          toast.error("Game Over! Final Score: " + score);
+        }
+      } else {
+        // Continue falling
+        setCurrentPiece(prev => prev ? {
+          ...prev,
+          position: prev.position.clone().add(new THREE.Vector3(0, -1, 0))
+        } : null);
+      }
+    }, dropSpeed);
+
+    return () => clearInterval(dropInterval);
+  }, [isPlaying, isPaused, gameOver, currentPiece, dropSpeed, checkCollision, placePiece, nextPiece, createPiece, score, onGameEnd]);
+
+  // Initialize game
   const startGame = () => {
     if (onGameStart && !onGameStart()) return;
     if (!handleGameStart('tetris')) return;
     
-    setBoard(Array(BOARD_HEIGHT).fill(null).map(() => Array(BOARD_WIDTH).fill(null)));
-    setCurrentPiece(getRandomPiece());
-    setCurrentPosition({ x: 4, y: 0 });
     setScore(0);
     setLevel(1);
     setLines(0);
-    setDropTime(500);
     setGameOver(false);
     setIsPlaying(true);
     setIsPaused(false);
+    setDropSpeed(1000);
+    
+    const firstPiece = createPiece();
+    const second = createPiece();
+    setCurrentPiece(firstPiece);
+    setNextPiece(second);
+    
+    setBoard(Array(10).fill(null).map(() => 
+      Array(20).fill(null).map(() => 
+        Array(10).fill(null)
+      )
+    ));
   };
 
   const pauseGame = () => {
@@ -299,13 +354,11 @@ export const Tetris3DGame = ({ onScoreChange, onGameEnd, onGameStart }: Tetris3D
 
   return (
     <div className="space-y-4">
-      <Card className="p-6 bg-gradient-card border-neon-blue">
+      <Card className="p-6 bg-gradient-card border-neon-green">
         <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl font-bold text-neon-blue">3D Tetris</h2>
-          <div className="flex gap-4 text-sm">
-            <div className="text-arcade-gold">Score: {score}</div>
-            <div className="text-neon-green">Level: {level}</div>
-            <div className="text-neon-pink">Lines: {lines}</div>
+          <h2 className="text-2xl font-bold text-neon-green">3D Tetris</h2>
+          <div className="text-lg font-bold text-arcade-gold">
+            Score: {score} | Level: {level} | Lines: {lines}
           </div>
         </div>
         
@@ -325,61 +378,63 @@ export const Tetris3DGame = ({ onScoreChange, onGameEnd, onGameStart }: Tetris3D
           )}
         </div>
 
-        <div className="h-[600px] bg-black rounded-lg overflow-hidden">
-          <Canvas 
-            key="tetris-3d-canvas"
-            camera={{ position: [8, 15, 12], fov: 50 }}
-            onCreated={({ gl }) => {
-              gl.setSize(600, 600);
-              gl.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-            }}
-            gl={{ 
-              antialias: true, 
-              alpha: false,
-              powerPreference: "high-performance"
-            }}
-            dpr={[1, 2]}
-            fallback={<div className="flex items-center justify-center h-full text-white">Loading 3D...</div>}
-          >
-            <ambientLight intensity={0.4} />
-            <directionalLight position={[5, 10, 5]} intensity={0.8} />
-            <pointLight position={[5, 10, 2]} intensity={0.6} color="#4444ff" />
-            
-            <GameBoard />
-            
-            {/* Placed blocks */}
-            {board.map((row, y) =>
-              row.map((cell, x) =>
-                cell ? (
-                  <Block
-                    key={`${x}-${y}`}
-                    position={[x, BOARD_HEIGHT - 1 - y, 0]}
-                    color={cell}
-                  />
-                ) : null
-              )
-            )}
-            
-            {/* Current piece */}
-            {currentPiece && currentPiece.blocks.map(([x, y]: [number, number], index: number) => (
-              <Block
-                key={index}
-                position={[
-                  currentPosition.x + x,
-                  BOARD_HEIGHT - 1 - (currentPosition.y + y),
-                  0
-                ]}
-                color={currentPiece.color}
-                isActive={true}
-              />
-            ))}
-            
-            <OrbitControls enablePan={false} enableZoom={true} />
-          </Canvas>
-        </div>
+        <Game3DEngine
+          gameId="tetris-3d"
+          camera={{ position: [8, 12, 12], fov: 60 }}
+          lighting="retro"
+          environment="abstract"
+          enableOrbitControls={true}
+        >
+          {/* Game boundaries */}
+          <Box args={[0.1, 20, 20]} position={[-5.5, 10, 0]} castShadow>
+            <meshStandardMaterial color="#666666" transparent opacity={0.3} />
+          </Box>
+          <Box args={[0.1, 20, 20]} position={[4.5, 10, 0]} castShadow>
+            <meshStandardMaterial color="#666666" transparent opacity={0.3} />
+          </Box>
+          <Box args={[10, 0.1, 20]} position={[0, 0, 0]} castShadow>
+            <meshStandardMaterial color="#666666" />
+          </Box>
+          <Box args={[10, 20, 0.1]} position={[0, 10, -10.5]} castShadow>
+            <meshStandardMaterial color="#666666" transparent opacity={0.3} />
+          </Box>
+          <Box args={[10, 20, 0.1]} position={[0, 10, 9.5]} castShadow>
+            <meshStandardMaterial color="#666666" transparent opacity={0.3} />
+          </Box>
+
+          {/* Grid lines */}
+          {Array.from({ length: 11 }, (_, i) => (
+            <Box key={`line-x-${i}`} args={[0.02, 20, 20]} position={[-5 + i, 10, 0]}>
+              <meshBasicMaterial color="#333333" transparent opacity={0.2} />
+            </Box>
+          ))}
+          {Array.from({ length: 21 }, (_, i) => (
+            <Box key={`line-y-${i}`} args={[10, 0.02, 20]} position={[0, i, 0]}>
+              <meshBasicMaterial color="#333333" transparent opacity={0.2} />
+            </Box>
+          ))}
+          
+          {/* Placed blocks */}
+          {board.flat().flat().filter(Boolean).map((block, index) => (
+            <Block3D key={index} block={block!} />
+          ))}
+          
+          {/* Current Piece */}
+          {currentPiece && <TetrisPiece3D piece={currentPiece} />}
+          
+          {/* Next Piece Preview */}
+          {nextPiece && (
+            <group position={[8, 15, 0]}>
+              <TetrisPiece3D piece={{
+                ...nextPiece,
+                position: new THREE.Vector3(0, 0, 0)
+              }} />
+            </group>
+          )}
+        </Game3DEngine>
         
         <div className="mt-4 text-sm text-muted-foreground text-center">
-          Use WASD or Arrow keys to move • W/↑ to rotate • Space to pause • Mouse to rotate camera
+          WASD to move in 3D space • Space for hard drop • Full 3D Tetris!
         </div>
       </Card>
     </div>
