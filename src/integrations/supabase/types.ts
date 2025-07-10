@@ -314,6 +314,48 @@ export type Database = {
         }
         Relationships: []
       }
+      compliance_reports: {
+        Row: {
+          file_path: string | null
+          generated_at: string
+          generated_by: string | null
+          id: string
+          metadata: Json | null
+          period_end: string | null
+          period_start: string | null
+          report_data: Json
+          report_name: string
+          report_type: string
+          status: string | null
+        }
+        Insert: {
+          file_path?: string | null
+          generated_at?: string
+          generated_by?: string | null
+          id?: string
+          metadata?: Json | null
+          period_end?: string | null
+          period_start?: string | null
+          report_data: Json
+          report_name: string
+          report_type: string
+          status?: string | null
+        }
+        Update: {
+          file_path?: string | null
+          generated_at?: string
+          generated_by?: string | null
+          id?: string
+          metadata?: Json | null
+          period_end?: string | null
+          period_start?: string | null
+          report_data?: Json
+          report_name?: string
+          report_type?: string
+          status?: string | null
+        }
+        Relationships: []
+      }
       game_performance: {
         Row: {
           created_at: string
@@ -492,6 +534,39 @@ export type Database = {
         }
         Relationships: []
       }
+      performance_metrics: {
+        Row: {
+          id: string
+          metadata: Json | null
+          metric_name: string
+          metric_type: string
+          metric_unit: string | null
+          metric_value: number
+          recorded_at: string
+          tags: Json | null
+        }
+        Insert: {
+          id?: string
+          metadata?: Json | null
+          metric_name: string
+          metric_type: string
+          metric_unit?: string | null
+          metric_value: number
+          recorded_at?: string
+          tags?: Json | null
+        }
+        Update: {
+          id?: string
+          metadata?: Json | null
+          metric_name?: string
+          metric_type?: string
+          metric_unit?: string | null
+          metric_value?: number
+          recorded_at?: string
+          tags?: Json | null
+        }
+        Relationships: []
+      }
       player_balances: {
         Row: {
           created_at: string | null
@@ -597,6 +672,54 @@ export type Database = {
         }
         Relationships: []
       }
+      security_incidents: {
+        Row: {
+          affected_user_id: string | null
+          assigned_to: string | null
+          created_by: string | null
+          description: string | null
+          detected_at: string
+          id: string
+          incident_data: Json
+          incident_type: string
+          resolution_notes: string | null
+          resolved_at: string | null
+          severity: string
+          status: string | null
+          title: string
+        }
+        Insert: {
+          affected_user_id?: string | null
+          assigned_to?: string | null
+          created_by?: string | null
+          description?: string | null
+          detected_at?: string
+          id?: string
+          incident_data: Json
+          incident_type: string
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          severity?: string
+          status?: string | null
+          title: string
+        }
+        Update: {
+          affected_user_id?: string | null
+          assigned_to?: string | null
+          created_by?: string | null
+          description?: string | null
+          detected_at?: string
+          id?: string
+          incident_data?: Json
+          incident_type?: string
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          severity?: string
+          status?: string | null
+          title?: string
+        }
+        Relationships: []
+      }
       tournament_participants: {
         Row: {
           final_score: number | null
@@ -677,6 +800,51 @@ export type Database = {
           prize_pool?: number
           start_time?: string
           status?: string | null
+        }
+        Relationships: []
+      }
+      user_behavior_analytics: {
+        Row: {
+          action_details: Json
+          action_type: string
+          anomaly_detected: boolean | null
+          created_at: string
+          device_fingerprint: string | null
+          geo_location: Json | null
+          id: string
+          ip_address: string | null
+          risk_score: number | null
+          session_id: string | null
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          action_details: Json
+          action_type: string
+          anomaly_detected?: boolean | null
+          created_at?: string
+          device_fingerprint?: string | null
+          geo_location?: Json | null
+          id?: string
+          ip_address?: string | null
+          risk_score?: number | null
+          session_id?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          action_details?: Json
+          action_type?: string
+          anomaly_detected?: boolean | null
+          created_at?: string
+          device_fingerprint?: string | null
+          geo_location?: Json | null
+          id?: string
+          ip_address?: string | null
+          risk_score?: number | null
+          session_id?: string | null
+          user_agent?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -769,6 +937,14 @@ export type Database = {
         Args: { p_session_id: string; p_final_score?: number }
         Returns: boolean
       }
+      generate_compliance_report: {
+        Args: {
+          p_report_type: string
+          p_period_start: string
+          p_period_end: string
+        }
+        Returns: Json
+      }
       get_admin_audit_logs: {
         Args: { p_limit?: number; p_offset?: number }
         Returns: {
@@ -825,6 +1001,16 @@ export type Database = {
         Args: { wallet_address: string }
         Returns: boolean
       }
+      log_user_behavior: {
+        Args: {
+          p_action_type: string
+          p_action_details: Json
+          p_session_id?: string
+          p_ip_address?: string
+          p_user_agent?: string
+        }
+        Returns: undefined
+      }
       lose_life: {
         Args: { p_session_id: string }
         Returns: Json
@@ -850,6 +1036,16 @@ export type Database = {
           p_device_fingerprint?: string
         }
         Returns: Json
+      }
+      record_performance_metric: {
+        Args: {
+          p_metric_type: string
+          p_metric_name: string
+          p_metric_value: number
+          p_metric_unit?: string
+          p_tags?: Json
+        }
+        Returns: undefined
       }
       start_game_session: {
         Args: { p_game_type: string; p_session_token: string }
