@@ -1,187 +1,22 @@
-import { useState, useEffect, useRef, useCallback } from "react";
-import { useFrame } from "@react-three/fiber";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { useGameManager } from "@/hooks/useGameManager";
+import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
-import Game3DEngine from "./engine/Game3DEngine";
-import { Platform3D, GameFloor3D } from "./engine/Game3DComponents";
-import { EnhancedEnemy3D, EnhancedCoin3D, ParticleExplosion3D } from "./engine/EnhancedMario3DComponents";
 import * as THREE from "three";
-
-interface Mario3DGameProps {
-  onScoreChange?: (score: number) => void;
-  onGameEnd?: () => void;
-  onGameStart?: () => Promise<boolean>;
-}
+import { Mario3DPlayer, Mario3DEnemy, Mario3DCoin, Mario3DPlatform } from "./types";
 
 const WORLD_SIZE = 50;
 const PLAYER_SPEED = 0.3;
 const JUMP_FORCE = 0.8;
 const GRAVITY = 0.03;
 
-interface Mario3DPlayer {
-  position: THREE.Vector3;
-  velocity: THREE.Vector3;
-  grounded: boolean;
-  lives: number;
-  size: number;
-  powerUp: 'small' | 'big' | 'fire';
-}
-
-interface Mario3DEnemy {
-  id: number;
-  position: THREE.Vector3;
-  velocity: THREE.Vector3;
-  type: 'goomba' | 'koopa';
-  alive: boolean;
-}
-
-interface Mario3DCoin {
-  id: number;
-  position: THREE.Vector3;
-  collected: boolean;
-}
-
-interface Mario3DPlatform {
-  position: THREE.Vector3;
-  size: THREE.Vector3;
-  type: 'ground' | 'brick' | 'pipe' | 'moving';
-}
-
-// Enhanced Mario Character Component with detailed 3D geometry
-const Mario3DCharacter = ({ player, animation }: { player: Mario3DPlayer, animation: string }) => {
-  const meshRef = useRef<THREE.Group>(null);
-  const bodyRef = useRef<THREE.Mesh>(null);
-  const hatRef = useRef<THREE.Group>(null);
-  
-  useFrame((state) => {
-    if (meshRef.current) {
-      meshRef.current.position.copy(player.position);
-      
-      // Enhanced animations
-      if (animation === "jump") {
-        meshRef.current.rotation.x = Math.sin(state.clock.elapsedTime * 10) * 0.2;
-      } else if (animation === "run") {
-        meshRef.current.rotation.z = Math.sin(state.clock.elapsedTime * 8) * 0.1;
-        if (bodyRef.current) {
-          bodyRef.current.scale.setScalar(1 + Math.sin(state.clock.elapsedTime * 12) * 0.05);
-        }
-      } else {
-        meshRef.current.rotation.x = 0;
-        meshRef.current.rotation.z = 0;
-        if (bodyRef.current) {
-          bodyRef.current.scale.setScalar(1);
-        }
-      }
-    }
-  });
-
-  const getBodyColor = () => {
-    switch (player.powerUp) {
-      case 'big': return "#DC143C";
-      case 'fire': return "#FF6347";
-      default: return "#0066CC";
-    }
-  };
-
-  const getSize = () => {
-    return player.powerUp === 'small' ? 0.8 : 1.2;
-  };
-
-  const size = getSize();
-
-  return (
-    <group ref={meshRef}>
-      {/* Mario's body - rounded cylinder */}
-      <mesh ref={bodyRef} position={[0, 0, 0]} castShadow receiveShadow>
-        <cylinderGeometry args={[size * 0.4, size * 0.5, size * 0.8, 16]} />
-        <meshStandardMaterial 
-          color={getBodyColor()}
-          metalness={0.1}
-          roughness={0.3}
-          emissive={getBodyColor()}
-          emissiveIntensity={0.05}
-        />
-      </mesh>
-      
-      {/* Mario's head - sphere */}
-      <mesh position={[0, size * 0.6, 0]} castShadow receiveShadow>
-        <sphereGeometry args={[size * 0.35, 16, 16]} />
-        <meshStandardMaterial 
-          color="#FFDBAC"
-          metalness={0}
-          roughness={0.4}
-        />
-      </mesh>
-      
-      {/* Mario's hat - cone + cylinder */}
-      <group ref={hatRef}>
-        <mesh position={[0, size * 0.85, 0]} castShadow>
-          <cylinderGeometry args={[size * 0.4, size * 0.4, size * 0.2, 16]} />
-          <meshStandardMaterial 
-            color="#DC143C"
-            metalness={0.2}
-            roughness={0.3}
-          />
-        </mesh>
-        <mesh position={[0, size * 0.95, size * 0.2]} castShadow>
-          <sphereGeometry args={[size * 0.15, 8, 8]} />
-          <meshStandardMaterial 
-            color="#FFD700"
-            metalness={0.8}
-            roughness={0.1}
-            emissive="#FFD700"
-            emissiveIntensity={0.3}
-          />
-        </mesh>
-      </group>
-      
-      {/* Mario's mustache */}
-      <mesh position={[0, size * 0.45, size * 0.3]} castShadow>
-        <boxGeometry args={[size * 0.3, size * 0.1, size * 0.1]} />
-        <meshStandardMaterial 
-          color="#8B4513"
-          metalness={0}
-          roughness={0.8}
-        />
-      </mesh>
-      
-      {/* Mario's overalls straps */}
-      <mesh position={[0, size * 0.2, 0]} castShadow>
-        <boxGeometry args={[size * 0.6, size * 0.1, size * 0.4]} />
-        <meshStandardMaterial 
-          color="#4169E1"
-          metalness={0.1}
-          roughness={0.4}
-        />
-      </mesh>
-      
-      {/* Power-up glow effect */}
-      {player.powerUp !== 'small' && (
-        <mesh position={[0, 0, 0]}>
-          <sphereGeometry args={[size * 0.8, 16, 16]} />
-          <meshBasicMaterial 
-            color={player.powerUp === 'fire' ? "#FF6347" : "#FFD700"}
-            transparent
-            opacity={0.1}
-          />
-        </mesh>
-      )}
-    </group>
-  );
-};
-
-export const Mario3DGame = ({ onScoreChange, onGameEnd, onGameStart }: Mario3DGameProps = {}) => {
-  const [score, setScore] = useState(0);
-  const [lives, setLives] = useState(3);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [isPaused, setIsPaused] = useState(false);
-  const [gameOver, setGameOver] = useState(false);
-  const [level, setLevel] = useState(1);
+export const useMarioGameLogic = (
+  isPlaying: boolean,
+  isPaused: boolean,
+  gameOver: boolean,
+  lives: number,
+  onScoreChange?: (score: number) => void
+) => {
   const [keys, setKeys] = useState<{ [key: string]: boolean }>({});
-  
-  const { handleGameStart } = useGameManager();
+  const [score, setScore] = useState(0);
   
   // Game objects
   const [player, setPlayer] = useState<Mario3DPlayer>({
@@ -308,7 +143,6 @@ export const Mario3DGame = ({ onScoreChange, onGameEnd, onGameStart }: Mario3DGa
         
         // Fall death
         if (newPlayer.position.y < -10) {
-          setLives(prev => prev - 1);
           newPlayer.position.set(0, 2, 0);
           newPlayer.velocity.set(0, 0, 0);
           toast.error("Mario fell! Lives remaining: " + (lives - 1));
@@ -375,7 +209,6 @@ export const Mario3DGame = ({ onScoreChange, onGameEnd, onGameStart }: Mario3DGa
         } else {
           // Side collision - take damage
           if (player.powerUp === 'small') {
-            setLives(prev => prev - 1);
             toast.error("Mario got hurt!");
             // Knockback
             const direction = player.position.clone().sub(enemy.position).normalize();
@@ -412,25 +245,7 @@ export const Mario3DGame = ({ onScoreChange, onGameEnd, onGameStart }: Mario3DGa
     );
   }, [player, enemies, onScoreChange]);
 
-  // Game over check
-  useEffect(() => {
-    if (lives <= 0) {
-      setGameOver(true);
-      setIsPlaying(false);
-      onGameEnd?.();
-      toast.error("Game Over! Final Score: " + score);
-    }
-  }, [lives, score, onGameEnd]);
-
-  const startGame = async () => {
-    if (onGameStart && !(await onGameStart())) return;
-    if (!handleGameStart('mario')) return;
-    
-    setScore(0);
-    setLives(3);
-    setGameOver(false);
-    setIsPlaying(true);
-    setIsPaused(false);
+  const resetGameState = () => {
     setPlayer({
       position: new THREE.Vector3(0, 2, 0),
       velocity: new THREE.Vector3(0, 0, 0),
@@ -441,10 +256,7 @@ export const Mario3DGame = ({ onScoreChange, onGameEnd, onGameStart }: Mario3DGa
     });
     setCoins(prev => prev.map(coin => ({ ...coin, collected: false })));
     setEnemies(prev => prev.map(enemy => ({ ...enemy, alive: true })));
-  };
-
-  const pauseGame = () => {
-    setIsPaused(!isPaused);
+    setScore(0);
   };
 
   const getPlayerAnimation = () => {
@@ -453,86 +265,13 @@ export const Mario3DGame = ({ onScoreChange, onGameEnd, onGameStart }: Mario3DGa
     return "idle";
   };
 
-  return (
-    <div className="space-y-4">
-      <Card className="p-6 bg-gradient-card border-neon-green">
-        <div className="flex justify-between items-center mb-4">
-          <h2 className="text-2xl font-bold text-neon-green">3D Mario Adventure</h2>
-          <div className="text-lg font-bold text-arcade-gold">
-            Score: {score} | Lives: {lives} | Level: {level}
-          </div>
-        </div>
-        
-        <div className="flex gap-2 mb-4">
-          <Button
-            onClick={startGame}
-            variant="arcade"
-            disabled={isPlaying && !gameOver}
-          >
-            {gameOver ? 'Play Again' : 'Start Game'}
-          </Button>
-          
-          {isPlaying && !gameOver && (
-            <Button onClick={pauseGame} variant="secondary">
-              {isPaused ? 'Resume' : 'Pause'}
-            </Button>
-          )}
-        </div>
-
-        <Game3DEngine
-          gameId="mario-3d"
-          camera={{ position: [0, 15, 15], fov: 60 }}
-          lighting="arcade"
-          environment="abstract"
-          enableOrbitControls={true}
-        >
-          {/* Game Floor */}
-          <GameFloor3D size={WORLD_SIZE} color="#228B22" pattern="grid" />
-          
-          {/* Platforms */}
-          {platforms.map((platform, index) => (
-            <Platform3D
-              key={index}
-              position={platform.position.toArray()}
-              size={platform.size.toArray()}
-              color={platform.type === 'pipe' ? "#32CD32" : platform.type === 'brick' ? "#CD853F" : "#8B4513"}
-              type={platform.type}
-            />
-          ))}
-          
-          {/* Mario Player */}
-          <Mario3DCharacter player={player} animation={getPlayerAnimation()} />
-          
-          {/* Enemies */}
-          {enemies.map(enemy => 
-            enemy.alive && (
-              <EnhancedEnemy3D
-                key={enemy.id}
-                position={enemy.position.toArray()}
-                color={enemy.type === 'goomba' ? "#8B4513" : "#32CD32"}
-                size={0.8}
-                type={enemy.type}
-                behavior="patrol"
-                speed={1}
-              />
-            )
-          )}
-          
-          {/* Coins */}
-          {coins.map(coin => (
-            <EnhancedCoin3D
-              key={coin.id}
-              position={coin.position.toArray()}
-              color="#FFD700"
-              collected={coin.collected}
-            />
-          ))}
-        </Game3DEngine>
-        
-        <div className="mt-4 text-sm text-muted-foreground text-center">
-          WASD to move • Space to jump • Jump on enemies to defeat them!
-        </div>
-      </Card>
-    </div>
-  );
+  return {
+    player,
+    enemies,
+    coins,
+    platforms,
+    score,
+    resetGameState,
+    getPlayerAnimation
+  };
 };

@@ -1,7 +1,7 @@
 import { Snake3DGame } from "@/components/games/Snake3DGame";
 import { Tetris3DGame } from "@/components/games/Tetris3DGame";
 import { PacMan3DGame } from "@/components/games/PacMan3DGame";
-import { Mario3DGame } from "@/components/games/Mario3DGame";
+import { Mario3DGame } from "@/components/games/mario/Mario3DGame";
 import { KingKong3DGame } from "@/components/games/KingKong3DGame";
 import { Breakout3DGame } from "@/components/games/Breakout3DGame";
 import { Asteroids3DGame } from "@/components/games/Asteroids3DGame";
