@@ -236,7 +236,7 @@ serve(async (req) => {
           .from('player_balances')
           .select('*')
           .eq('wallet_address', userProfile.verified_wallet_address)
-          .single()
+          .maybeSingle() // Use maybeSingle to avoid errors when no record exists
 
         console.log('💰 Current balance result:', { currentBalance, balanceError });
 
@@ -250,16 +250,33 @@ serve(async (req) => {
           formula: `${currentChips} + ${chip_amount} = ${newChipAmount}`
         });
 
-        // Upsert player_balances table with new chip count
-        const { error: balanceUpdateError } = await supabaseClient
-          .from('player_balances')
-          .upsert({
-            wallet_address: userProfile.verified_wallet_address,
-            game_chips: newChipAmount,
-            over_balance: currentBalance?.over_balance || 0,
-            total_earnings: currentBalance?.total_earnings || 0,
-            last_updated: new Date().toISOString()
-          })
+        // Check if record exists and UPDATE or INSERT accordingly to avoid duplicate key constraint
+        let balanceUpdateError;
+        if (currentBalance) {
+          // Record exists - UPDATE it
+          console.log('📝 Updating existing balance record');
+          const { error } = await supabaseClient
+            .from('player_balances')
+            .update({
+              game_chips: newChipAmount,
+              last_updated: new Date().toISOString()
+            })
+            .eq('wallet_address', userProfile.verified_wallet_address);
+          balanceUpdateError = error;
+        } else {
+          // No record exists - INSERT new one
+          console.log('📝 Creating new balance record');
+          const { error } = await supabaseClient
+            .from('player_balances')
+            .insert({
+              wallet_address: userProfile.verified_wallet_address,
+              game_chips: newChipAmount,
+              over_balance: 0,
+              total_earnings: 0,
+              last_updated: new Date().toISOString()
+            });
+          balanceUpdateError = error;
+        }
 
         console.log('💾 Balance update result:', { balanceUpdateError });
 
