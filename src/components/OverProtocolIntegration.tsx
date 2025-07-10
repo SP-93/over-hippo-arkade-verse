@@ -148,52 +148,6 @@ export const OverProtocolIntegration = ({
         </DialogContent>
       </Dialog>
 
-      {/* Withdraw Tokens */}
-      <Dialog>
-        <DialogTrigger asChild>
-          <Button variant="outline" className="w-full border-arcade-gold text-arcade-gold hover:bg-arcade-gold/10">
-            <Wallet className="h-4 w-4 mr-2" />
-            Withdraw OVER Tokens
-          </Button>
-        </DialogTrigger>
-        <DialogContent className="bg-gradient-card border-arcade-gold">
-          <DialogHeader>
-            <DialogTitle className="text-arcade-gold">Withdraw OVER Tokens</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <label className="text-sm font-medium text-muted-foreground">Amount to Withdraw</label>
-              <Input
-                type="number"
-                min={MIN_WITHDRAWAL}
-                max={overBalance}
-                step="0.01"
-                value={withdrawAmount}
-                onChange={(e) => setWithdrawAmount(parseFloat(e.target.value) || 0)}
-                className="bg-input border-arcade-gold/30 text-arcade-gold"
-              />
-            </div>
-            <div className="bg-muted/20 p-3 rounded-lg">
-              <p className="text-xs text-muted-foreground">
-                Available: {overBalance.toFixed(2)} OVER
-              </p>
-              <p className="text-xs text-muted-foreground">
-                Minimum withdrawal: {MIN_WITHDRAWAL} OVER
-              </p>
-              <p className="text-xs text-muted-foreground">
-                Withdrawal address: {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}
-              </p>
-            </div>
-            <Button 
-              onClick={handleWithdraw}
-              disabled={isLoading || withdrawAmount < MIN_WITHDRAWAL || withdrawAmount > overBalance}
-              className="w-full bg-gradient-secondary hover:shadow-glow"
-            >
-              {isLoading ? "Processing..." : `Withdraw ${withdrawAmount} OVER`}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
 
     </div>
   );

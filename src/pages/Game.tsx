@@ -31,8 +31,8 @@ export const Game = () => {
   const onGameStart = () => handleGameStart(gameId || '');
 
   return (
-    <div className="min-h-screen bg-gradient-bg p-4">
-      <div className="max-w-4xl mx-auto space-y-6">
+    <div className="min-h-screen max-w-screen-2xl mx-auto bg-gradient-bg p-4 overflow-x-hidden">
+      <div className="max-w-6xl mx-auto space-y-6">
         <GameHeader gameId={gameId} onGoBack={goBack} />
         
         <GameStats 
@@ -41,7 +41,7 @@ export const Game = () => {
           gameStatus={gameStatus}
         />
 
-        <div className="w-full">
+        <div className="w-full max-w-4xl mx-auto">
           <GameRouter 
             gameId={gameId}
             onScoreChange={setCurrentScore}

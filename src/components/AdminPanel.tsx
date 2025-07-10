@@ -475,6 +475,23 @@ export const AdminPanel = ({ walletAddress, isVisible }: AdminPanelProps) => {
                 <h4 className="font-medium mb-2">Platform Status</h4>
                 <Badge variant="default">Active</Badge>
               </div>
+
+              <div className="p-4 bg-muted/20 rounded-lg">
+                <h4 className="font-medium mb-2">Debug Tools</h4>
+                <p className="text-sm text-muted-foreground mb-4">Admin debugging utilities</p>
+                <div className="space-y-2">
+                  <div className="border border-border rounded-lg p-3">
+                    <h5 className="font-medium text-sm mb-2">Wallet Debug Panel</h5>
+                    <div className="text-xs text-muted-foreground">
+                      <div>{'{'}</div>
+                      <div>&nbsp;&nbsp;"isAdmin": {adminStatus?.isAdmin ? 'true' : 'false'},</div>
+                      <div>&nbsp;&nbsp;"walletAddress": "{walletAddress || 'None'}",</div>
+                      <div>&nbsp;&nbsp;"adminWallet": "{adminWallet}"</div>
+                      <div>{'}'}</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </Card>
         </TabsContent>

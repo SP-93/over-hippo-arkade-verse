@@ -509,7 +509,7 @@ const Index = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-bg relative">
+    <div className="min-h-screen max-w-screen-2xl mx-auto bg-gradient-bg relative overflow-x-hidden">
       {/* Animated hippo background */}
       <HippoBackground />
       
@@ -566,45 +566,38 @@ const Index = () => {
                   )}
                 </div>
                 
-                <div className="flex items-center space-x-2 md:space-x-4">
-                  <ChipDisplay 
-                    playerChips={chipManager.playerChips} 
-                    timeUntilReset={chipManager.getTimeUntilReset()}
-                    currentLives={playerStats.playerStats.overTokens > 0 ? 3 : 0}
-                    showLives={isWalletConnected}
-                  />
-                  <Badge variant="secondary" className="bg-arcade-gold/20 text-arcade-gold border-arcade-gold">
-                    Score: {playerStats.playerStats.totalScore.toLocaleString()}
-                  </Badge>
-                  <OverProtocolIntegration
-                    walletAddress={walletAddress}
-                    overBalance={overBalance}
-                    onPurchaseChips={handleOverPurchaseChips}
-                    onWithdrawTokens={handleOverWithdraw}
-                  />
-                  {user && (
-                    <WalletConnection 
-                      onConnect={handleWalletConnect} 
-                      onDisconnect={handleWalletDisconnect}
-                      isConnected={isWalletConnected}
-                      walletType={walletType}
-                      walletAddress={walletAddress}
-                      isVerified={isWalletVerified}
+                  <div className="flex items-center space-x-2 md:space-x-4">
+                    <ChipDisplay 
+                      playerChips={chipManager.playerChips} 
+                      timeUntilReset={chipManager.getTimeUntilReset()}
+                      currentLives={playerStats.playerStats.overTokens > 0 ? 3 : 0}
+                      showLives={isWalletConnected}
                     />
-                  )}
-                   {user && (
-                     <Button
-                       variant="ghost"
-                       size="sm"
-                       onClick={handleSignOut}
-                       className="h-8 px-3 text-xs hover:bg-destructive/10 hover:text-destructive"
-                     >
-                       <LogOut className="h-3 w-3 mr-1" />
-                       Sign Out
-                     </Button>
-                   )}
-                   <WalletDebugPanel />
-                 </div>
+                    <Badge variant="secondary" className="bg-arcade-gold/20 text-arcade-gold border-arcade-gold">
+                      Score: {playerStats.playerStats.totalScore.toLocaleString()}
+                    </Badge>
+                    {user && (
+                      <WalletConnection 
+                        onConnect={handleWalletConnect} 
+                        onDisconnect={handleWalletDisconnect}
+                        isConnected={isWalletConnected}
+                        walletType={walletType}
+                        walletAddress={walletAddress}
+                        isVerified={isWalletVerified}
+                      />
+                    )}
+                     {user && (
+                       <Button
+                         variant="ghost"
+                         size="sm"
+                         onClick={handleSignOut}
+                         className="h-8 px-3 text-xs hover:bg-destructive/10 hover:text-destructive"
+                       >
+                         <LogOut className="h-3 w-3 mr-1" />
+                         Sign Out
+                       </Button>
+                     )}
+                   </div>
               </div>
             </div>
           </nav>
