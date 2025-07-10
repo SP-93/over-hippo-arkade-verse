@@ -302,40 +302,13 @@ This signature proves you own this wallet and grants access to Over Hippo Arkade
 
       console.log('🔐 Storing wallet verification for:', { address, userId: user.id });
 
-      // First, check if profile exists, create if it doesn't
-      const { data: existingProfile, error: profileCheckError } = await supabase
-        .from('profiles')
-        .select('id, user_id')
-        .eq('user_id', user.id)
-        .single();
+      // Ensure profile exists first - this is critical for the wallet verification flow
+      await this.ensureProfileExists(user);
 
-      if (profileCheckError && profileCheckError.code !== 'PGRST116') {
-        console.error('Profile check error:', profileCheckError);
-        throw profileCheckError;
-      }
-
-      // Create profile if it doesn't exist
-      if (!existingProfile) {
-        console.log('👤 Creating profile for user:', user.id);
-        const { error: createProfileError } = await supabase
-          .from('profiles')
-          .insert({
-            user_id: user.id,
-            display_name: user.user_metadata?.display_name || `Player_${user.id.slice(0, 8)}`,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          });
-
-        if (createProfileError) {
-          console.error('Profile creation error:', createProfileError);
-          throw createProfileError;
-        }
-      }
-
-      // Store wallet verification with proper upsert
-      const { error: walletError } = await supabase
+      // Try INSERT first, then UPDATE if conflict (simpler than upsert)
+      const { error: insertError } = await supabase
         .from('wallet_verifications')
-        .upsert({
+        .insert({
           wallet_address: address,
           message: message,
           signature: signature,
@@ -343,14 +316,30 @@ This signature proves you own this wallet and grants access to Over Hippo Arkade
           verified_at: new Date().toISOString(),
           is_active: true,
           is_banned: false
-        }, { 
-          onConflict: 'wallet_address',
-          ignoreDuplicates: false 
         });
 
-      if (walletError) {
-        console.error('❌ Wallet verification storage failed:', walletError);
-        throw walletError;
+      // If wallet already exists, update it
+      if (insertError && insertError.code === '23505') {
+        console.log('🔄 Wallet exists, updating verification...');
+        const { error: updateError } = await supabase
+          .from('wallet_verifications')
+          .update({
+            message: message,
+            signature: signature,
+            user_id: user.id,
+            verified_at: new Date().toISOString(),
+            is_active: true,
+            is_banned: false
+          })
+          .eq('wallet_address', address);
+
+        if (updateError) {
+          console.error('❌ Wallet verification update failed:', updateError);
+          throw updateError;
+        }
+      } else if (insertError) {
+        console.error('❌ Wallet verification insert failed:', insertError);
+        throw insertError;
       }
 
       console.log('✅ Wallet verification stored successfully');
@@ -380,6 +369,36 @@ This signature proves you own this wallet and grants access to Over Hippo Arkade
         code: error.code
       });
       throw error;
+    }
+  }
+
+  // Helper method to ensure profile exists
+  private async ensureProfileExists(user: any): Promise<void> {
+    const { data: existingProfile, error: profileCheckError } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('user_id', user.id)
+      .single();
+
+    if (profileCheckError && profileCheckError.code === 'PGRST116') {
+      // Profile doesn't exist, create it
+      console.log('👤 Creating profile for user:', user.id);
+      const { error: createProfileError } = await supabase
+        .from('profiles')
+        .insert({
+          user_id: user.id,
+          display_name: user.user_metadata?.display_name || `Player_${user.id.slice(0, 8)}`,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        });
+
+      if (createProfileError) {
+        console.error('Profile creation error:', createProfileError);
+        throw createProfileError;
+      }
+    } else if (profileCheckError) {
+      console.error('Profile check error:', profileCheckError);
+      throw profileCheckError;
     }
   }
 

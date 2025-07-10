@@ -908,6 +908,10 @@ export type Database = {
         }
         Returns: Json
       }
+      check_admin_config_access: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
       check_admin_rate_limit: {
         Args: {
           p_admin_wallet: string
@@ -984,6 +988,10 @@ export type Database = {
       }
       is_admin_wallet_with_logging: {
         Args: { wallet_address: string }
+        Returns: boolean
+      }
+      is_current_user_admin: {
+        Args: Record<PropertyKey, never>
         Returns: boolean
       }
       log_admin_action: {
