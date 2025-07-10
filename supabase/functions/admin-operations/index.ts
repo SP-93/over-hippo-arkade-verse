@@ -26,30 +26,40 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
     )
     
-    const requestBody = await req.json();
-    console.log('🔧 Admin operations function called with action:', requestBody);
-
+    console.log('🔧 Admin operations function started');
+    
     const authHeader = req.headers.get('Authorization')!
     const token = authHeader.replace('Bearer ', '')
     
     const { data: { user } } = await supabaseClient.auth.getUser(token)
     if (!user) {
+      console.error('❌ No authenticated user found');
       return new Response(JSON.stringify({ error: 'Unauthorized' }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
 
+    console.log('✅ User authenticated:', user.id);
+
+    const requestBody = await req.json();
+    console.log('📥 Request body received:', requestBody);
+
     const { action, wallet_address, user_id, chip_amount, over_amount, withdrawal_amount }: AdminRequest = requestBody
 
     // Check if user is admin
+    console.log('🔍 Checking admin status for user:', user.id);
+    
     const { data: profile } = await supabaseClient
       .from('profiles')
       .select('verified_wallet_address')
       .eq('user_id', user.id)
       .single()
 
+    console.log('👤 User profile:', profile);
+
     if (!profile?.verified_wallet_address) {
+      console.error('❌ No verified wallet for user');
       return new Response(JSON.stringify({ error: 'No verified wallet' }), {
         status: 403,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -60,12 +70,17 @@ serve(async (req) => {
       wallet_address: profile.verified_wallet_address
     })
 
+    console.log('🛡️ Admin check result:', isAdmin);
+
     if (!isAdmin) {
+      console.error('❌ Admin access denied for:', profile.verified_wallet_address);
       return new Response(JSON.stringify({ error: 'Admin access required' }), {
         status: 403,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
+
+    console.log('✅ Admin access confirmed. Processing action:', action);
 
     switch (action) {
       case 'check_admin':
