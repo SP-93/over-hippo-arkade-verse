@@ -36,21 +36,35 @@ const Game3DEngine = ({
   useEffect(() => {
     const checkWebGL = () => {
       try {
+        console.log(`🎮 Checking WebGL support for game: ${gameId}`);
+        
         const canvas = document.createElement('canvas');
-        const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+        const gl = canvas.getContext('webgl2') || 
+                   canvas.getContext('webgl') || 
+                   canvas.getContext('experimental-webgl');
+        
         if (!gl) {
-          throw new Error('WebGL not supported');
+          throw new Error('WebGL not supported on this device');
         }
+        
+        // Test basic WebGL functionality
+        if (gl instanceof WebGLRenderingContext || gl instanceof WebGL2RenderingContext) {
+          const renderer = gl.getParameter(gl.RENDERER);
+          const vendor = gl.getParameter(gl.VENDOR);
+          console.log(`✅ WebGL supported - Renderer: ${renderer}, Vendor: ${vendor}`);
+        }
+        
         setIsLoading(false);
       } catch (error) {
-        console.error('WebGL check failed:', error);
+        console.error(`❌ WebGL check failed for ${gameId}:`, error);
         setHasError(true);
         setIsLoading(false);
       }
     };
 
-    checkWebGL();
-  }, [retryCount]);
+    const timer = setTimeout(checkWebGL, 100);
+    return () => clearTimeout(timer);
+  }, [retryCount, gameId]);
 
   const handleRetry = useCallback(() => {
     if (retryCount < 3) {
@@ -162,8 +176,10 @@ const Game3DEngine = ({
           near: camera.near || 0.1,
           far: camera.far || 1000
         }}
-        onCreated={({ gl, scene }) => {
+        onCreated={({ gl, scene, camera }) => {
           try {
+            console.log(`🎯 3D Canvas created for ${gameId}`);
+            
             gl.setSize(600, 600);
             gl.setPixelRatio(Math.min(window.devicePixelRatio, 2));
             gl.shadowMap.enabled = true;
@@ -172,9 +188,12 @@ const Game3DEngine = ({
             gl.toneMappingExposure = 1.2;
             
             scene.background = new THREE.Color('#000814');
+            
+            console.log(`✅ 3D Engine initialized for ${gameId}`);
             onRendererReady?.(gl);
             setIsLoading(false);
           } catch (error) {
+            console.error(`❌ 3D Canvas creation failed for ${gameId}:`, error);
             handleCanvasError(error);
           }
         }}

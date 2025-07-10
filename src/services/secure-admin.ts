@@ -116,6 +116,8 @@ export class SecureAdminService {
   // Add chips to admin's own account
   async addChipsToSelf(chipAmount: number): Promise<boolean> {
     try {
+      console.log('🎯 Adding chips to self:', chipAmount);
+      
       const { data, error } = await supabase.functions.invoke('admin-operations', {
         body: { 
           action: 'add_chips_to_self',
@@ -123,20 +125,22 @@ export class SecureAdminService {
         }
       });
 
+      console.log('🔍 Edge function response:', { data, error });
+
       if (error) {
-        console.error('Add chips error:', error);
-        throw error;
+        console.error('❌ Add chips edge function error:', error);
+        throw new Error(`Edge function error: ${error.message || 'Unknown error'}`);
       }
 
-      if (data.success) {
-        console.log('Chips added successfully:', data);
+      if (data?.success) {
+        console.log('✅ Chips added successfully:', data);
         return true;
       } else {
-        console.error('Add chips failed:', data);
-        throw new Error(data.error || 'Failed to add chips');
+        console.error('❌ Add chips failed - invalid response:', data);
+        throw new Error(data?.error || data?.message || 'Failed to add chips - invalid response');
       }
     } catch (error) {
-      console.error('Add chips operation failed:', error);
+      console.error('💥 Add chips operation failed:', error);
       throw error;
     }
   }

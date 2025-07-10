@@ -158,14 +158,16 @@ export const AdminPanel = ({ walletAddress, isVisible }: AdminPanelProps) => {
     mutationFn: (amount: number) => secureAdminService.addChipsToSelf(amount),
     onSuccess: (success) => {
       if (success) {
-        toast.success("Chips added to your account successfully!");
+        toast.success("Chips added successfully! ✨");
         queryClient.invalidateQueries({ queryKey: ['admin-stats'] });
+        queryClient.invalidateQueries({ queryKey: ['admin-users'] });
       } else {
         toast.error("Failed to add chips");
       }
     },
     onError: (error) => {
-      toast.error(`Failed to add chips: ${error.message}`);
+      console.error('Add chips mutation error:', error);
+      toast.error(`Add chips failed: ${error.message || 'Unknown error'}`);
     }
   });
 
@@ -307,14 +309,18 @@ export const AdminPanel = ({ walletAddress, isVisible }: AdminPanelProps) => {
               <Button
                 variant="destructive"
                 onClick={() => {
-                  const amount = prompt("Enter number of chips to add to your account:");
-                  if (amount && !isNaN(Number(amount)) && Number(amount) > 0) {
-                    addChipsMutation.mutate(Number(amount));
+                  const amount = prompt("Enter chips to add (current logic: current + new = total):");
+                  const numAmount = Number(amount);
+                  if (amount && !isNaN(numAmount) && numAmount > 0) {
+                    console.log('Adding chips:', numAmount);
+                    addChipsMutation.mutate(numAmount);
+                  } else if (amount !== null) {
+                    toast.error("Please enter a valid positive number");
                   }
                 }}
                 disabled={addChipsMutation.isPending}
               >
-                {addChipsMutation.isPending ? 'Adding...' : 'Add Chips to Self'}
+                {addChipsMutation.isPending ? '🔄 Adding...' : '🎯 Add Chips (1+1=2)'}
               </Button>
             </div>
           </Card>
