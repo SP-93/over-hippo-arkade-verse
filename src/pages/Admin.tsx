@@ -10,6 +10,9 @@ import { AdminOverview } from "@/components/admin/AdminOverview";
 import { AdminAuditLog } from "@/components/admin/AdminAuditLog";
 import { AdminSecurityMonitor } from "@/components/admin/AdminSecurityMonitor";
 import { AccountManagement } from "@/components/admin/AccountManagement";
+import { ComplianceReporting } from "@/components/admin/ComplianceReporting";
+import { SecurityIncidentManager } from "@/components/admin/SecurityIncidentManager";
+import { AnalyticsDashboard } from "@/components/admin/AnalyticsDashboard";
 import { WalletAdminPanel } from "@/components/WalletAdminPanel";
 
 interface AdminStats {
@@ -26,7 +29,7 @@ export default function Admin() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<AdminStats | null>(null);
-  const [activeTab, setActiveTab] = useState<"overview" | "wallets" | "accounts" | "audit" | "security">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "analytics" | "wallets" | "accounts" | "compliance" | "incidents" | "audit" | "security">("overview");
 
   // Check authentication and admin status
   useEffect(() => {
@@ -141,12 +144,18 @@ export default function Admin() {
         </div>
 
         {/* Navigation Tabs */}
-        <div className="flex gap-2 mb-6">
+        <div className="flex gap-2 mb-6 flex-wrap">
           <Button
             variant={activeTab === "overview" ? "default" : "outline"}
             onClick={() => setActiveTab("overview")}
           >
             Platform Overview
+          </Button>
+          <Button
+            variant={activeTab === "analytics" ? "default" : "outline"}
+            onClick={() => setActiveTab("analytics")}
+          >
+            Analytics Dashboard
           </Button>
           <Button
             variant={activeTab === "wallets" ? "default" : "outline"}
@@ -159,6 +168,18 @@ export default function Admin() {
             onClick={() => setActiveTab("accounts")}
           >
             Account Security
+          </Button>
+          <Button
+            variant={activeTab === "compliance" ? "default" : "outline"}
+            onClick={() => setActiveTab("compliance")}
+          >
+            Compliance Reports
+          </Button>
+          <Button
+            variant={activeTab === "incidents" ? "default" : "outline"}
+            onClick={() => setActiveTab("incidents")}
+          >
+            Security Incidents
           </Button>
           <Button
             variant={activeTab === "audit" ? "default" : "outline"}
@@ -183,12 +204,24 @@ export default function Admin() {
           />
         )}
 
+        {activeTab === "analytics" && (
+          <AnalyticsDashboard />
+        )}
+
         {activeTab === "wallets" && (
           <WalletAdminPanel isAdmin={isAdmin} />
         )}
 
         {activeTab === "accounts" && (
           <AccountManagement />
+        )}
+
+        {activeTab === "compliance" && (
+          <ComplianceReporting />
+        )}
+
+        {activeTab === "incidents" && (
+          <SecurityIncidentManager />
         )}
 
         {activeTab === "audit" && (
