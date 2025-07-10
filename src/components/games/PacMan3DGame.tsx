@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Canvas, useFrame } from "@react-three/fiber";
-import { OrbitControls, Box, Sphere, Cylinder } from "@react-three/drei";
+import { useFrame } from "@react-three/fiber";
+import { Box, Sphere, Cylinder } from "@react-three/drei";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useGameManager } from "@/hooks/useGameManager";
 import { toast } from "sonner";
+import Game3DEngine from "./engine/Game3DEngine";
 import * as THREE from "three";
 
 const GRID_SIZE = 21;
@@ -277,61 +278,44 @@ export const PacMan3DGame = ({ onScoreChange, onGameEnd, onGameStart }: PacMan3D
           )}
         </div>
 
-        <div className="h-[600px] bg-gradient-to-b from-green-900 to-green-700 rounded-lg overflow-hidden border-2 border-arcade-gold">
-          <Canvas 
-            key="pacman-3d-canvas"
-            camera={{ position: [10, 25, 25], fov: 60 }}
-            onCreated={({ gl }) => {
-              gl.setSize(600, 600);
-              gl.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-            }}
-            gl={{ 
-              antialias: true, 
-              alpha: false,
-              powerPreference: "high-performance"
-            }}
-            dpr={[1, 2]}
-            fallback={<div className="flex items-center justify-center h-full text-white">Loading Jungle Pac-Man...</div>}
-          >
-            <ambientLight intensity={0.6} color="#90EE90" />
-            <directionalLight position={[15, 15, 5]} intensity={1.2} color="#FFD700" />
-            <pointLight position={[10, 8, 10]} intensity={0.8} color="#ffff88" />
-            <fog attach="fog" args={['#228B22', 30, 80]} />
-            
-            {/* Render maze */}
-            {maze.map((row, z) =>
-              row.map((cell, x) => {
-                const position: [number, number, number] = [x, CELL_SIZE/2, z];
-                
-                if (cell === 1) {
-                  return <Wall key={`${x}-${z}`} position={position} />;
-                } else if (cell === 2) {
-                  return <Dot key={`${x}-${z}`} position={[x, 0, z]} />;
-                } else if (cell === 3) {
-                  return <PowerPellet key={`${x}-${z}`} position={[x, 0, z]} />;
-                }
-                return null;
-              })
-            )}
-            
-            {/* Pac-Man */}
-            <PacManPlayer 
-              position={[pacmanPosition.x, CELL_SIZE/2, pacmanPosition.z]} 
-              direction={direction}
+        <Game3DEngine
+          gameId="pacman-3d"
+          camera={{ position: [10, 25, 25], fov: 60 }}
+          lighting="arcade"
+          environment="forest"
+          enableOrbitControls={true}
+        >
+          {/* Render maze */}
+          {maze.map((row, z) =>
+            row.map((cell, x) => {
+              const position: [number, number, number] = [x, CELL_SIZE/2, z];
+              
+              if (cell === 1) {
+                return <Wall key={`${x}-${z}`} position={position} />;
+              } else if (cell === 2) {
+                return <Dot key={`${x}-${z}`} position={[x, 0, z]} />;
+              } else if (cell === 3) {
+                return <PowerPellet key={`${x}-${z}`} position={[x, 0, z]} />;
+              }
+              return null;
+            })
+          )}
+          
+          {/* Pac-Man */}
+          <PacManPlayer 
+            position={[pacmanPosition.x, CELL_SIZE/2, pacmanPosition.z]} 
+            direction={direction}
+          />
+          
+          {/* Ghosts */}
+          {ghosts.map((ghost, index) => (
+            <Ghost 
+              key={index}
+              position={ghost.position}
+              color={ghost.color}
             />
-            
-            {/* Ghosts */}
-            {ghosts.map((ghost, index) => (
-              <Ghost 
-                key={index}
-                position={ghost.position}
-                color={ghost.color}
-              />
-            ))}
-            
-            <OrbitControls enablePan={false} enableZoom={true} />
-          </Canvas>
-        </div>
+          ))}
+        </Game3DEngine>
         
         <div className="mt-4 text-sm text-muted-foreground text-center">
           Use WASD or Arrow keys to move • Space to pause • Mouse to rotate camera

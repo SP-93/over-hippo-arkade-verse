@@ -1,10 +1,11 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Canvas, useFrame } from "@react-three/fiber";
-import { OrbitControls, Box, Sphere } from "@react-three/drei";
+import { useFrame } from "@react-three/fiber";
+import { Box, Sphere } from "@react-three/drei";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useGameManager } from "@/hooks/useGameManager";
 import { toast } from "sonner";
+import Game3DEngine from "./engine/Game3DEngine";
 import * as THREE from "three";
 
 const GRID_SIZE = 20;
@@ -250,43 +251,27 @@ export const Snake3DGame = ({ onScoreChange, onGameEnd, onGameStart }: Snake3DGa
           )}
         </div>
 
-        <div className="h-[600px] bg-black rounded-lg overflow-hidden">
-          <Canvas 
-            key="snake-3d-canvas"
-            camera={{ position: [15, 15, 15], fov: 50 }}
-            onCreated={({ gl }) => {
-              gl.setSize(600, 600);
-              gl.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-            }}
-            gl={{ 
-              antialias: true, 
-              alpha: false,
-              powerPreference: "high-performance"
-            }}
-            dpr={[1, 2]}
-            fallback={<div className="flex items-center justify-center h-full text-white">Loading 3D...</div>}
-          >
-            <ambientLight intensity={0.3} />
-            <directionalLight position={[10, 10, 5]} intensity={1} />
-            <pointLight position={[0, 10, 0]} intensity={0.5} color="#00ff41" />
-            
-            <GameGrid />
-            
-            {/* Snake segments */}
-            {snake.map((segment, index) => (
-              <SnakeSegment
-                key={index}
-                position={[segment.x, segment.y, segment.z]}
-                isHead={index === 0}
-              />
-            ))}
-            
-            {/* Food */}
-            <Food position={[food.x, food.y, food.z]} />
-            
-            <OrbitControls enablePan={false} enableZoom={true} />
-          </Canvas>
-        </div>
+        <Game3DEngine
+          gameId="snake-3d"
+          camera={{ position: [15, 15, 15], fov: 50 }}
+          lighting="arcade"
+          environment="abstract"
+          enableOrbitControls={true}
+        >
+          <GameGrid />
+          
+          {/* Snake segments */}
+          {snake.map((segment, index) => (
+            <SnakeSegment
+              key={index}
+              position={[segment.x, segment.y, segment.z]}
+              isHead={index === 0}
+            />
+          ))}
+          
+          {/* Food */}
+          <Food position={[food.x, food.y, food.z]} />
+        </Game3DEngine>
         
         <div className="mt-4 text-sm text-muted-foreground text-center">
           Use WASD or Arrow keys to move • Space to pause • Mouse to rotate camera

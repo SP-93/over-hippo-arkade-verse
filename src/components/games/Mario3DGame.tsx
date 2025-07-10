@@ -11,7 +11,7 @@ import * as THREE from "three";
 interface Mario3DGameProps {
   onScoreChange?: (score: number) => void;
   onGameEnd?: () => void;
-  onGameStart?: () => boolean;
+  onGameStart?: () => Promise<boolean>;
 }
 
 const WORLD_SIZE = 50;
@@ -188,7 +188,7 @@ export const Mario3DGame = ({ onScoreChange, onGameEnd, onGameStart }: Mario3DGa
           newPlayer.velocity.x *= 0.8; // Friction
         }
         
-        if (keys['ArrowUp'] || keys['z']) {
+        if (keys['ArrowUp'] || keys['w']) {
           newPlayer.velocity.z = -PLAYER_SPEED;
         } else if (keys['ArrowDown'] || keys['s']) {
           newPlayer.velocity.z = PLAYER_SPEED;
@@ -196,7 +196,7 @@ export const Mario3DGame = ({ onScoreChange, onGameEnd, onGameStart }: Mario3DGa
           newPlayer.velocity.z *= 0.8;
         }
         
-        if ((keys[' '] || keys['ArrowUp']) && newPlayer.grounded) {
+        if (keys[' '] && newPlayer.grounded) {
           newPlayer.velocity.y = JUMP_FORCE;
           newPlayer.grounded = false;
         }
@@ -245,16 +245,23 @@ export const Mario3DGame = ({ onScoreChange, onGameEnd, onGameStart }: Mario3DGa
         return newPlayer;
       });
       
-      // Update enemies
+      // Update enemies with improved AI
       setEnemies(prevEnemies => 
         prevEnemies.map(enemy => {
           if (!enemy.alive) return enemy;
           
+          // Smooth enemy movement
           enemy.position.add(enemy.velocity);
           
-          // Reverse direction at world edges
+          // Reverse direction at world edges or platform edges
           if (enemy.position.x > WORLD_SIZE/2 || enemy.position.x < -WORLD_SIZE/2) {
             enemy.velocity.x *= -1;
+          }
+          
+          // Simple platform edge detection
+          const groundY = 1;
+          if (enemy.position.y <= groundY) {
+            enemy.position.y = groundY;
           }
           
           return enemy;
@@ -276,8 +283,9 @@ export const Mario3DGame = ({ onScoreChange, onGameEnd, onGameStart }: Mario3DGa
       
       const distance = player.position.distanceTo(enemy.position);
       if (distance < 1.5) {
-        if (player.velocity.y < -0.1) {
-          // Jump on enemy
+        // Check if Mario is jumping on enemy (from above)
+        if (player.velocity.y < -0.1 && player.position.y > enemy.position.y + 0.5) {
+          // Jump on enemy - kill it
           setEnemies(prev => prev.map((e, i) => 
             i === enemyIndex ? { ...e, alive: false } : e
           ));
@@ -286,14 +294,27 @@ export const Mario3DGame = ({ onScoreChange, onGameEnd, onGameStart }: Mario3DGa
             onScoreChange?.(newScore);
             return newScore;
           });
-          toast.success("+100 points!");
+          // Mario bounces up after killing enemy
+          setPlayer(prev => ({
+            ...prev,
+            velocity: prev.velocity.clone().setY(JUMP_FORCE * 0.6)
+          }));
+          toast.success("+100 Enemy defeated!");
         } else {
-          // Take damage
+          // Side collision - take damage
           if (player.powerUp === 'small') {
             setLives(prev => prev - 1);
             toast.error("Mario got hurt!");
+            // Knockback
+            const direction = player.position.clone().sub(enemy.position).normalize();
+            setPlayer(prev => ({
+              ...prev,
+              position: prev.position.clone().add(direction.multiplyScalar(2)),
+              velocity: prev.velocity.clone().set(direction.x * 2, prev.velocity.y, direction.z * 2)
+            }));
           } else {
             setPlayer(prev => ({ ...prev, powerUp: 'small', size: 0.8 }));
+            toast.warning("Mario shrunk!");
           }
         }
       }
@@ -305,7 +326,7 @@ export const Mario3DGame = ({ onScoreChange, onGameEnd, onGameStart }: Mario3DGa
         if (coin.collected) return coin;
         
         const distance = player.position.distanceTo(coin.position);
-        if (distance < 1) {
+        if (distance < 1.2) {
           setScore(prev => {
             const newScore = prev + 50;
             onScoreChange?.(newScore);
@@ -329,8 +350,8 @@ export const Mario3DGame = ({ onScoreChange, onGameEnd, onGameStart }: Mario3DGa
     }
   }, [lives, score, onGameEnd]);
 
-  const startGame = () => {
-    if (onGameStart && !onGameStart()) return;
+  const startGame = async () => {
+    if (onGameStart && !(await onGameStart())) return;
     if (!handleGameStart('mario')) return;
     
     setScore(0);
@@ -437,7 +458,7 @@ export const Mario3DGame = ({ onScoreChange, onGameEnd, onGameStart }: Mario3DGa
         </Game3DEngine>
         
         <div className="mt-4 text-sm text-muted-foreground text-center">
-          WASD/Arrow Keys to move • Space to jump • Mouse to rotate camera
+          WASD to move • Space to jump • Jump on enemies to defeat them!
         </div>
       </Card>
     </div>
