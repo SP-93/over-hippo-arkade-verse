@@ -96,7 +96,9 @@ export type Database = {
           created_at: string | null
           id: string
           is_active: boolean | null
+          max_chips_allowed: number | null
           permissions: Json | null
+          unlimited_chips: boolean | null
         }
         Insert: {
           admin_role?: string
@@ -104,7 +106,9 @@ export type Database = {
           created_at?: string | null
           id?: string
           is_active?: boolean | null
+          max_chips_allowed?: number | null
           permissions?: Json | null
+          unlimited_chips?: boolean | null
         }
         Update: {
           admin_role?: string
@@ -112,7 +116,9 @@ export type Database = {
           created_at?: string | null
           id?: string
           is_active?: boolean | null
+          max_chips_allowed?: number | null
           permissions?: Json | null
+          unlimited_chips?: boolean | null
         }
         Relationships: []
       }
@@ -986,6 +992,10 @@ export type Database = {
         Args: { wallet_address: string }
         Returns: boolean
       }
+      is_admin_wallet_with_chip_protection: {
+        Args: { wallet_address: string }
+        Returns: Json
+      }
       is_admin_wallet_with_logging: {
         Args: { wallet_address: string }
         Returns: boolean
@@ -1054,6 +1064,10 @@ export type Database = {
           p_tags?: Json
         }
         Returns: undefined
+      }
+      safe_admin_add_chips: {
+        Args: { p_chip_amount: number; p_admin_protection?: boolean }
+        Returns: Json
       }
       start_game_session: {
         Args: { p_game_type: string; p_session_token: string }
