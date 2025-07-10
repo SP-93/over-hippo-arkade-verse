@@ -3,9 +3,10 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Shield, AlertTriangle, Clock, TrendingUp, RefreshCw } from "lucide-react";
+import { Shield, AlertTriangle, Clock, TrendingUp, RefreshCw, Bell } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { SecurityAlertPanel } from "./SecurityAlertPanel";
 
 interface RateLimitInfo {
   admin_wallet_address: string;
@@ -140,6 +141,9 @@ export const AdminSecurityMonitor = ({ isAdmin }: AdminSecurityMonitorProps) => 
           </Button>
         </div>
       </Card>
+
+      {/* Real-time Security Alerts */}
+      <SecurityAlertPanel isAdmin={isAdmin} />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Rate Limits */}

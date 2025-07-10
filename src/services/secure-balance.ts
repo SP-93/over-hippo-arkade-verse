@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { sanitizeOperationInput, checkRateLimit } from "@/utils/inputSanitization";
+import { securityEscalationService } from './security-escalation';
 
 export interface BalanceInfo {
   success: boolean;
@@ -73,6 +74,11 @@ export class SecureBalanceService {
     try {
       // Rate limiting check
       if (!checkRateLimit('spend_chip', 10, 60000)) {
+        // Trigger security escalation for rate limiting
+        const currentUser = await this.getCurrentUserWallet();
+        if (currentUser) {
+          await securityEscalationService.checkRateLimitEscalation(currentUser, 'spend_chip', 10);
+        }
         return {
           success: false,
           error: 'Too many requests. Please wait before trying again.',
@@ -114,6 +120,19 @@ export class SecureBalanceService {
       };
     } catch (error) {
       console.error('💥 Chip spend error:', error);
+      
+      // Check for failed attempts escalation and suspicious patterns
+      const currentUser = await this.getCurrentUserWallet();
+      if (currentUser) {
+        await securityEscalationService.checkFailedAttemptsEscalation(currentUser, 'spend_chip');
+        await securityEscalationService.detectSuspiciousPatterns(currentUser, {
+          operationType: 'spend_chip',
+          amount,
+          gameType,
+          error: error instanceof Error ? error.message : String(error)
+        });
+      }
+      
       return {
         success: false,
         error: 'Network error',
@@ -127,6 +146,11 @@ export class SecureBalanceService {
     try {
       // Rate limiting check
       if (!checkRateLimit('add_chips', 5, 60000)) {
+        // Trigger security escalation for rate limiting
+        const currentUser = await this.getCurrentUserWallet();
+        if (currentUser) {
+          await securityEscalationService.checkRateLimitEscalation(currentUser, 'add_chips', 5);
+        }
         return {
           success: false,
           error: 'Too many requests. Please wait before trying again.',
@@ -167,6 +191,19 @@ export class SecureBalanceService {
       };
     } catch (error) {
       console.error('💥 Chip add error:', error);
+      
+      // Check for failed attempts escalation and suspicious patterns
+      const currentUser = await this.getCurrentUserWallet();
+      if (currentUser) {
+        await securityEscalationService.checkFailedAttemptsEscalation(currentUser, 'add_chips');
+        await securityEscalationService.detectSuspiciousPatterns(currentUser, {
+          operationType: 'add_chips',
+          amount,
+          transactionRef,
+          error: error instanceof Error ? error.message : String(error)
+        });
+      }
+      
       return {
         success: false,
         error: 'Network error',
@@ -180,6 +217,11 @@ export class SecureBalanceService {
     try {
       // Rate limiting check
       if (!checkRateLimit('spend_over', 10, 60000)) {
+        // Trigger security escalation for rate limiting
+        const currentUser = await this.getCurrentUserWallet();
+        if (currentUser) {
+          await securityEscalationService.checkRateLimitEscalation(currentUser, 'spend_over', 10);
+        }
         return {
           success: false,
           error: 'Too many requests. Please wait before trying again.',
@@ -220,6 +262,19 @@ export class SecureBalanceService {
       };
     } catch (error) {
       console.error('💥 OVER spend error:', error);
+      
+      // Check for failed attempts escalation and suspicious patterns
+      const currentUser = await this.getCurrentUserWallet();
+      if (currentUser) {
+        await securityEscalationService.checkFailedAttemptsEscalation(currentUser, 'spend_over');
+        await securityEscalationService.detectSuspiciousPatterns(currentUser, {
+          operationType: 'spend_over',
+          overAmount: amount,
+          purpose,
+          error: error instanceof Error ? error.message : String(error)
+        });
+      }
+      
       return {
         success: false,
         error: 'Network error',
@@ -233,6 +288,11 @@ export class SecureBalanceService {
     try {
       // Rate limiting check
       if (!checkRateLimit('add_over', 5, 60000)) {
+        // Trigger security escalation for rate limiting
+        const currentUser = await this.getCurrentUserWallet();
+        if (currentUser) {
+          await securityEscalationService.checkRateLimitEscalation(currentUser, 'add_over', 5);
+        }
         return {
           success: false,
           error: 'Too many requests. Please wait before trying again.',
@@ -273,6 +333,19 @@ export class SecureBalanceService {
       };
     } catch (error) {
       console.error('💥 OVER add error:', error);
+      
+      // Check for failed attempts escalation and suspicious patterns
+      const currentUser = await this.getCurrentUserWallet();
+      if (currentUser) {
+        await securityEscalationService.checkFailedAttemptsEscalation(currentUser, 'add_over');
+        await securityEscalationService.detectSuspiciousPatterns(currentUser, {
+          operationType: 'add_over',
+          overAmount: amount,
+          transactionRef,
+          error: error instanceof Error ? error.message : String(error)
+        });
+      }
+      
       return {
         success: false,
         error: 'Network error',
@@ -309,6 +382,25 @@ export class SecureBalanceService {
     }
 
     return true;
+  }
+
+  // Get current user wallet for security checks
+  private async getCurrentUserWallet(): Promise<string | null> {
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      if (!session.session) return null;
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('verified_wallet_address')
+        .eq('user_id', session.session.user.id)
+        .single();
+
+      return profile?.verified_wallet_address || null;
+    } catch (error) {
+      console.error('Failed to get current user wallet:', error);
+      return null;
+    }
   }
 }
 
