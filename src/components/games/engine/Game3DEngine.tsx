@@ -105,49 +105,41 @@ const Game3DEngine = ({
       case 'arcade':
         return (
           <>
-            <ambientLight intensity={0.6} color="#5C94FC" />
+            <ambientLight intensity={0.8} color="#5C94FC" />
             <directionalLight 
               position={[10, 10, 5]} 
-              intensity={1.2} 
+              intensity={1.0} 
               color="#FFD700"
-              castShadow
-              shadow-mapSize-width={2048}
-              shadow-mapSize-height={2048}
             />
-            <pointLight position={[0, 8, 0]} intensity={0.8} color="#00ff41" />
-            <pointLight position={[-10, 5, -10]} intensity={0.6} color="#ff3366" />
+            <pointLight position={[0, 8, 0]} intensity={0.6} color="#00ff41" />
           </>
         );
       
       case 'atmospheric':
         return (
           <>
-            <ambientLight intensity={0.4} color="#4a5568" />
+            <ambientLight intensity={0.6} color="#4a5568" />
             <directionalLight 
               position={[20, 20, 10]} 
-              intensity={1} 
+              intensity={0.8} 
               color="#f7fafc"
-              castShadow
             />
-            <fog attach="fog" args={['#1a202c', 30, 100]} />
           </>
         );
       
       case 'retro':
         return (
           <>
-            <ambientLight intensity={0.8} color="#ff6b9d" />
-            <directionalLight position={[0, 10, 0]} intensity={1.5} color="#45cafc" />
-            <pointLight position={[10, 0, 10]} intensity={0.7} color="#f093fb" />
-            <pointLight position={[-10, 0, -10]} intensity={0.7} color="#45cafc" />
+            <ambientLight intensity={0.9} color="#ff6b9d" />
+            <directionalLight position={[0, 10, 0]} intensity={1.2} color="#45cafc" />
           </>
         );
       
       default:
         return (
           <>
-            <ambientLight intensity={0.5} />
-            <directionalLight position={[10, 10, 5]} intensity={1} castShadow />
+            <ambientLight intensity={0.7} />
+            <directionalLight position={[10, 10, 5]} intensity={0.8} />
           </>
         );
     }
@@ -168,19 +160,58 @@ const Game3DEngine = ({
 
   return (
     <div className="h-[600px] bg-black rounded-lg overflow-hidden border-2 border-neon-green shadow-lg shadow-neon-green/20">
-      {/* Simple 2D fallback for now - remove 3D complexity */}
-      <div className="h-full flex items-center justify-center text-center space-y-4">
-        <div>
-          <h3 className="text-neon-green font-bold text-xl mb-2">2D Game Mode</h3>
-          <p className="text-white mb-4">3D temporarily disabled for stability</p>
-          <button 
-            onClick={() => window.location.href = '/'}
-            className="px-4 py-2 bg-neon-green text-black rounded font-bold hover:bg-green-400"
-          >
-            Back to Arcade
-          </button>
-        </div>
-      </div>
+      <Canvas
+        key={`${gameId}-3d-canvas-${retryCount}`}
+        camera={{ 
+          position: camera.position, 
+          fov: camera.fov || 75,
+          near: camera.near || 0.1,
+          far: camera.far || 1000
+        }}
+        onCreated={({ gl, scene, camera }) => {
+          try {
+            console.log(`🎯 3D Canvas created for ${gameId}`);
+            
+            // Basic WebGL setup - less aggressive settings
+            gl.setPixelRatio(Math.min(window.devicePixelRatio, 1.5)); // Reduced from 2
+            gl.shadowMap.enabled = false; // Disable shadows initially
+            gl.toneMapping = THREE.NoToneMapping; // Simpler tone mapping
+            
+            scene.background = new THREE.Color('#000814');
+            
+            console.log(`✅ 3D Engine initialized for ${gameId}`);
+            onRendererReady?.(gl);
+            setIsLoading(false);
+          } catch (error) {
+            console.error(`❌ 3D Canvas creation failed for ${gameId}:`, error);
+            handleCanvasError(error);
+          }
+        }}
+        onError={handleCanvasError}
+        gl={{ 
+          antialias: false, // Disabled for performance
+          alpha: false,
+          powerPreference: "default", // Changed from high-performance
+          failIfMajorPerformanceCaveat: false
+        }}
+        dpr={1} // Fixed DPR instead of array
+        fallback={<Game3DFallback loading={true} />}
+      >
+        {getLighting()}
+        {getEnvironment()}
+        
+        {children}
+        
+        {enableOrbitControls && (
+          <OrbitControls 
+            enablePan={false} 
+            enableZoom={true} 
+            maxPolarAngle={Math.PI * 0.75}
+            minDistance={5}
+            maxDistance={50}
+          />
+        )}
+      </Canvas>
     </div>
   );
 };
