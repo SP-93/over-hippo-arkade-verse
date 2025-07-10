@@ -25,6 +25,9 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
     )
+    
+    const requestBody = await req.json();
+    console.log('🔧 Admin operations function called with action:', requestBody);
 
     const authHeader = req.headers.get('Authorization')!
     const token = authHeader.replace('Bearer ', '')
@@ -37,7 +40,7 @@ serve(async (req) => {
       })
     }
 
-    const { action, wallet_address, user_id, chip_amount, over_amount, withdrawal_amount }: AdminRequest = await req.json()
+    const { action, wallet_address, user_id, chip_amount, over_amount, withdrawal_amount }: AdminRequest = requestBody
 
     // Check if user is admin
     const { data: profile } = await supabaseClient
@@ -181,7 +184,10 @@ serve(async (req) => {
         })
 
       case 'add_chips_to_self':
+        console.log('🎯 Processing add_chips_to_self with amount:', chip_amount);
+        
         if (!chip_amount || chip_amount <= 0) {
+          console.error('❌ Invalid chip amount:', chip_amount);
           return new Response(JSON.stringify({ error: 'Valid chip amount required' }), {
             status: 400,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -189,25 +195,45 @@ serve(async (req) => {
         }
 
         // Get user's verified wallet
+        console.log('🔍 Getting user profile for user ID:', user.id);
         const { data: userProfile, error: profileError } = await supabaseClient
           .from('profiles')
           .select('verified_wallet_address')
           .eq('user_id', user.id)
           .single()
 
+        console.log('📊 User profile result:', { userProfile, profileError });
+
         if (profileError || !userProfile?.verified_wallet_address) {
-          throw new Error('No verified wallet found for user')
+          console.error('❌ No verified wallet found:', profileError);
+          return new Response(JSON.stringify({ 
+            error: 'No verified wallet found for user',
+            details: profileError?.message 
+          }), {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          })
         }
 
         // Get current player_balances - THIS IS THE SINGLE SOURCE OF TRUTH
-        const { data: currentBalance } = await supabaseClient
+        console.log('🔍 Getting current balance for wallet:', userProfile.verified_wallet_address);
+        const { data: currentBalance, error: balanceError } = await supabaseClient
           .from('player_balances')
           .select('*')
           .eq('wallet_address', userProfile.verified_wallet_address)
           .single()
 
+        console.log('💰 Current balance result:', { currentBalance, balanceError });
+
         const currentChips = currentBalance?.game_chips || 3; // Default to 3 if no record
         const newChipAmount = currentChips + chip_amount; // ADDITIVE LOGIC
+        
+        console.log('🧮 Chip calculation:', {
+          currentChips,
+          chipAmountToAdd: chip_amount,
+          newChipAmount,
+          formula: `${currentChips} + ${chip_amount} = ${newChipAmount}`
+        });
 
         // Upsert player_balances table with new chip count
         const { error: balanceUpdateError } = await supabaseClient
@@ -220,10 +246,22 @@ serve(async (req) => {
             last_updated: new Date().toISOString()
           })
 
-        if (balanceUpdateError) throw balanceUpdateError
+        console.log('💾 Balance update result:', { balanceUpdateError });
+
+        if (balanceUpdateError) {
+          console.error('❌ Balance update failed:', balanceUpdateError);
+          return new Response(JSON.stringify({ 
+            error: 'Failed to update balance',
+            details: balanceUpdateError.message 
+          }), {
+            status: 500,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          })
+        }
 
         // Record the admin action
-        await supabaseClient
+        console.log('📝 Recording admin transaction...');
+        const { error: transactionError } = await supabaseClient
           .from('blockchain_transactions')
           .insert({
             wallet_address: profile.verified_wallet_address,
@@ -233,13 +271,19 @@ serve(async (req) => {
             status: 'completed'
           })
 
-        return new Response(JSON.stringify({ 
+        console.log('📝 Transaction record result:', { transactionError });
+
+        const successResponse = { 
           success: true,
           message: `Successfully added ${chip_amount} chips. Previous: ${currentChips}, New balance: ${newChipAmount}`,
           previous_balance: currentChips,
           chips_added: chip_amount,
           new_balance: newChipAmount
-        }), {
+        };
+
+        console.log('✅ Returning success response:', successResponse);
+
+        return new Response(JSON.stringify(successResponse), {
           status: 200,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         })

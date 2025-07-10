@@ -168,61 +168,19 @@ const Game3DEngine = ({
 
   return (
     <div className="h-[600px] bg-black rounded-lg overflow-hidden border-2 border-neon-green shadow-lg shadow-neon-green/20">
-      <Canvas
-        key={`${gameId}-3d-canvas-${retryCount}`}
-        camera={{ 
-          position: camera.position, 
-          fov: camera.fov || 75,
-          near: camera.near || 0.1,
-          far: camera.far || 1000
-        }}
-        onCreated={({ gl, scene, camera }) => {
-          try {
-            console.log(`🎯 3D Canvas created for ${gameId}`);
-            
-            gl.setSize(600, 600);
-            gl.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-            gl.shadowMap.enabled = true;
-            gl.shadowMap.type = THREE.PCFSoftShadowMap;
-            gl.toneMapping = THREE.ACESFilmicToneMapping;
-            gl.toneMappingExposure = 1.2;
-            
-            scene.background = new THREE.Color('#000814');
-            
-            console.log(`✅ 3D Engine initialized for ${gameId}`);
-            onRendererReady?.(gl);
-            setIsLoading(false);
-          } catch (error) {
-            console.error(`❌ 3D Canvas creation failed for ${gameId}:`, error);
-            handleCanvasError(error);
-          }
-        }}
-        onError={handleCanvasError}
-        gl={{ 
-          antialias: true, 
-          alpha: false,
-          powerPreference: "high-performance",
-          failIfMajorPerformanceCaveat: false
-        }}
-        dpr={[1, 2]}
-        shadows
-        fallback={<Game3DFallback loading={true} />}
-      >
-        {getLighting()}
-        {getEnvironment()}
-        
-        {children}
-        
-        {enableOrbitControls && (
-          <OrbitControls 
-            enablePan={false} 
-            enableZoom={true} 
-            maxPolarAngle={Math.PI * 0.75}
-            minDistance={5}
-            maxDistance={50}
-          />
-        )}
-      </Canvas>
+      {/* Simple 2D fallback for now - remove 3D complexity */}
+      <div className="h-full flex items-center justify-center text-center space-y-4">
+        <div>
+          <h3 className="text-neon-green font-bold text-xl mb-2">2D Game Mode</h3>
+          <p className="text-white mb-4">3D temporarily disabled for stability</p>
+          <button 
+            onClick={() => window.location.href = '/'}
+            className="px-4 py-2 bg-neon-green text-black rounded font-bold hover:bg-green-400"
+          >
+            Back to Arcade
+          </button>
+        </div>
+      </div>
     </div>
   );
 };
