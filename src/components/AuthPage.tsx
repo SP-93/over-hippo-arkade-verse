@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import { ArrowLeft, Info } from "lucide-react";
-import { useAuthOperations } from "@/hooks/useAuthOperations";
+import { useEnhancedAuth } from "@/hooks/useEnhancedAuth";
 import { LoginForm } from "./auth/LoginForm";
 import { SignUpForm } from "./auth/SignUpForm";
 import { PlatformInfoModal } from "./PlatformInfoModal";
@@ -16,14 +16,14 @@ interface AuthPageProps {
 
 export const AuthPage = ({ onSuccess, onBack }: AuthPageProps) => {
   const [showPlatformInfo, setShowPlatformInfo] = useState(false);
-  const { isLoading, handleSignIn, handleSignUp } = useAuthOperations();
+  const { isLoading, handleEnhancedSignIn, handleEnhancedSignUp } = useEnhancedAuth();
 
   const onSignInSubmit = (email: string, password: string) => {
-    handleSignIn(email, password, onSuccess);
+    handleEnhancedSignIn(email, password, onSuccess);
   };
 
   const onSignUpSubmit = (email: string, password: string, displayName: string) => {
-    handleSignUp(email, password, displayName, onSuccess);
+    handleEnhancedSignUp(email, password, displayName, onSuccess);
   };
 
   return (

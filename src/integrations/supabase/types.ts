@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      account_lockouts: {
+        Row: {
+          created_by_system: boolean | null
+          email: string
+          failure_count: number
+          id: string
+          last_attempt_ip: string | null
+          locked_at: string
+          locked_until: string
+        }
+        Insert: {
+          created_by_system?: boolean | null
+          email: string
+          failure_count?: number
+          id?: string
+          last_attempt_ip?: string | null
+          locked_at?: string
+          locked_until: string
+        }
+        Update: {
+          created_by_system?: boolean | null
+          email?: string
+          failure_count?: number
+          id?: string
+          last_attempt_ip?: string | null
+          locked_at?: string
+          locked_until?: string
+        }
+        Relationships: []
+      }
       admin_audit_log: {
         Row: {
           action_details: Json | null
@@ -123,34 +153,73 @@ export type Database = {
         Row: {
           admin_wallet_address: string
           created_at: string | null
+          device_fingerprint: string | null
           expires_at: string | null
           id: string
           ip_address: string | null
           is_active: boolean | null
           last_activity: string | null
+          last_seen_ip: string | null
+          login_location: string | null
           session_token: string
           user_agent: string | null
         }
         Insert: {
           admin_wallet_address: string
           created_at?: string | null
+          device_fingerprint?: string | null
           expires_at?: string | null
           id?: string
           ip_address?: string | null
           is_active?: boolean | null
           last_activity?: string | null
+          last_seen_ip?: string | null
+          login_location?: string | null
           session_token: string
           user_agent?: string | null
         }
         Update: {
           admin_wallet_address?: string
           created_at?: string | null
+          device_fingerprint?: string | null
           expires_at?: string | null
           id?: string
           ip_address?: string | null
           is_active?: boolean | null
           last_activity?: string | null
+          last_seen_ip?: string | null
+          login_location?: string | null
           session_token?: string
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
+      auth_failed_attempts: {
+        Row: {
+          attempt_time: string
+          device_fingerprint: string | null
+          email: string
+          failure_reason: string | null
+          id: string
+          ip_address: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          attempt_time?: string
+          device_fingerprint?: string | null
+          email: string
+          failure_reason?: string | null
+          id?: string
+          ip_address?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          attempt_time?: string
+          device_fingerprint?: string | null
+          email?: string
+          failure_reason?: string | null
+          id?: string
+          ip_address?: string | null
           user_agent?: string | null
         }
         Relationships: []
@@ -729,6 +798,10 @@ export type Database = {
         Args: { wallet_addr: string; amount: number }
         Returns: number
       }
+      is_account_locked: {
+        Args: { p_email: string }
+        Returns: boolean
+      }
       is_admin_wallet: {
         Args: { wallet_address: string }
         Returns: boolean
@@ -768,12 +841,26 @@ export type Database = {
         Args: { p_duration_days?: number }
         Returns: Json
       }
+      record_failed_login: {
+        Args: {
+          p_email: string
+          p_ip_address?: string
+          p_user_agent?: string
+          p_failure_reason?: string
+          p_device_fingerprint?: string
+        }
+        Returns: Json
+      }
       start_game_session: {
         Args: { p_game_type: string; p_session_token: string }
         Returns: Json
       }
       unban_wallet: {
         Args: { p_wallet_address: string; p_admin_user_id: string }
+        Returns: boolean
+      }
+      unlock_account: {
+        Args: { p_email: string }
         Returns: boolean
       }
       update_realtime_score: {

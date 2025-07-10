@@ -9,6 +9,7 @@ import { secureAdminService } from "@/services/secure-admin";
 import { AdminOverview } from "@/components/admin/AdminOverview";
 import { AdminAuditLog } from "@/components/admin/AdminAuditLog";
 import { AdminSecurityMonitor } from "@/components/admin/AdminSecurityMonitor";
+import { AccountManagement } from "@/components/admin/AccountManagement";
 import { WalletAdminPanel } from "@/components/WalletAdminPanel";
 
 interface AdminStats {
@@ -25,7 +26,7 @@ export default function Admin() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<AdminStats | null>(null);
-  const [activeTab, setActiveTab] = useState<"overview" | "wallets" | "audit" | "security">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "wallets" | "accounts" | "audit" | "security">("overview");
 
   // Check authentication and admin status
   useEffect(() => {
@@ -154,6 +155,12 @@ export default function Admin() {
             Wallet Management
           </Button>
           <Button
+            variant={activeTab === "accounts" ? "default" : "outline"}
+            onClick={() => setActiveTab("accounts")}
+          >
+            Account Security
+          </Button>
+          <Button
             variant={activeTab === "audit" ? "default" : "outline"}
             onClick={() => setActiveTab("audit")}
           >
@@ -178,6 +185,10 @@ export default function Admin() {
 
         {activeTab === "wallets" && (
           <WalletAdminPanel isAdmin={isAdmin} />
+        )}
+
+        {activeTab === "accounts" && (
+          <AccountManagement />
         )}
 
         {activeTab === "audit" && (

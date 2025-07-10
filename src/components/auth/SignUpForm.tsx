@@ -3,6 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Mail, Lock, User } from "lucide-react";
+import { PasswordStrengthIndicator } from "./PasswordStrengthIndicator";
+import { useEnhancedAuth } from "@/hooks/useEnhancedAuth";
 
 interface SignUpFormProps {
   onSubmit: (email: string, password: string, displayName: string) => void;
@@ -13,9 +15,15 @@ export const SignUpForm = ({ onSubmit, isLoading }: SignUpFormProps) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
+  const { validatePassword } = useEnhancedAuth();
+
+  const passwordValidation = validatePassword(password);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!passwordValidation.isValid && password) {
+      return; // Don't submit if password is invalid
+    }
     onSubmit(email, password, displayName);
   };
 
@@ -71,13 +79,19 @@ export const SignUpForm = ({ onSubmit, isLoading }: SignUpFormProps) => {
             required
           />
         </div>
+        {password && (
+          <PasswordStrengthIndicator 
+            password={password} 
+            className="mt-2"
+          />
+        )}
       </div>
 
-      <Button 
+      <Button
         type="submit" 
         className="w-full" 
         variant="arcade"
-        disabled={isLoading}
+        disabled={isLoading || (password && !passwordValidation.isValid)}
       >
         {isLoading ? "Creating Account..." : "Create Account"}
       </Button>
