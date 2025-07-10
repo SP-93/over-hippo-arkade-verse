@@ -19,16 +19,22 @@ export const useChipBalance = () => {
         const { data: { session } } = await supabase.auth.getSession();
         
         if (session?.user) {
-          // Only try to load from backend if authenticated
+          // ALWAYS prioritize backend data for authenticated users
           const balance = await securePlayerService.getPlayerBalance();
           if (balance) {
+            console.log('Loaded chips from backend:', balance.gameChips);
             setPlayerChips(balance.gameChips);
+            // Clear localStorage to prevent conflicts
+            localStorage.removeItem('player_chips');
+            localStorage.removeItem('chip_reset_time');
+            localStorage.removeItem('first_chip_consumed');
             setIsLoading(false);
             return;
           }
         }
         
-        // Fallback to localStorage (for non-authenticated users)
+        // Fallback to localStorage only for non-authenticated users
+        console.log('User not authenticated, using localStorage fallback');
         const savedChips = localStorage.getItem('player_chips');
         const savedResetTime = localStorage.getItem('chip_reset_time');
         const chipConsumed = localStorage.getItem('first_chip_consumed') === 'true';
@@ -73,9 +79,15 @@ export const useChipBalance = () => {
     loadChipBalance();
   }, []);
 
-  // Save chips to localStorage as backup
+  // Only save to localStorage for non-authenticated users
   useEffect(() => {
-    localStorage.setItem('player_chips', playerChips.toString());
+    const checkAuth = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) {
+        localStorage.setItem('player_chips', playerChips.toString());
+      }
+    };
+    checkAuth();
   }, [playerChips]);
 
   const canPlayGame = (gameType: string): boolean => {
