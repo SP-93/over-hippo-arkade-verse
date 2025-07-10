@@ -393,6 +393,36 @@ export type Database = {
         }
         Relationships: []
       }
+      operation_locks: {
+        Row: {
+          expires_at: string | null
+          id: string
+          lock_key: string
+          locked_at: string | null
+          locked_by: string
+          metadata: Json | null
+          operation_type: string
+        }
+        Insert: {
+          expires_at?: string | null
+          id?: string
+          lock_key: string
+          locked_at?: string | null
+          locked_by: string
+          metadata?: Json | null
+          operation_type: string
+        }
+        Update: {
+          expires_at?: string | null
+          id?: string
+          lock_key?: string
+          locked_at?: string | null
+          locked_by?: string
+          metadata?: Json | null
+          operation_type?: string
+        }
+        Relationships: []
+      }
       player_balances: {
         Row: {
           created_at: string | null
@@ -631,6 +661,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      atomic_balance_operation: {
+        Args: {
+          p_operation_type: string
+          p_amount: number
+          p_over_amount?: number
+          p_game_type?: string
+          p_transaction_ref?: string
+        }
+        Returns: Json
+      }
       check_admin_rate_limit: {
         Args: {
           p_admin_wallet: string
@@ -672,6 +712,10 @@ export type Database = {
           error_message: string
           created_at: string
         }[]
+      }
+      get_secure_wallet_balance: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
       }
       increment_chips: {
         Args: { wallet_addr: string; amount: number }
