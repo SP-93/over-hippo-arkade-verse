@@ -71,7 +71,7 @@ export const KingKongGame = ({ onScoreChange, onGameEnd, onGameStart, chipCost =
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const gameLoopRef = useRef<NodeJS.Timeout>();
   const [score, setScore] = useState(0);
-  const [lives, setLives] = useState(3); // 1 chip = 3 lives
+  const [lives, setLives] = useState(1); // 1 chip = 1 life
   const [isPlaying, setIsPlaying] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [gameOver, setGameOver] = useState(false);

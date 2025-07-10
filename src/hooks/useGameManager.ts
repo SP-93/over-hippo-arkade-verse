@@ -7,7 +7,7 @@ export const useGameManager = () => {
   const [currentScore, setCurrentScore] = useState(0);
   const [gameStatus, setGameStatus] = useState<'playing' | 'paused' | 'finished'>('playing');
   const [hasGameStarted, setHasGameStarted] = useState(false);
-  const [currentLives, setCurrentLives] = useState(3);
+  const [currentLives, setCurrentLives] = useState(1);
 
   // Initialize chip manager
   const chipManager = useChipManager();
@@ -63,7 +63,7 @@ export const useGameManager = () => {
       
       if (chipManager.consumeChip(gameId)) {
         resetLives();
-        toast.success(`Chip potrošen! Imate ${chipManager.getChipLives()} života za igru!`);
+        toast.success(`Chip potrošen! Imate ${chipManager.getChipLives()} život za igru!`);
         setHasGameStarted(true);
         setGameStatus('playing');
         return true;

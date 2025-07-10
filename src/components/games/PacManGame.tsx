@@ -50,7 +50,7 @@ export const PacManGame = ({ onScoreChange, onGameEnd, onGameStart }: PacManGame
   ]);
   const [maze, setMaze] = useState(() => MAZE.map(row => [...row]));
   const [score, setScore] = useState(0);
-  const [lives, setLives] = useState(3);
+  const [lives, setLives] = useState(1);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
   const [gameOver, setGameOver] = useState(false);

@@ -124,9 +124,9 @@ export const useChipManager = () => {
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   };
 
-  // Each chip gives 3 lives
+  // Each chip gives 1 life
   const getChipLives = (): number => {
-    return 3;
+    return 1;
   };
 
   return {
