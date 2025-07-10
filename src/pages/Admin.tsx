@@ -13,6 +13,9 @@ import { AccountManagement } from "@/components/admin/AccountManagement";
 import { ComplianceReporting } from "@/components/admin/ComplianceReporting";
 import { SecurityIncidentManager } from "@/components/admin/SecurityIncidentManager";
 import { AnalyticsDashboard } from "@/components/admin/AnalyticsDashboard";
+import { AdvancedUserManagement } from "@/components/admin/AdvancedUserManagement";
+import { SystemMaintenancePanel } from "@/components/admin/SystemMaintenancePanel";
+import { PrivilegeEscalationMonitor } from "@/components/admin/PrivilegeEscalationMonitor";
 import { WalletAdminPanel } from "@/components/WalletAdminPanel";
 
 interface AdminStats {
@@ -29,7 +32,7 @@ export default function Admin() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<AdminStats | null>(null);
-  const [activeTab, setActiveTab] = useState<"overview" | "analytics" | "wallets" | "accounts" | "compliance" | "incidents" | "audit" | "security">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "analytics" | "wallets" | "accounts" | "compliance" | "incidents" | "audit" | "security" | "advanced_users" | "maintenance" | "privileges">("overview");
 
   // Check authentication and admin status
   useEffect(() => {
@@ -193,6 +196,24 @@ export default function Admin() {
           >
             Security Monitor
           </Button>
+          <Button
+            variant={activeTab === "advanced_users" ? "default" : "outline"}
+            onClick={() => setActiveTab("advanced_users")}
+          >
+            Advanced Users
+          </Button>
+          <Button
+            variant={activeTab === "maintenance" ? "default" : "outline"}
+            onClick={() => setActiveTab("maintenance")}
+          >
+            System Maintenance
+          </Button>
+          <Button
+            variant={activeTab === "privileges" ? "default" : "outline"}
+            onClick={() => setActiveTab("privileges")}
+          >
+            Privilege Monitor
+          </Button>
         </div>
 
         {/* Content */}
@@ -230,6 +251,18 @@ export default function Admin() {
 
         {activeTab === "security" && (
           <AdminSecurityMonitor isAdmin={isAdmin} />
+        )}
+
+        {activeTab === "advanced_users" && (
+          <AdvancedUserManagement isAdmin={isAdmin} />
+        )}
+
+        {activeTab === "maintenance" && (
+          <SystemMaintenancePanel isAdmin={isAdmin} />
+        )}
+
+        {activeTab === "privileges" && (
+          <PrivilegeEscalationMonitor isAdmin={isAdmin} />
         )}
       </div>
     </div>
