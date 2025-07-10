@@ -16,6 +16,7 @@ import { AnalyticsDashboard } from "@/components/admin/AnalyticsDashboard";
 import { AdvancedUserManagement } from "@/components/admin/AdvancedUserManagement";
 import { SystemMaintenancePanel } from "@/components/admin/SystemMaintenancePanel";
 import { PrivilegeEscalationMonitor } from "@/components/admin/PrivilegeEscalationMonitor";
+import { PerformanceDashboard } from "@/components/admin/PerformanceDashboard";
 import { WalletAdminPanel } from "@/components/WalletAdminPanel";
 
 interface AdminStats {
@@ -32,7 +33,7 @@ export default function Admin() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<AdminStats | null>(null);
-  const [activeTab, setActiveTab] = useState<"overview" | "analytics" | "wallets" | "accounts" | "compliance" | "incidents" | "audit" | "security" | "advanced_users" | "maintenance" | "privileges">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "analytics" | "wallets" | "accounts" | "compliance" | "incidents" | "audit" | "security" | "advanced_users" | "maintenance" | "privileges" | "performance">("overview");
 
   // Check authentication and admin status
   useEffect(() => {
@@ -214,6 +215,12 @@ export default function Admin() {
           >
             Privilege Monitor
           </Button>
+          <Button
+            variant={activeTab === "performance" ? "default" : "outline"}
+            onClick={() => setActiveTab("performance")}
+          >
+            Performance
+          </Button>
         </div>
 
         {/* Content */}
@@ -263,6 +270,10 @@ export default function Admin() {
 
         {activeTab === "privileges" && (
           <PrivilegeEscalationMonitor isAdmin={isAdmin} />
+        )}
+
+        {activeTab === "performance" && (
+          <PerformanceDashboard isAdmin={isAdmin} />
         )}
       </div>
     </div>
