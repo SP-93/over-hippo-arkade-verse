@@ -12,14 +12,28 @@ interface AsteroidsGameProps {
 
 export const AsteroidsGame = ({ onScoreChange, onGameEnd, onGameStart }: AsteroidsGameProps) => {
   const [score, setScore] = useState(0);
+  const [ship, setShip] = useState({ x: 300, y: 300, angle: 0, vx: 0, vy: 0 });
+  const [asteroids, setAsteroids] = useState([]);
+  const [bullets, setBullets] = useState([]);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [gameOver, setGameOver] = useState(false);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const startGame = useCallback(() => {
     if (onGameStart && !onGameStart()) return;
     setIsPlaying(true);
+    setGameOver(false);
     setScore(0);
     onScoreChange(0);
-    toast.success("Asteroids started!");
+    setShip({ x: 300, y: 300, angle: 0, vx: 0, vy: 0 });
+    setAsteroids([
+      { x: 100, y: 100, vx: 2, vy: 1, size: 40 },
+      { x: 500, y: 150, vx: -1, vy: 2, size: 40 },
+      { x: 400, y: 400, vx: 1, vy: -1, size: 40 },
+      { x: 150, y: 350, vx: -2, vy: -1, size: 40 }
+    ]);
+    setBullets([]);
+    toast.success("Asteroids misija počinje!");
   }, [onGameStart, onScoreChange]);
 
   return (

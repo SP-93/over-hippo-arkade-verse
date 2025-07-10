@@ -12,14 +12,28 @@ interface FlipperGameProps {
 
 export const FlipperGame = ({ onScoreChange, onGameEnd, onGameStart }: FlipperGameProps) => {
   const [score, setScore] = useState(0);
+  const [ball, setBall] = useState({ x: 300, y: 400, vx: 2, vy: -3 });
+  const [leftFlipper, setLeftFlipper] = useState({ angle: 0 });
+  const [rightFlipper, setRightFlipper] = useState({ angle: 0 });
+  const [bumpers] = useState([
+    { x: 200, y: 200, radius: 25 },
+    { x: 350, y: 180, radius: 25 },
+    { x: 400, y: 250, radius: 25 }
+  ]);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [gameOver, setGameOver] = useState(false);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const startGame = useCallback(() => {
     if (onGameStart && !onGameStart()) return;
     setIsPlaying(true);
+    setGameOver(false);
     setScore(0);
     onScoreChange(0);
-    toast.success("Pinball started!");
+    setBall({ x: 300, y: 400, vx: 2, vy: -3 });
+    setLeftFlipper({ angle: 0 });
+    setRightFlipper({ angle: 0 });
+    toast.success("Pinball mašina aktivirana!");
   }, [onGameStart, onScoreChange]);
 
   return (
