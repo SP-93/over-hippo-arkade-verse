@@ -5,7 +5,8 @@ import { Card } from "@/components/ui/card";
 import { useGameManager } from "@/hooks/useGameManager";
 import { toast } from "sonner";
 import Game3DEngine from "./engine/Game3DEngine";
-import { Player3D, Enemy3D, Collectible3D, Platform3D, GameFloor3D } from "./engine/Game3DComponents";
+import { Platform3D, GameFloor3D } from "./engine/Game3DComponents";
+import { EnhancedEnemy3D, EnhancedCoin3D, ParticleExplosion3D } from "./engine/EnhancedMario3DComponents";
 import * as THREE from "three";
 
 interface Mario3DGameProps {
@@ -48,17 +49,35 @@ interface Mario3DPlatform {
   type: 'ground' | 'brick' | 'pipe' | 'moving';
 }
 
-// Mario Character Component
+// Enhanced Mario Character Component with detailed 3D geometry
 const Mario3DCharacter = ({ player, animation }: { player: Mario3DPlayer, animation: string }) => {
   const meshRef = useRef<THREE.Group>(null);
+  const bodyRef = useRef<THREE.Mesh>(null);
+  const hatRef = useRef<THREE.Group>(null);
   
-  useFrame(() => {
+  useFrame((state) => {
     if (meshRef.current) {
       meshRef.current.position.copy(player.position);
+      
+      // Enhanced animations
+      if (animation === "jump") {
+        meshRef.current.rotation.x = Math.sin(state.clock.elapsedTime * 10) * 0.2;
+      } else if (animation === "run") {
+        meshRef.current.rotation.z = Math.sin(state.clock.elapsedTime * 8) * 0.1;
+        if (bodyRef.current) {
+          bodyRef.current.scale.setScalar(1 + Math.sin(state.clock.elapsedTime * 12) * 0.05);
+        }
+      } else {
+        meshRef.current.rotation.x = 0;
+        meshRef.current.rotation.z = 0;
+        if (bodyRef.current) {
+          bodyRef.current.scale.setScalar(1);
+        }
+      }
     }
   });
 
-  const getColor = () => {
+  const getBodyColor = () => {
     switch (player.powerUp) {
       case 'big': return "#DC143C";
       case 'fire': return "#FF6347";
@@ -70,32 +89,85 @@ const Mario3DCharacter = ({ player, animation }: { player: Mario3DPlayer, animat
     return player.powerUp === 'small' ? 0.8 : 1.2;
   };
 
+  const size = getSize();
+
   return (
     <group ref={meshRef}>
-      {/* Mario's body */}
-      <Player3D 
-        position={[0, 0, 0]}
-        color={getColor()}
-        size={getSize()}
-        animation={animation}
-        type="cube"
-      />
+      {/* Mario's body - rounded cylinder */}
+      <mesh ref={bodyRef} position={[0, 0, 0]} castShadow receiveShadow>
+        <cylinderGeometry args={[size * 0.4, size * 0.5, size * 0.8, 16]} />
+        <meshStandardMaterial 
+          color={getBodyColor()}
+          metalness={0.1}
+          roughness={0.3}
+          emissive={getBodyColor()}
+          emissiveIntensity={0.05}
+        />
+      </mesh>
       
-      {/* Mario's hat */}
-      <Player3D 
-        position={[0, getSize() * 0.6, 0]}
-        color="#DC143C"
-        size={getSize() * 0.7}
-        type="cube"
-      />
+      {/* Mario's head - sphere */}
+      <mesh position={[0, size * 0.6, 0]} castShadow receiveShadow>
+        <sphereGeometry args={[size * 0.35, 16, 16]} />
+        <meshStandardMaterial 
+          color="#FFDBAC"
+          metalness={0}
+          roughness={0.4}
+        />
+      </mesh>
+      
+      {/* Mario's hat - cone + cylinder */}
+      <group ref={hatRef}>
+        <mesh position={[0, size * 0.85, 0]} castShadow>
+          <cylinderGeometry args={[size * 0.4, size * 0.4, size * 0.2, 16]} />
+          <meshStandardMaterial 
+            color="#DC143C"
+            metalness={0.2}
+            roughness={0.3}
+          />
+        </mesh>
+        <mesh position={[0, size * 0.95, size * 0.2]} castShadow>
+          <sphereGeometry args={[size * 0.15, 8, 8]} />
+          <meshStandardMaterial 
+            color="#FFD700"
+            metalness={0.8}
+            roughness={0.1}
+            emissive="#FFD700"
+            emissiveIntensity={0.3}
+          />
+        </mesh>
+      </group>
       
       {/* Mario's mustache */}
-      <Player3D 
-        position={[0, getSize() * 0.1, getSize() * 0.4]}
-        color="#8B4513"
-        size={getSize() * 0.3}
-        type="cube"
-      />
+      <mesh position={[0, size * 0.45, size * 0.3]} castShadow>
+        <boxGeometry args={[size * 0.3, size * 0.1, size * 0.1]} />
+        <meshStandardMaterial 
+          color="#8B4513"
+          metalness={0}
+          roughness={0.8}
+        />
+      </mesh>
+      
+      {/* Mario's overalls straps */}
+      <mesh position={[0, size * 0.2, 0]} castShadow>
+        <boxGeometry args={[size * 0.6, size * 0.1, size * 0.4]} />
+        <meshStandardMaterial 
+          color="#4169E1"
+          metalness={0.1}
+          roughness={0.4}
+        />
+      </mesh>
+      
+      {/* Power-up glow effect */}
+      {player.powerUp !== 'small' && (
+        <mesh position={[0, 0, 0]}>
+          <sphereGeometry args={[size * 0.8, 16, 16]} />
+          <meshBasicMaterial 
+            color={player.powerUp === 'fire' ? "#FF6347" : "#FFD700"}
+            transparent
+            opacity={0.1}
+          />
+        </mesh>
+      )}
     </group>
   );
 };
@@ -377,7 +449,7 @@ export const Mario3DGame = ({ onScoreChange, onGameEnd, onGameStart }: Mario3DGa
 
   const getPlayerAnimation = () => {
     if (!player.grounded) return "jump";
-    if (Math.abs(player.velocity.x) > 0.1 || Math.abs(player.velocity.z) > 0.1) return "spin";
+    if (Math.abs(player.velocity.x) > 0.1 || Math.abs(player.velocity.z) > 0.1) return "run";
     return "idle";
   };
 
@@ -434,11 +506,12 @@ export const Mario3DGame = ({ onScoreChange, onGameEnd, onGameStart }: Mario3DGa
           {/* Enemies */}
           {enemies.map(enemy => 
             enemy.alive && (
-              <Enemy3D
+              <EnhancedEnemy3D
                 key={enemy.id}
                 position={enemy.position.toArray()}
                 color={enemy.type === 'goomba' ? "#8B4513" : "#32CD32"}
                 size={0.8}
+                type={enemy.type}
                 behavior="patrol"
                 speed={1}
               />
@@ -447,11 +520,10 @@ export const Mario3DGame = ({ onScoreChange, onGameEnd, onGameStart }: Mario3DGa
           
           {/* Coins */}
           {coins.map(coin => (
-            <Collectible3D
+            <EnhancedCoin3D
               key={coin.id}
               position={coin.position.toArray()}
               color="#FFD700"
-              type="coin"
               collected={coin.collected}
             />
           ))}
