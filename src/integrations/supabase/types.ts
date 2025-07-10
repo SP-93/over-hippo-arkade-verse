@@ -86,6 +86,75 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_rate_limit: {
+        Row: {
+          action_type: string
+          admin_wallet_address: string
+          blocked_until: string | null
+          created_at: string | null
+          id: string
+          last_request: string | null
+          request_count: number | null
+          window_start: string | null
+        }
+        Insert: {
+          action_type: string
+          admin_wallet_address: string
+          blocked_until?: string | null
+          created_at?: string | null
+          id?: string
+          last_request?: string | null
+          request_count?: number | null
+          window_start?: string | null
+        }
+        Update: {
+          action_type?: string
+          admin_wallet_address?: string
+          blocked_until?: string | null
+          created_at?: string | null
+          id?: string
+          last_request?: string | null
+          request_count?: number | null
+          window_start?: string | null
+        }
+        Relationships: []
+      }
+      admin_sessions: {
+        Row: {
+          admin_wallet_address: string
+          created_at: string | null
+          expires_at: string | null
+          id: string
+          ip_address: string | null
+          is_active: boolean | null
+          last_activity: string | null
+          session_token: string
+          user_agent: string | null
+        }
+        Insert: {
+          admin_wallet_address: string
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          ip_address?: string | null
+          is_active?: boolean | null
+          last_activity?: string | null
+          session_token: string
+          user_agent?: string | null
+        }
+        Update: {
+          admin_wallet_address?: string
+          created_at?: string | null
+          expires_at?: string | null
+          id?: string
+          ip_address?: string | null
+          is_active?: boolean | null
+          last_activity?: string | null
+          session_token?: string
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       blockchain_transactions: {
         Row: {
           amount_chips: number | null
@@ -562,9 +631,26 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_admin_rate_limit: {
+        Args: {
+          p_admin_wallet: string
+          p_action_type: string
+          p_max_requests?: number
+          p_window_minutes?: number
+        }
+        Returns: Json
+      }
       check_wallet_exclusivity: {
         Args: { p_wallet_address: string; p_user_id: string }
         Returns: boolean
+      }
+      create_admin_session: {
+        Args: {
+          p_admin_wallet: string
+          p_ip_address?: string
+          p_user_agent?: string
+        }
+        Returns: Json
       }
       decrement_over: {
         Args: { wallet_addr: string; amount: number }
@@ -653,6 +739,10 @@ export type Database = {
           p_combo_multiplier?: number
           p_bonus_points?: number
         }
+        Returns: Json
+      }
+      validate_admin_session: {
+        Args: { p_session_token: string; p_admin_wallet: string }
         Returns: Json
       }
       verify_wallet_signature: {

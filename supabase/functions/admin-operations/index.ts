@@ -3,7 +3,12 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.3'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type, x-admin-session, x-request-id',
+  'X-Content-Type-Options': 'nosniff',
+  'X-Frame-Options': 'DENY',
+  'X-XSS-Protection': '1; mode=block',
+  'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',
+  'Content-Security-Policy': 'default-src \'none\'; script-src \'none\';'
 }
 
 interface AdminRequest {
@@ -13,9 +18,48 @@ interface AdminRequest {
   chip_amount?: number;
   over_amount?: number;
   withdrawal_amount?: number;
+  session_token?: string;
+  request_id?: string;
 }
 
+// Utility function to sanitize errors for client
+const sanitizeError = (error: any, isDev = false): string => {
+  if (isDev) return error?.message || 'Unknown error';
+  
+  // Only return safe, generic error messages in production
+  const safeErrors = [
+    'Invalid chip amount',
+    'No verified wallet',
+    'Insufficient balance',
+    'Admin access required',
+    'Rate limit exceeded',
+    'Invalid session'
+  ];
+  
+  const errorMsg = error?.message || '';
+  if (safeErrors.some(safe => errorMsg.includes(safe))) {
+    return errorMsg;
+  }
+  
+  return 'Operation failed';
+};
+
+// Utility function to extract client info
+const extractClientInfo = (req: Request) => {
+  const clientIP = req.headers.get('x-forwarded-for') || 
+                   req.headers.get('x-real-ip') || 
+                   'unknown';
+  const userAgent = req.headers.get('user-agent') || 'unknown';
+  const requestId = req.headers.get('x-request-id') || crypto.randomUUID();
+  
+  return { clientIP, userAgent, requestId };
+};
+
 serve(async (req) => {
+  const { clientIP, userAgent, requestId } = extractClientInfo(req);
+  
+  console.log(`🔧 Admin operations [${requestId}] from ${clientIP}`);
+  
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }
@@ -26,29 +70,42 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
     )
     
-    console.log('🔧 Admin operations function started');
-    
     const authHeader = req.headers.get('Authorization')!
     const token = authHeader.replace('Bearer ', '')
     
     const { data: { user } } = await supabaseClient.auth.getUser(token)
     if (!user) {
-      console.error('❌ No authenticated user found');
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+      console.error(`❌ [${requestId}] No authenticated user found`);
+      return new Response(JSON.stringify({ 
+        error: sanitizeError({ message: 'Unauthorized' }),
+        request_id: requestId 
+      }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
 
-    console.log('✅ User authenticated:', user.id);
+    console.log(`✅ [${requestId}] User authenticated:`, user.id);
 
     const requestBody = await req.json();
-    console.log('📥 Request body received:', requestBody);
+    console.log(`📥 [${requestId}] Request body received:`, { 
+      action: requestBody.action,
+      hasSessionToken: !!requestBody.session_token 
+    });
 
-    const { action, wallet_address, user_id, chip_amount, over_amount, withdrawal_amount }: AdminRequest = requestBody
+    const { 
+      action, 
+      wallet_address, 
+      user_id, 
+      chip_amount, 
+      over_amount, 
+      withdrawal_amount,
+      session_token,
+      request_id 
+    }: AdminRequest = requestBody
 
     // Check if user is admin
-    console.log('🔍 Checking admin status for user:', user.id);
+    console.log(`🔍 [${requestId}] Checking admin status for user:`, user.id);
     
     const { data: profile } = await supabaseClient
       .from('profiles')
@@ -56,11 +113,14 @@ serve(async (req) => {
       .eq('user_id', user.id)
       .single()
 
-    console.log('👤 User profile:', profile);
+    console.log(`👤 [${requestId}] User profile:`, !!profile?.verified_wallet_address);
 
     if (!profile?.verified_wallet_address) {
-      console.error('❌ No verified wallet for user');
-      return new Response(JSON.stringify({ error: 'No verified wallet' }), {
+      console.error(`❌ [${requestId}] No verified wallet for user`);
+      return new Response(JSON.stringify({ 
+        error: sanitizeError({ message: 'No verified wallet' }),
+        request_id: requestId 
+      }), {
         status: 403,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
@@ -70,17 +130,46 @@ serve(async (req) => {
       wallet_address: profile.verified_wallet_address
     })
 
-    console.log('🛡️ Admin check result:', isAdmin);
+    console.log(`🛡️ [${requestId}] Admin check result:`, isAdmin);
 
     if (!isAdmin) {
-      console.error('❌ Admin access denied for:', profile.verified_wallet_address);
-      return new Response(JSON.stringify({ error: 'Admin access required' }), {
+      console.error(`❌ [${requestId}] Admin access denied for:`, profile.verified_wallet_address);
+      return new Response(JSON.stringify({ 
+        error: sanitizeError({ message: 'Admin access required' }),
+        request_id: requestId 
+      }), {
         status: 403,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       })
     }
 
-    console.log('✅ Admin access confirmed. Processing action:', action);
+    // Rate limiting check for critical actions
+    if (['add_chips_to_self', 'update_user_balance', 'withdraw_funds'].includes(action)) {
+      console.log(`🚦 [${requestId}] Checking rate limits for action:`, action);
+      
+      const { data: rateLimitResult } = await supabaseClient.rpc('check_admin_rate_limit', {
+        p_admin_wallet: profile.verified_wallet_address,
+        p_action_type: action,
+        p_max_requests: action === 'add_chips_to_self' ? 10 : 5, // More restrictive for dangerous actions
+        p_window_minutes: 60
+      });
+
+      if (!rateLimitResult?.allowed) {
+        console.error(`🛑 [${requestId}] Rate limit exceeded:`, rateLimitResult);
+        return new Response(JSON.stringify({ 
+          error: 'Rate limit exceeded',
+          rate_limit: rateLimitResult,
+          request_id: requestId 
+        }), {
+          status: 429,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+      }
+
+      console.log(`✅ [${requestId}] Rate limit check passed:`, rateLimitResult);
+    }
+
+    console.log(`✅ [${requestId}] Admin access confirmed. Processing action:`, action);
 
     switch (action) {
       case 'check_admin':
@@ -377,8 +466,36 @@ serve(async (req) => {
     }
 
   } catch (error) {
-    console.error('Admin operation error:', error)
-    return new Response(JSON.stringify({ error: error.message }), {
+    console.error(`💥 [${requestId}] Admin operation error:`, error);
+    
+    // Log failed operation for security monitoring
+    try {
+      const { data: profile } = await supabaseClient
+        .from('profiles')
+        .select('verified_wallet_address')
+        .eq('user_id', user?.id)
+        .single();
+        
+      if (profile?.verified_wallet_address) {
+        await supabaseClient.rpc('log_admin_action', {
+          p_action_type: 'system_error',
+          p_action_details: { 
+            error: error.message,
+            request_id: requestId,
+            client_ip: clientIP
+          },
+          p_success: false,
+          p_error_message: error.message
+        });
+      }
+    } catch (auditError) {
+      console.error(`📋 [${requestId}] Audit logging failed:`, auditError);
+    }
+    
+    return new Response(JSON.stringify({ 
+      error: sanitizeError(error),
+      request_id: requestId 
+    }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     })

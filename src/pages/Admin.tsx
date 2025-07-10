@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { secureAdminService } from "@/services/secure-admin";
 import { AdminOverview } from "@/components/admin/AdminOverview";
 import { AdminAuditLog } from "@/components/admin/AdminAuditLog";
+import { AdminSecurityMonitor } from "@/components/admin/AdminSecurityMonitor";
 import { WalletAdminPanel } from "@/components/WalletAdminPanel";
 
 interface AdminStats {
@@ -24,7 +25,7 @@ export default function Admin() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<AdminStats | null>(null);
-  const [activeTab, setActiveTab] = useState<"overview" | "wallets" | "audit">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "wallets" | "audit" | "security">("overview");
 
   // Check authentication and admin status
   useEffect(() => {
@@ -158,6 +159,12 @@ export default function Admin() {
           >
             Audit Log
           </Button>
+          <Button
+            variant={activeTab === "security" ? "default" : "outline"}
+            onClick={() => setActiveTab("security")}
+          >
+            Security Monitor
+          </Button>
         </div>
 
         {/* Content */}
@@ -175,6 +182,10 @@ export default function Admin() {
 
         {activeTab === "audit" && (
           <AdminAuditLog isAdmin={isAdmin} />
+        )}
+
+        {activeTab === "security" && (
+          <AdminSecurityMonitor isAdmin={isAdmin} />
         )}
       </div>
     </div>
