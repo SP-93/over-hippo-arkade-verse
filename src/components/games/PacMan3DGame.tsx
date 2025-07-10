@@ -6,6 +6,13 @@ import { Card } from "@/components/ui/card";
 import { useGameManager } from "@/hooks/useGameManager";
 import { toast } from "sonner";
 import Game3DEngine from "./engine/Game3DEngine";
+import { 
+  EnhancedGhost, 
+  EnhancedPacMan, 
+  EnhancedDot, 
+  EnhancedMazeWall, 
+  GameBounds 
+} from "./engine/EnhancedPacMan3DComponents";
 import * as THREE from "three";
 
 const GRID_SIZE = 21;
@@ -285,34 +292,63 @@ export const PacMan3DGame = ({ onScoreChange, onGameEnd, onGameStart }: PacMan3D
           environment="forest"
           enableOrbitControls={true}
         >
-          {/* Render maze */}
+          {/* Game Bounds */}
+          <GameBounds size={GRID_SIZE} />
+          
+          {/* Enhanced Maze */}
           {maze.map((row, z) =>
             row.map((cell, x) => {
               const position: [number, number, number] = [x, CELL_SIZE/2, z];
               
               if (cell === 1) {
-                return <Wall key={`${x}-${z}`} position={position} />;
+                return <EnhancedMazeWall key={`${x}-${z}`} position={position} type="wall" />;
               } else if (cell === 2) {
-                return <Dot key={`${x}-${z}`} position={[x, 0, z]} />;
+                return (
+                  <EnhancedDot 
+                    key={`${x}-${z}`} 
+                    position={[x, 0, z]} 
+                    collected={false}
+                    onCollect={() => {}}
+                    playerPosition={[pacmanPosition.x, CELL_SIZE/2, pacmanPosition.z]}
+                  />
+                );
               } else if (cell === 3) {
-                return <PowerPellet key={`${x}-${z}`} position={[x, 0, z]} />;
+                return (
+                  <EnhancedDot 
+                    key={`${x}-${z}`} 
+                    position={[x, 0, z]} 
+                    isPowerPellet={true}
+                    collected={false}
+                    onCollect={() => {}}
+                    playerPosition={[pacmanPosition.x, CELL_SIZE/2, pacmanPosition.z]}
+                  />
+                );
               }
               return null;
             })
           )}
           
-          {/* Pac-Man */}
-          <PacManPlayer 
+          {/* Enhanced Pac-Man */}
+          <EnhancedPacMan 
             position={[pacmanPosition.x, CELL_SIZE/2, pacmanPosition.z]} 
             direction={direction}
           />
           
-          {/* Ghosts */}
+          {/* Enhanced Ghosts */}
           {ghosts.map((ghost, index) => (
-            <Ghost 
+            <EnhancedGhost 
               key={index}
               position={ghost.position}
+              targetPosition={[pacmanPosition.x, CELL_SIZE/2, pacmanPosition.z]}
+              maze={maze}
               color={ghost.color}
+              mode="chase"
+              onPlayerCollision={() => {
+                toast.error("Caught by ghost!");
+                setGameOver(true);
+                setIsPlaying(false);
+                onGameEnd?.();
+              }}
             />
           ))}
         </Game3DEngine>

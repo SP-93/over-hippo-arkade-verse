@@ -6,6 +6,14 @@ import { useGameManager } from "@/hooks/useGameManager";
 import { toast } from "sonner";
 import Game3DEngine from "./engine/Game3DEngine";
 import { Player3D, Enemy3D, Platform3D, GameFloor3D, ParticleSystem3D } from "./engine/Game3DComponents";
+import { 
+  EnhancedPlayer, 
+  EnhancedBarrel, 
+  EnhancedLadder, 
+  EnhancedPlatform, 
+  EnhancedWinZone,
+  GameBoundary
+} from "./engine/EnhancedKingKong3DComponents";
 import { Box, Cylinder } from "@react-three/drei";
 import * as THREE from "three";
 
@@ -497,21 +505,52 @@ export const KingKong3DGame = ({ onScoreChange, onGameEnd, onGameStart }: KingKo
           {/* Tower Structure */}
           <TowerStructure platforms={platforms} />
           
-          {/* Player */}
-          <Player3D
-            position={player.position.toArray()}
-            color={player.invulnerable > 0 ? "#ff6666" : "#4169E1"}
-            size={0.8}
-            type="cube"
-            animation={getPlayerAnimation()}
+          {/* Enhanced Player */}
+          <EnhancedPlayer 
+            position={player.position.toArray() as [number, number, number]}
+            onCollision={() => {}}
+          />
+          
+          {/* Win Zone */}
+          <EnhancedWinZone 
+            position={[bossPosition.x, bossPosition.y + 2, bossPosition.z]}
+            playerPosition={player.position.toArray() as [number, number, number]}
+            onWin={() => {
+              if (!bossDefeated) {
+                setBossDefeated(true);
+                setScore(prev => {
+                  const newScore = prev + 1000;
+                  onScoreChange?.(newScore);
+                  return newScore;
+                });
+                toast.success("You defeated King Kong! +1000 points!");
+              }
+            }}
           />
           
           {/* King Kong Boss */}
           <KingKong3D position={bossPosition} defeated={bossDefeated} />
           
-          {/* Obstacles */}
+          {/* Enhanced Obstacles */}
           {obstacles.map(obstacle => (
-            <Barrel3D key={obstacle.id} obstacle={obstacle} />
+            <EnhancedBarrel 
+              key={obstacle.id} 
+              barrel={{
+                id: obstacle.id,
+                position: obstacle.position.toArray() as [number, number, number],
+                velocity: obstacle.velocity.toArray() as [number, number, number],
+                rotation: [obstacle.rotation, 0, 0] as [number, number, number]
+              }}
+              playerPosition={player.position.toArray() as [number, number, number]}
+              onCollisionWithPlayer={(barrelId) => {
+                if (player.invulnerable <= 0) {
+                  setPlayer(prev => ({ ...prev, invulnerable: 60 }));
+                  setLives(prev => prev - 1);
+                  setObstacles(prev => prev.filter(o => o.id !== barrelId));
+                  toast.error("Hit by barrel! Lives: " + (lives - 1));
+                }
+              }}
+            />
           ))}
           
           {/* Particles for effect */}

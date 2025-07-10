@@ -5,9 +5,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
-import { Mail, Lock, User, ArrowLeft } from "lucide-react";
+import { Mail, Lock, User, ArrowLeft, Info } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { PlatformInfoModal } from "./PlatformInfoModal";
 
 interface AuthPageProps {
   onSuccess: () => void;
@@ -19,6 +20,7 @@ export const AuthPage = ({ onSuccess, onBack }: AuthPageProps) => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
+  const [showPlatformInfo, setShowPlatformInfo] = useState(false);
 
   const cleanupAuthState = () => {
     // Remove all Supabase auth keys
@@ -255,9 +257,26 @@ export const AuthPage = ({ onSuccess, onBack }: AuthPageProps) => {
 
       <Separator className="my-6" />
       
-      <p className="text-xs text-muted-foreground text-center">
-        After authentication, you'll be able to connect your wallet and start playing!
-      </p>
+      <div className="flex flex-col items-center gap-3">
+        <Button
+          onClick={() => setShowPlatformInfo(true)}
+          variant="outline"
+          size="sm"
+          className="border-neon-blue text-neon-blue hover:bg-neon-blue/10"
+        >
+          <Info className="h-4 w-4 mr-2" />
+          Platform Information
+        </Button>
+        
+        <p className="text-xs text-muted-foreground text-center">
+          After authentication, you'll be able to connect your wallet and start playing!
+        </p>
+      </div>
+
+      <PlatformInfoModal 
+        isOpen={showPlatformInfo} 
+        onClose={() => setShowPlatformInfo(false)} 
+      />
     </Card>
   );
 };
