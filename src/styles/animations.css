@@ -1,0 +1,106 @@
+/* 2025 Modern Animations */
+@keyframes liquid-glow {
+  0%, 100% { 
+    filter: blur(1px) brightness(1);
+    box-shadow: 0 0 30px hsl(var(--neon-electric) / 0.5);
+  }
+  50% { 
+    filter: blur(0px) brightness(1.2);
+    box-shadow: 0 0 60px hsl(var(--neon-cyber) / 0.8), 0 0 90px hsl(var(--neon-quantum) / 0.4);
+  }
+}
+
+@keyframes particle-float {
+  0%, 100% { 
+    transform: translateY(0px) translateX(0px) scale(1);
+    opacity: 0.7;
+  }
+  33% { 
+    transform: translateY(-10px) translateX(5px) scale(1.1);
+    opacity: 1;
+  }
+  66% { 
+    transform: translateY(-5px) translateX(-5px) scale(0.9);
+    opacity: 0.8;
+  }
+}
+
+@keyframes cyber-pulse {
+  0%, 100% { 
+    background: var(--gradient-cyber);
+    transform: scale(1) rotate(0deg);
+  }
+  50% { 
+    background: var(--gradient-plasma);
+    transform: scale(1.05) rotate(2deg);
+  }
+}
+
+@keyframes glass-shimmer {
+  0%, 100% { 
+    background-position: -200% center;
+  }
+  50% { 
+    background-position: 200% center;
+  }
+}
+
+@keyframes neon-wave {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* Custom keyframes for hippo animations */
+@keyframes float {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-20px) rotate(2deg); }
+}
+
+@keyframes drift {
+  0% { transform: translateX(-100px) rotate(0deg); }
+  25% { transform: translateX(calc(100vw + 100px)) rotate(5deg); }
+  50% { transform: translateX(calc(100vw + 200px)) rotate(0deg); }
+  75% { transform: translateX(-200px) rotate(-5deg); }
+  100% { transform: translateX(-100px) rotate(0deg); }
+}
+
+@keyframes glow {
+  0%, 100% { filter: drop-shadow(0 0 10px hsl(var(--primary))); }
+  50% { filter: drop-shadow(0 0 20px hsl(var(--primary))) drop-shadow(0 0 30px hsl(var(--primary-glow))); }
+}
+
+@keyframes neon-pulse {
+  0%, 100% { 
+    box-shadow: 0 0 10px hsl(var(--primary) / 0.5), 0 0 20px hsl(var(--primary) / 0.3);
+    transform: scale(1);
+  }
+  50% { 
+    box-shadow: 0 0 20px hsl(var(--primary) / 0.8), 0 0 40px hsl(var(--primary) / 0.6), 0 0 60px hsl(var(--primary) / 0.4);
+    transform: scale(1.02);
+  }
+}
+
+@keyframes zoom-in {
+  0% { transform: scale(0.9); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes gradient-shift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+@keyframes pulse-border {
+  0%, 100% { border-color: hsl(var(--primary) / 0.5); }
+  50% { border-color: hsl(var(--primary) / 1); }
+}
+
+@keyframes text-glow {
+  0%, 100% { 
+    text-shadow: 0 0 10px hsl(var(--primary) / 0.3), 0 0 20px hsl(var(--primary) / 0.2);
+  }
+  50% { 
+    text-shadow: 0 0 20px hsl(var(--primary) / 0.5), 0 0 30px hsl(var(--primary) / 0.3), 0 0 40px hsl(var(--primary) / 0.1);
+  }
+}

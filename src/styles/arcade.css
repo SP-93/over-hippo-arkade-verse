@@ -1,0 +1,75 @@
+/* Classic 90s Arcade Styles */
+@keyframes crt-flicker {
+  0% { opacity: 1; }
+  98% { opacity: 1; }
+  99% { opacity: 0.98; }
+  100% { opacity: 1; }
+}
+
+.retro-text {
+  text-shadow: 
+    2px 2px 0px rgba(0,0,0,0.8),
+    0 0 10px currentColor,
+    0 0 20px currentColor;
+  font-family: 'Courier New', monospace;
+  letter-spacing: 2px;
+}
+
+.scanlines {
+  position: relative;
+}
+
+.scanlines::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent 0px,
+    transparent 2px,
+    rgba(255, 255, 255, 0.03) 2px,
+    rgba(255, 255, 255, 0.03) 4px
+  );
+  animation: crt-flicker 0.15s infinite linear alternate;
+}
+
+/* 90s Arcade Game Grid */
+.arcade-grid {
+  background: 
+    radial-gradient(circle at 25% 25%, rgba(255, 0, 255, 0.1) 0%, transparent 25%),
+    radial-gradient(circle at 75% 75%, rgba(0, 255, 255, 0.1) 0%, transparent 25%),
+    linear-gradient(135deg, rgba(255, 255, 0, 0.05) 0%, rgba(255, 0, 0, 0.05) 100%);
+}
+
+.neon-glow {
+  box-shadow: 
+    0 0 5px currentColor,
+    0 0 10px currentColor,
+    0 0 15px currentColor,
+    0 0 20px currentColor;
+}
+
+.retro-button {
+  background: linear-gradient(145deg, #ff6b6b, #d63447);
+  border: 3px solid #ffffff;
+  border-bottom: 6px solid #a71e1e;
+  box-shadow: 
+    0 4px 8px rgba(0,0,0,0.3),
+    inset 0 1px 0 rgba(255,255,255,0.4);
+  text-shadow: 1px 1px 0px rgba(0,0,0,0.5);
+  transition: all 0.1s ease;
+}
+
+.retro-button:hover {
+  transform: translateY(1px);
+  border-bottom-width: 4px;
+}
+
+.retro-button:active {
+  transform: translateY(2px);
+  border-bottom-width: 2px;
+}

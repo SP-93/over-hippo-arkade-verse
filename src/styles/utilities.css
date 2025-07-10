@@ -1,0 +1,252 @@
+/* Utility classes */
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.animate-drift {
+  animation: drift 15s linear infinite;
+}
+
+.animate-glow {
+  animation: glow 2s ease-in-out infinite;
+}
+
+.animate-neon-pulse {
+  animation: neon-pulse 2s ease-in-out infinite;
+}
+
+.animate-zoom-in {
+  animation: zoom-in 0.3s ease-out;
+}
+
+.animate-gradient {
+  background-size: 200% 200%;
+  animation: gradient-shift 3s ease infinite;
+}
+
+.animate-pulse-border {
+  animation: pulse-border 2s ease-in-out infinite;
+}
+
+.animate-text-glow {
+  animation: text-glow 2s ease-in-out infinite;
+}
+
+/* 2025 Utility Classes */
+.animate-liquid-glow {
+  animation: liquid-glow 3s ease-in-out infinite;
+}
+
+.animate-particle-float {
+  animation: particle-float 4s ease-in-out infinite;
+}
+
+.animate-cyber-pulse {
+  animation: cyber-pulse 2.5s ease-in-out infinite;
+}
+
+.animate-glass-shimmer {
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+  background-size: 200% 100%;
+  animation: glass-shimmer 3s ease-in-out infinite;
+}
+
+.animate-neon-wave {
+  background: var(--gradient-neon-wave);
+  background-size: 400% 400%;
+  animation: neon-wave 6s ease infinite;
+}
+
+/* Modern design utilities */
+.bg-gradient-primary {
+  background: var(--gradient-primary);
+}
+
+.bg-gradient-secondary {
+  background: var(--gradient-secondary);
+}
+
+.bg-gradient-hero {
+  background: var(--gradient-hero);
+}
+
+.bg-gradient-neon {
+  background: var(--gradient-neon);
+}
+
+.bg-gradient-liquid {
+  background: var(--gradient-liquid);
+}
+
+.bg-gradient-cyber {
+  background: var(--gradient-cyber);
+}
+
+.bg-gradient-plasma {
+  background: var(--gradient-plasma);
+}
+
+.bg-gradient-glass {
+  background: var(--gradient-glass);
+}
+
+.shadow-neon {
+  box-shadow: var(--shadow-neon);
+}
+
+.shadow-glow {
+  box-shadow: var(--shadow-glow);
+}
+
+.shadow-intense {
+  box-shadow: var(--shadow-intense);
+}
+
+/* 2025 Shadow Effects */
+.shadow-liquid {
+  box-shadow: 
+    0 10px 40px hsl(var(--neon-electric) / 0.3),
+    0 20px 80px hsl(var(--neon-cyber) / 0.2);
+}
+
+.shadow-cyber {
+  box-shadow: 
+    0 0 20px hsl(var(--neon-cyber) / 0.6),
+    0 0 40px hsl(var(--neon-quantum) / 0.4),
+    0 20px 60px rgba(0, 0, 0, 0.3);
+}
+
+.shadow-quantum {
+  box-shadow: 
+    0 0 30px hsl(var(--neon-quantum) / 0.8),
+    0 0 60px hsl(var(--neon-electric) / 0.5),
+    0 30px 80px rgba(0, 0, 0, 0.4);
+}
+
+.border-neon {
+  border: 1px solid hsl(var(--primary) / 0.6);
+}
+
+.backdrop-glass {
+  backdrop-filter: blur(10px);
+  background: hsl(var(--card) / 0.8);
+}
+
+/* Glassmorphism & Liquid Glass */
+.glass-card {
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.glass-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: var(--glass-highlight);
+  border-radius: inherit;
+  border-top-left-radius: inherit;
+  border-top-right-radius: inherit;
+}
+
+.liquid-glass {
+  background: var(--gradient-liquid);
+  backdrop-filter: blur(15px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 
+    0 8px 32px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+/* 2025 Neon Effects */
+.neon-electric {
+  color: hsl(var(--neon-electric));
+  text-shadow: 
+    0 0 10px hsl(var(--neon-electric) / 0.8),
+    0 0 20px hsl(var(--neon-electric) / 0.6),
+    0 0 30px hsl(var(--neon-electric) / 0.4);
+}
+
+.neon-cyber {
+  color: hsl(var(--neon-cyber));
+  text-shadow: 
+    0 0 10px hsl(var(--neon-cyber) / 0.8),
+    0 0 20px hsl(var(--neon-cyber) / 0.6);
+}
+
+.neon-quantum {
+  color: hsl(var(--neon-quantum));
+  text-shadow: 
+    0 0 15px hsl(var(--neon-quantum) / 0.9),
+    0 0 30px hsl(var(--neon-quantum) / 0.7);
+}
+
+/* Interactive hover effects */
+.hover-lift {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.hover-lift:hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: var(--shadow-intense);
+}
+
+/* Enhanced buttons */
+.btn-neon {
+  background: linear-gradient(135deg, hsl(var(--primary)), hsl(var(--primary-glow)));
+  border: 1px solid hsl(var(--primary));
+  box-shadow: 0 4px 15px hsl(var(--primary) / 0.4);
+  transition: all 0.3s ease;
+}
+
+.btn-neon:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px hsl(var(--primary) / 0.6);
+}
+
+/* Game card enhancements */
+.game-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.game-card::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(45deg, transparent, hsl(var(--primary) / 0.1), transparent);
+  transform: rotate(45deg);
+  transition: transform 0.6s ease;
+  z-index: 1;
+}
+
+.game-card:hover::before {
+  transform: rotate(45deg) translate(100%, 100%);
+}
+
+.game-card > * {
+  position: relative;
+  z-index: 2;
+}
+
+/* Responsive utilities */
+@media (max-width: 768px) {
+  .animate-float {
+    animation-duration: 2s;
+  }
+  
+  .animate-drift {
+    animation-duration: 12s;
+  }
+  
+  .backdrop-glass {
+    backdrop-filter: blur(8px);
+  }
+}

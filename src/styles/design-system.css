@@ -1,0 +1,189 @@
+/* Over Hippo Arkade - Gaming Platform Design System
+All colors MUST be HSL. Retro arcade aesthetic with neon accents.
+*/
+
+@layer base {
+  :root {
+    --background: 230 35% 7%;
+    --foreground: 300 100% 95%;
+
+    --card: 240 30% 12%;
+    --card-foreground: 300 100% 95%;
+
+    --popover: 240 30% 12%;
+    --popover-foreground: 300 100% 95%;
+
+    --primary: 280 100% 60%;
+    --primary-foreground: 230 35% 7%;
+    --primary-glow: 285 100% 70%;
+
+    --secondary: 320 100% 50%;
+    --secondary-foreground: 230 35% 7%;
+
+    --muted: 240 20% 20%;
+    --muted-foreground: 280 20% 65%;
+
+    --accent: 160 100% 50%;
+    --accent-foreground: 230 35% 7%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 240 20% 20%;
+    --input: 240 30% 15%;
+    --ring: 280 100% 60%;
+
+    --radius: 0.75rem;
+
+    /* 32-bit SEGA Gaming Colors - Enhanced for 2006 HD */
+    --neon-pink: 320 100% 65%;
+    --neon-blue: 200 100% 65%;
+    --neon-green: 120 100% 55%;
+    --neon-cyan: 180 100% 70%;
+    --neon-yellow: 60 100% 70%;
+    --neon-purple: 280 100% 70%;
+    --arcade-gold: 45 100% 65%;
+    --danger-red: 0 100% 65%;
+    
+    /* 2025 Modern Gaming Colors - Liquid Glass + Neon */
+    --glass-primary: 240 10% 15%;
+    --glass-secondary: 250 8% 20%;
+    --glass-accent: 260 12% 25%;
+    --neon-electric: 200 100% 60%;
+    --neon-cyber: 280 100% 65%;
+    --neon-quantum: 320 100% 70%;
+    --neon-plasma: 180 100% 55%;
+    --neon-fusion: 60 100% 65%;
+    
+    /* Liquid Glass Effects */
+    --glass-blur: blur(20px);
+    --glass-opacity: 0.1;
+    --glass-border: rgba(255, 255, 255, 0.1);
+    --glass-highlight: rgba(255, 255, 255, 0.2);
+    
+    --sega-cyan: 180 100% 60%;
+    --sega-magenta: 300 100% 70%;
+    --sega-lime: 90 100% 55%;
+    --sega-orange: 25 100% 60%;
+    --sega-purple: 270 100% 65%;
+
+    /* 2025 Modern Gradients - Liquid Glass + Neon */
+    --gradient-liquid: linear-gradient(135deg, 
+      hsl(var(--glass-primary)) 0%, 
+      hsl(var(--glass-secondary)) 30%, 
+      hsl(var(--glass-accent)) 100%
+    );
+    --gradient-cyber: linear-gradient(135deg,
+      hsl(var(--neon-electric)) 0%,
+      hsl(var(--neon-cyber)) 50%,
+      hsl(var(--neon-quantum)) 100%
+    );
+    --gradient-plasma: linear-gradient(135deg,
+      hsl(var(--neon-plasma)) 0%,
+      hsl(var(--neon-fusion)) 50%,
+      hsl(var(--neon-electric)) 100%
+    );
+    --gradient-glass: linear-gradient(135deg,
+      rgba(255, 255, 255, 0.1) 0%,
+      rgba(255, 255, 255, 0.2) 50%,
+      rgba(255, 255, 255, 0.05) 100%
+    );
+    --gradient-neon-wave: linear-gradient(45deg,
+      hsl(var(--neon-electric)) 0%,
+      hsl(var(--neon-cyber)) 25%,
+      hsl(var(--neon-quantum)) 50%,
+      hsl(var(--neon-plasma)) 75%,
+      hsl(var(--neon-fusion)) 100%
+    );
+    
+    /* Legacy gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(280 100% 65%), hsl(320 100% 70%));
+    --gradient-secondary: linear-gradient(135deg, hsl(200 100% 65%), hsl(180 100% 60%));
+    --gradient-bg: linear-gradient(135deg, hsl(230 40% 8%), hsl(240 35% 15%));
+    --gradient-card: linear-gradient(135deg, hsl(240 35% 15%), hsl(250 30% 18%));
+    --gradient-hero: linear-gradient(135deg, hsl(280 100% 65%) 0%, hsl(320 100% 70%) 20%, hsl(200 100% 65%) 40%, hsl(180 100% 60%) 60%, hsl(45 100% 65%) 80%, hsl(90 100% 55%) 100%);
+    --gradient-neon: linear-gradient(90deg, hsl(280 100% 65%), hsl(320 100% 70%), hsl(200 100% 65%));
+    --gradient-sega: linear-gradient(45deg, hsl(180 100% 60%), hsl(300 100% 70%), hsl(90 100% 55%), hsl(25 100% 60%));
+    --gradient-metal: linear-gradient(135deg, hsl(220 20% 85%), hsl(220 15% 75%), hsl(220 10% 65%));
+    --gradient-chrome: linear-gradient(135deg, hsl(0 0% 95%), hsl(220 5% 85%), hsl(220 10% 75%), hsl(0 0% 95%));
+    --gradient-hd: linear-gradient(145deg, 
+      hsl(var(--hd-silver)) 0%, 
+      hsl(var(--hd-chrome)) 25%, 
+      hsl(var(--hd-platinum)) 50%, 
+      hsl(var(--hd-crystal)) 75%, 
+      hsl(var(--hd-electric)) 100%
+    );
+    --gradient-plasma: linear-gradient(135deg,
+      rgba(0, 255, 255, 0.9) 0%,
+      rgba(128, 0, 255, 0.8) 25%,
+      rgba(255, 0, 128, 0.7) 50%,
+      rgba(255, 255, 0, 0.8) 75%,
+      rgba(0, 255, 255, 0.9) 100%
+    );
+
+    /* 32-bit Shadows and Effects */
+    --shadow-neon: 0 0 25px hsl(280 100% 65% / 0.6);
+    --shadow-neon-strong: 0 0 35px hsl(280 100% 65% / 0.9);
+    --shadow-card: 0 12px 40px hsl(230 40% 8% / 0.6);
+    --shadow-glow: 0 6px 25px hsl(var(--primary) / 0.5), 0 12px 50px hsl(var(--primary) / 0.3);
+    --shadow-intense: 0 0 50px hsl(var(--primary) / 0.7), 0 0 100px hsl(var(--primary) / 0.5), 0 0 150px hsl(var(--primary) / 0.3);
+    --shadow-chrome: 0 4px 15px rgba(255,255,255,0.2), inset 0 1px 0 rgba(255,255,255,0.3);
+    --shadow-sprite: 0 2px 8px rgba(0,0,0,0.4), 0 4px 16px rgba(0,0,0,0.2);
+    --shadow-particle: 0 0 15px currentColor, 0 0 30px currentColor;
+
+    /* 32-bit Fast Animations */
+    --transition-smooth: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: all 0.2s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    --transition-fast: all 0.1s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-snappy: all 0.08s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    
+    /* Enhanced 32-bit Effects */
+    --glow-pulse: 0 0 25px hsl(var(--primary)), 0 0 50px hsl(var(--primary)), 0 0 75px hsl(var(--primary));
+    --particle-trail: linear-gradient(90deg, transparent, hsl(var(--primary) / 0.9), hsl(var(--primary) / 0.6), transparent);
+    --sprite-shine: linear-gradient(135deg, transparent 30%, rgba(255,255,255,0.3) 50%, transparent 70%);
+    --chrome-reflect: linear-gradient(45deg, transparent, rgba(255,255,255,0.4), transparent);
+
+    /* Hippo character animations */
+    --hippo-float: bounce 3s ease-in-out infinite;
+    --hippo-drift: drift 15s linear infinite;
+
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 212.7 26.8% 83.9%;
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+}
