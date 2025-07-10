@@ -27,15 +27,14 @@ export const PlayerDashboard = ({ playerAddress, playerChips }: PlayerDashboardP
     refetchInterval: 30000 // Refresh every 30 seconds
   });
 
-  const chips = balance?.gameChips || playerChips || 3; // Updated default from 5 to 3
+  const chips = balance?.gameChips || playerChips || 3;
   const overBalance = balance?.overTokens || 0;
 
   useEffect(() => {
     const timer = setInterval(() => {
       setTimeUntilReset(prev => {
         if (prev <= 0) {
-          // Chips will be reset via backend query refresh (3 chips instead of 5)
-          toast.success("Your chips have been refilled! (3 chips)");
+          // Timer reset - chips are managed by backend now
           queryClient.invalidateQueries({ queryKey: ['player-balance'] });
           return 24 * 3600; // Reset to 24 hours
         }

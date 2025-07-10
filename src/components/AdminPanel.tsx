@@ -357,18 +357,17 @@ export const AdminPanel = ({ walletAddress, isVisible }: AdminPanelProps) => {
                     <div className="flex items-center space-x-4">
                       <div className="text-right">
                         <div className="space-y-1">
-                          <p className="text-sm font-medium">Profile: {user.total_chips || 0} Chips</p>
                           {(user as any).player_balances?.[0] && (
-                            <p className="text-xs text-muted-foreground">
-                              Game: {(user as any).player_balances[0].game_chips || 0} Chips
+                            <p className="text-sm font-medium">
+                              Chips: {(user as any).player_balances[0].game_chips || 0}
                             </p>
                           )}
                           <p className="text-sm text-neon-green">
-                            Profile: {user.over_balance || 0} OVER
+                            Profile OVER: {user.over_balance || 0}
                           </p>
                           {(user as any).player_balances?.[0] && (
                             <p className="text-xs text-muted-foreground">
-                              Game: {(user as any).player_balances[0].over_balance || 0} OVER
+                              Game OVER: {(user as any).player_balances[0].over_balance || 0}
                             </p>
                           )}
                         </div>
@@ -378,7 +377,8 @@ export const AdminPanel = ({ walletAddress, isVisible }: AdminPanelProps) => {
                           size="sm" 
                           variant="outline"
                           onClick={() => {
-                            const newChips = prompt(`Current chips: ${user.total_chips}. Enter new amount:`);
+                            const currentChips = (user as any).player_balances?.[0]?.game_chips || 0;
+                            const newChips = prompt(`Current chips: ${currentChips}. Enter new amount:`);
                             if (newChips && !isNaN(Number(newChips))) {
                               updateUserMutation.mutate({ userId: user.user_id, chips: Number(newChips) });
                             }

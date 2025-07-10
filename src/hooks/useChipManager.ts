@@ -8,7 +8,8 @@ export const useChipManager = () => {
     isLoading,
     canPlayGame,
     getTimeUntilReset,
-    getChipLives
+    getChipLives,
+    refreshChips
   } = useChipBalance();
 
   const {
@@ -18,25 +19,13 @@ export const useChipManager = () => {
     getCurrentSession
   } = useGameSession();
 
-  // Enhanced startGameSession that updates local chip count and refreshes from backend
+  // Enhanced startGameSession that refreshes chips after consumption
   const startGameSession = async (gameType: string) => {
     const result = await originalStartGameSession(gameType);
     
-    // If chip was consumed, refresh balance from backend to get accurate count
+    // If chip was consumed, refresh balance from backend
     if (result && result.livesRemaining === 2 && !result.resumed) {
-      try {
-        const balance = await require('@/services/secure-player').securePlayerService.getPlayerBalance();
-        if (balance) {
-          console.log('Refreshed chips after game start:', balance.gameChips);
-          setPlayerChips(balance.gameChips);
-        } else {
-          // Fallback to local decrement if backend fails
-          setPlayerChips(prev => Math.max(0, prev - 1));
-        }
-      } catch (error) {
-        console.error('Failed to refresh balance after game start:', error);
-        setPlayerChips(prev => Math.max(0, prev - 1));
-      }
+      await refreshChips(); // Use the new refresh function
     }
     
     return result;
@@ -58,6 +47,7 @@ export const useChipManager = () => {
     getTimeUntilReset,
     getChipLives,
     setPlayerChips,
-    isLoading
+    isLoading,
+    refreshChips
   };
 };

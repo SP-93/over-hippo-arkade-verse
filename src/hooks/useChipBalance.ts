@@ -5,72 +5,41 @@ import { supabase } from "@/integrations/supabase/client";
 
 export const useChipBalance = () => {
   const [playerChips, setPlayerChips] = useState(3);
-  const [lastResetTime, setLastResetTime] = useState<string | null>(null);
-  const [firstChipConsumed, setFirstChipConsumed] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Load chip balance (only after authentication)
+  // Load chip balance with new simplified logic
   useEffect(() => {
     const loadChipBalance = async () => {
       setIsLoading(true);
       try {
-        // Check if user is authenticated first
-        const { supabase } = await import('@/integrations/supabase/client');
+        // Check if user is authenticated
         const { data: { session } } = await supabase.auth.getSession();
         
         if (session?.user) {
-          // ALWAYS prioritize backend data for authenticated users
+          // For authenticated users: ONLY use backend data from player_balances
+          console.log('Authenticated user - loading chips from backend');
           const balance = await securePlayerService.getPlayerBalance();
           if (balance) {
-            console.log('Loaded chips from backend:', balance.gameChips);
+            console.log('Backend chips loaded:', balance.gameChips);
             setPlayerChips(balance.gameChips);
-            // Clear localStorage to prevent conflicts
+            // Clear any old localStorage data to prevent conflicts
             localStorage.removeItem('player_chips');
             localStorage.removeItem('chip_reset_time');
             localStorage.removeItem('first_chip_consumed');
-            setIsLoading(false);
-            return;
-          }
-        }
-        
-        // Fallback to localStorage only for non-authenticated users
-        console.log('User not authenticated, using localStorage fallback');
-        const savedChips = localStorage.getItem('player_chips');
-        const savedResetTime = localStorage.getItem('chip_reset_time');
-        const chipConsumed = localStorage.getItem('first_chip_consumed') === 'true';
-        
-        if (savedChips) {
-          setPlayerChips(parseInt(savedChips));
-        } else {
-          // New default is 3 chips instead of 5
-          setPlayerChips(3);
-        }
-        
-        setFirstChipConsumed(chipConsumed);
-        
-        if (savedResetTime && chipConsumed) {
-          const resetTime = new Date(savedResetTime);
-          const now = new Date();
-          const timeDiff = now.getTime() - resetTime.getTime();
-          const hoursElapsed = timeDiff / (1000 * 60 * 60);
-          
-          if (hoursElapsed >= 24) {
-            // Reset chips to 3 after 24 hours (new monetization model)
-            setPlayerChips(3);
-            localStorage.setItem('player_chips', '3');
-            localStorage.removeItem('chip_reset_time');
-            localStorage.removeItem('first_chip_consumed');
-            setLastResetTime(null);
-            setFirstChipConsumed(false);
-            toast.success("Chips reset! You have 3 new chips!");
           } else {
-            setLastResetTime(savedResetTime);
+            // If backend fails, default to 3 chips
+            console.log('Backend failed, defaulting to 3 chips');
+            setPlayerChips(3);
           }
+        } else {
+          // For non-authenticated users: use localStorage with 3 chip default
+          console.log('Non-authenticated user - using localStorage');
+          const savedChips = localStorage.getItem('player_chips');
+          setPlayerChips(savedChips ? parseInt(savedChips) : 3);
         }
       } catch (error) {
         console.error('Failed to load chip balance:', error);
-        // Set default values (reduced from 5 to 3)
-        setPlayerChips(3);
+        setPlayerChips(3); // Always default to 3 chips
       } finally {
         setIsLoading(false);
       }
@@ -94,26 +63,26 @@ export const useChipBalance = () => {
     return playerChips > 0;
   };
 
+  // Simplified - no more complex timer logic
   const getTimeUntilReset = (): string => {
-    if (!lastResetTime || !firstChipConsumed) return "Play to start timer";
-    
-    const resetTime = new Date(lastResetTime);
-    const nextReset = new Date(resetTime.getTime() + (24 * 60 * 60 * 1000));
-    const now = new Date();
-    const timeDiff = nextReset.getTime() - now.getTime();
-    
-    if (timeDiff <= 0) return "00:00:00";
-    
-    const hours = Math.floor(timeDiff / (1000 * 60 * 60));
-    const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
-    const seconds = Math.floor((timeDiff % (1000 * 60)) / 1000);
-    
-    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    return "24:00:00"; // Static display
   };
 
-  // Each chip gives 2 lives
+  // Each chip gives 2 lives (unchanged)
   const getChipLives = (): number => {
     return 2;
+  };
+
+  // Refresh function to reload chips from backend
+  const refreshChips = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session?.user) {
+      const balance = await securePlayerService.getPlayerBalance();
+      if (balance) {
+        console.log('Chips refreshed:', balance.gameChips);
+        setPlayerChips(balance.gameChips);
+      }
+    }
   };
 
   return {
@@ -122,6 +91,7 @@ export const useChipBalance = () => {
     isLoading,
     canPlayGame,
     getTimeUntilReset,
-    getChipLives
+    getChipLives,
+    refreshChips
   };
 };

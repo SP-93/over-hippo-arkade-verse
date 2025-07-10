@@ -103,14 +103,31 @@ serve(async (req) => {
           })
         }
 
-        const updates: any = {}
-        if (chip_amount !== undefined) updates.total_chips = chip_amount
+        // Get user's verified wallet
+        const { data: targetProfile } = await supabaseClient
+          .from('profiles')
+          .select('verified_wallet_address')
+          .eq('user_id', user_id)
+          .single()
+
+        if (!targetProfile?.verified_wallet_address) {
+          return new Response(JSON.stringify({ error: 'Target user has no verified wallet' }), {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          })
+        }
+
+        // Update player_balances table (single source of truth)
+        const updates: any = { last_updated: new Date().toISOString() }
+        if (chip_amount !== undefined) updates.game_chips = chip_amount
         if (over_amount !== undefined) updates.over_balance = over_amount
 
         const { error: updateError } = await supabaseClient
-          .from('profiles')
-          .update(updates)
-          .eq('user_id', user_id)
+          .from('player_balances')
+          .upsert({
+            wallet_address: targetProfile.verified_wallet_address,
+            ...updates
+          })
 
         if (updateError) throw updateError
 
@@ -171,10 +188,10 @@ serve(async (req) => {
           })
         }
 
-        // Get user's current profile and balances
+        // Get user's verified wallet
         const { data: userProfile, error: profileError } = await supabaseClient
           .from('profiles')
-          .select('verified_wallet_address, total_chips')
+          .select('verified_wallet_address')
           .eq('user_id', user.id)
           .single()
 
@@ -182,27 +199,17 @@ serve(async (req) => {
           throw new Error('No verified wallet found for user')
         }
 
-        const newChipAmount = (userProfile.total_chips || 0) + chip_amount;
-
-        // Update profiles table
-        const { error: profileUpdateError } = await supabaseClient
-          .from('profiles')
-          .update({ 
-            total_chips: newChipAmount,
-            updated_at: new Date().toISOString()
-          })
-          .eq('user_id', user.id)
-
-        if (profileUpdateError) throw profileUpdateError
-
-        // Get current player_balances to preserve other values
+        // Get current player_balances - THIS IS THE SINGLE SOURCE OF TRUTH
         const { data: currentBalance } = await supabaseClient
           .from('player_balances')
           .select('*')
           .eq('wallet_address', userProfile.verified_wallet_address)
           .single()
 
-        // Upsert player_balances table
+        const currentChips = currentBalance?.game_chips || 3; // Default to 3 if no record
+        const newChipAmount = currentChips + chip_amount; // ADDITIVE LOGIC
+
+        // Upsert player_balances table with new chip count
         const { error: balanceUpdateError } = await supabaseClient
           .from('player_balances')
           .upsert({
@@ -228,7 +235,9 @@ serve(async (req) => {
 
         return new Response(JSON.stringify({ 
           success: true,
-          message: `Successfully added ${chip_amount} chips. New balance: ${newChipAmount}`,
+          message: `Successfully added ${chip_amount} chips. Previous: ${currentChips}, New balance: ${newChipAmount}`,
+          previous_balance: currentChips,
+          chips_added: chip_amount,
           new_balance: newChipAmount
         }), {
           status: 200,
