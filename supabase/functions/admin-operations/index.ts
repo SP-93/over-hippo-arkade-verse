@@ -203,6 +203,15 @@ serve(async (req) => {
         
         if (!chip_amount || chip_amount <= 0) {
           console.error('❌ Invalid chip amount:', chip_amount);
+          
+          // Log failed attempt
+          await supabaseClient.rpc('log_admin_action', {
+            p_action_type: 'chip_grant_self',
+            p_action_details: { chip_amount, error: 'Invalid chip amount' },
+            p_success: false,
+            p_error_message: 'Invalid chip amount provided'
+          });
+          
           return new Response(JSON.stringify({ error: 'Valid chip amount required' }), {
             status: 400,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -221,6 +230,15 @@ serve(async (req) => {
 
         if (profileError || !userProfile?.verified_wallet_address) {
           console.error('❌ No verified wallet found:', profileError);
+          
+          // Log failed attempt
+          await supabaseClient.rpc('log_admin_action', {
+            p_action_type: 'chip_grant_self',
+            p_action_details: { chip_amount, error: 'No verified wallet' },
+            p_success: false,
+            p_error_message: 'No verified wallet found for user'
+          });
+          
           return new Response(JSON.stringify({ 
             error: 'No verified wallet found for user',
             details: profileError?.message 
@@ -282,6 +300,21 @@ serve(async (req) => {
 
         if (balanceUpdateError) {
           console.error('❌ Balance update failed:', balanceUpdateError);
+          
+          // Log failed attempt
+          await supabaseClient.rpc('log_admin_action', {
+            p_action_type: 'chip_grant_self',
+            p_target_wallet_address: userProfile.verified_wallet_address,
+            p_action_details: { 
+              chip_amount, 
+              previous_balance: currentChips,
+              intended_new_balance: newChipAmount,
+              error: balanceUpdateError.message 
+            },
+            p_success: false,
+            p_error_message: `Balance update failed: ${balanceUpdateError.message}`
+          });
+          
           return new Response(JSON.stringify({ 
             error: 'Failed to update balance',
             details: balanceUpdateError.message 
@@ -291,7 +324,7 @@ serve(async (req) => {
           })
         }
 
-        // Record the admin action
+        // Record the admin action in blockchain_transactions
         console.log('📝 Recording admin transaction...');
         const { error: transactionError } = await supabaseClient
           .from('blockchain_transactions')
@@ -305,12 +338,28 @@ serve(async (req) => {
 
         console.log('📝 Transaction record result:', { transactionError });
 
+        // Log successful admin action with audit trail
+        const auditResult = await supabaseClient.rpc('log_admin_action', {
+          p_action_type: 'chip_grant_self',
+          p_target_wallet_address: userProfile.verified_wallet_address,
+          p_action_details: { 
+            chip_amount, 
+            previous_balance: currentChips,
+            new_balance: newChipAmount,
+            transaction_recorded: !transactionError
+          },
+          p_success: true
+        });
+
+        console.log('📋 Audit log result:', auditResult);
+
         const successResponse = { 
           success: true,
           message: `Successfully added ${chip_amount} chips. Previous: ${currentChips}, New balance: ${newChipAmount}`,
           previous_balance: currentChips,
           chips_added: chip_amount,
-          new_balance: newChipAmount
+          new_balance: newChipAmount,
+          audit_logged: !!auditResult.data
         };
 
         console.log('✅ Returning success response:', successResponse);

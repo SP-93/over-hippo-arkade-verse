@@ -7,6 +7,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { secureAdminService } from "@/services/secure-admin";
 import { AdminOverview } from "@/components/admin/AdminOverview";
+import { AdminAuditLog } from "@/components/admin/AdminAuditLog";
 import { WalletAdminPanel } from "@/components/WalletAdminPanel";
 
 interface AdminStats {
@@ -23,7 +24,7 @@ export default function Admin() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<AdminStats | null>(null);
-  const [activeTab, setActiveTab] = useState<"overview" | "wallets">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "wallets" | "audit">("overview");
 
   // Check authentication and admin status
   useEffect(() => {
@@ -151,6 +152,12 @@ export default function Admin() {
           >
             Wallet Management
           </Button>
+          <Button
+            variant={activeTab === "audit" ? "default" : "outline"}
+            onClick={() => setActiveTab("audit")}
+          >
+            Audit Log
+          </Button>
         </div>
 
         {/* Content */}
@@ -164,6 +171,10 @@ export default function Admin() {
 
         {activeTab === "wallets" && (
           <WalletAdminPanel isAdmin={isAdmin} />
+        )}
+
+        {activeTab === "audit" && (
+          <AdminAuditLog isAdmin={isAdmin} />
         )}
       </div>
     </div>

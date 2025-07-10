@@ -14,6 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_audit_log: {
+        Row: {
+          action_details: Json | null
+          action_type: string
+          admin_user_id: string | null
+          admin_wallet_address: string
+          created_at: string | null
+          error_message: string | null
+          id: string
+          ip_address: string | null
+          success: boolean | null
+          target_user_id: string | null
+          target_wallet_address: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          action_details?: Json | null
+          action_type: string
+          admin_user_id?: string | null
+          admin_wallet_address: string
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          ip_address?: string | null
+          success?: boolean | null
+          target_user_id?: string | null
+          target_wallet_address?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          action_details?: Json | null
+          action_type?: string
+          admin_user_id?: string | null
+          admin_wallet_address?: string
+          created_at?: string | null
+          error_message?: string | null
+          id?: string
+          ip_address?: string | null
+          success?: boolean | null
+          target_user_id?: string | null
+          target_wallet_address?: string | null
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       admin_config: {
         Row: {
           admin_role: string
@@ -529,6 +574,19 @@ export type Database = {
         Args: { p_session_id: string; p_final_score?: number }
         Returns: boolean
       }
+      get_admin_audit_logs: {
+        Args: { p_limit?: number; p_offset?: number }
+        Returns: {
+          id: string
+          admin_wallet_address: string
+          action_type: string
+          target_wallet_address: string
+          action_details: Json
+          success: boolean
+          error_message: string
+          created_at: string
+        }[]
+      }
       increment_chips: {
         Args: { wallet_addr: string; amount: number }
         Returns: number
@@ -544,6 +602,21 @@ export type Database = {
       is_admin_wallet: {
         Args: { wallet_address: string }
         Returns: boolean
+      }
+      is_admin_wallet_with_logging: {
+        Args: { wallet_address: string }
+        Returns: boolean
+      }
+      log_admin_action: {
+        Args: {
+          p_action_type: string
+          p_target_user_id?: string
+          p_target_wallet_address?: string
+          p_action_details?: Json
+          p_success?: boolean
+          p_error_message?: string
+        }
+        Returns: string
       }
       log_admin_check: {
         Args: { wallet_address: string }
