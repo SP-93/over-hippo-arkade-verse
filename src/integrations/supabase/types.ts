@@ -969,7 +969,7 @@ export type Database = {
         }[]
       }
       get_secure_wallet_balance: {
-        Args: Record<PropertyKey, never>
+        Args: Record<PropertyKey, never> | { p_user_id?: string }
         Returns: Json
       }
       increment_chips: {

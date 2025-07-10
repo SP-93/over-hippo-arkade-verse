@@ -45,18 +45,29 @@ serve(async (req) => {
 
     switch (action) {
       case 'get_balance':
+        console.log(`🔍 Getting balance for user: ${user.id}`)
+        
         const { data: balanceData, error: balanceError } = await supabaseClient
-          .rpc('get_secure_wallet_balance')
+          .rpc('get_secure_wallet_balance', { p_user_id: user.id })
+
+        console.log('💰 Balance result:', { balanceData, balanceError })
 
         if (balanceError) {
-          console.error('Balance fetch failed:', balanceError)
+          console.error('❌ Balance fetch failed:', balanceError)
           return new Response(JSON.stringify({ 
-            error: 'Failed to fetch balance' 
+            success: false,
+            error: 'Failed to fetch balance',
+            has_wallet: false,
+            game_chips: 0,
+            over_balance: 0,
+            total_earnings: 0
           }), {
             status: 500,
             headers: { ...corsHeaders, 'Content-Type': 'application/json' },
           })
         }
+
+        console.log('✅ Balance fetched successfully:', balanceData)
 
         return new Response(JSON.stringify(balanceData), {
           status: 200,
@@ -76,6 +87,8 @@ serve(async (req) => {
           })
         }
 
+        console.log(`🔧 Performing atomic operation: ${action} for user ${user.id}`)
+
         const { data: operationData, error: operationError } = await supabaseClient
           .rpc('atomic_balance_operation', {
             p_operation_type: action,
@@ -84,6 +97,8 @@ serve(async (req) => {
             p_game_type: game_type,
             p_transaction_ref: transaction_ref
           })
+
+        console.log('⚙️ Operation result:', { operationData, operationError })
 
         if (operationError) {
           console.error('Atomic operation failed:', operationError)
