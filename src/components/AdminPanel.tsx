@@ -158,16 +158,29 @@ export const AdminPanel = ({ walletAddress, isVisible }: AdminPanelProps) => {
     mutationFn: (amount: number) => secureAdminService.addChipsToSelf(amount),
     onSuccess: (success) => {
       if (success) {
+        console.log('✅ FRONTEND: Chips added successfully via mutation');
         toast.success("Chips added successfully! ✨");
+        
+        // Refresh all relevant queries
         queryClient.invalidateQueries({ queryKey: ['admin-stats'] });
         queryClient.invalidateQueries({ queryKey: ['admin-users'] });
+        
+        // Trigger chip balance refresh in the UI
+        window.dispatchEvent(new CustomEvent('chipBalanceUpdated'));
+        
+        // Force reload to reflect changes immediately
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000);
       } else {
+        console.error('❌ FRONTEND: Add chips returned false via mutation');
         toast.error("Failed to add chips");
       }
     },
     onError: (error) => {
-      console.error('Add chips mutation error:', error);
-      toast.error(`Add chips failed: ${error.message || 'Unknown error'}`);
+      console.error('💥 FRONTEND: Add chips mutation failed:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      toast.error(`Failed to add chips: ${errorMessage}`);
     }
   });
 

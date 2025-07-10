@@ -46,6 +46,18 @@ export const useChipBalance = () => {
     };
 
     loadChipBalance();
+
+    // Listen for chip balance updates
+    const handleChipUpdate = () => {
+      console.log('🔄 Chip balance update event received');
+      loadChipBalance();
+    };
+
+    window.addEventListener('chipBalanceUpdated', handleChipUpdate);
+    
+    return () => {
+      window.removeEventListener('chipBalanceUpdated', handleChipUpdate);
+    };
   }, []);
 
   // Only save to localStorage for non-authenticated users

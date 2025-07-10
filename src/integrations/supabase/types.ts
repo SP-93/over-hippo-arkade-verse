@@ -131,38 +131,105 @@ export type Database = {
         }
         Relationships: []
       }
+      game_performance: {
+        Row: {
+          created_at: string
+          device_info: Json | null
+          fps_average: number | null
+          game_type: string
+          id: string
+          memory_usage_mb: number | null
+          render_time_ms: number | null
+          session_id: string | null
+          user_id: string | null
+          webgl_version: string | null
+        }
+        Insert: {
+          created_at?: string
+          device_info?: Json | null
+          fps_average?: number | null
+          game_type: string
+          id?: string
+          memory_usage_mb?: number | null
+          render_time_ms?: number | null
+          session_id?: string | null
+          user_id?: string | null
+          webgl_version?: string | null
+        }
+        Update: {
+          created_at?: string
+          device_info?: Json | null
+          fps_average?: number | null
+          game_type?: string
+          id?: string
+          memory_usage_mb?: number | null
+          render_time_ms?: number | null
+          session_id?: string | null
+          user_id?: string | null
+          webgl_version?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "game_performance_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "game_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       game_scores: {
         Row: {
+          bonus_points: number | null
+          combo_multiplier: number | null
           created_at: string
           game_type: string
           id: string
           level_reached: number | null
           over_earned: number | null
+          real_time_score: number | null
           score: number
+          session_id: string | null
           time_played: number | null
           user_id: string
         }
         Insert: {
+          bonus_points?: number | null
+          combo_multiplier?: number | null
           created_at?: string
           game_type: string
           id?: string
           level_reached?: number | null
           over_earned?: number | null
+          real_time_score?: number | null
           score: number
+          session_id?: string | null
           time_played?: number | null
           user_id: string
         }
         Update: {
+          bonus_points?: number | null
+          combo_multiplier?: number | null
           created_at?: string
           game_type?: string
           id?: string
           level_reached?: number | null
           over_earned?: number | null
+          real_time_score?: number | null
           score?: number
+          session_id?: string | null
           time_played?: number | null
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "game_scores_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "game_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       game_sessions: {
         Row: {
@@ -505,6 +572,15 @@ export type Database = {
       unban_wallet: {
         Args: { p_wallet_address: string; p_admin_user_id: string }
         Returns: boolean
+      }
+      update_realtime_score: {
+        Args: {
+          p_session_id: string
+          p_score: number
+          p_combo_multiplier?: number
+          p_bonus_points?: number
+        }
+        Returns: Json
       }
       verify_wallet_signature: {
         Args: {

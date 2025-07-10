@@ -3,6 +3,8 @@ import { Canvas } from "@react-three/fiber";
 import { OrbitControls, Environment, Lightformer } from "@react-three/drei";
 import * as THREE from "three";
 import { Game3DFallback } from "@/components/Game3DFallback";
+import { webglDetector } from "@/utils/webglDetector";
+import { usePerformanceMonitor } from "@/hooks/usePerformanceMonitor";
 
 interface Game3DEngineProps {
   children: ReactNode;
@@ -31,38 +33,41 @@ const Game3DEngine = ({
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
   const [retryCount, setRetryCount] = useState(0);
+  const [shouldUse3D, setShouldUse3D] = useState(false);
+  const [performanceSettings, setPerformanceSettings] = useState(webglDetector.getRecommendedSettings());
+  
+  // Monitor performance
+  const performanceMetrics = usePerformanceMonitor(gameId);
 
-  // Check WebGL support
+  // Progressive Enhancement: Check WebGL support and capabilities
   useEffect(() => {
-    const checkWebGL = () => {
+    const initializeEngine = () => {
       try {
-        console.log(`🎮 Checking WebGL support for game: ${gameId}`);
+        console.log(`🎮 Initializing 3D engine for game: ${gameId}`);
         
-        const canvas = document.createElement('canvas');
-        const gl = canvas.getContext('webgl2') || 
-                   canvas.getContext('webgl') || 
-                   canvas.getContext('experimental-webgl');
+        const capabilities = webglDetector.detect();
+        const canUse3D = webglDetector.shouldUse3D();
         
-        if (!gl) {
-          throw new Error('WebGL not supported on this device');
-        }
+        console.log(`🔍 WebGL capabilities:`, capabilities);
+        console.log(`🎯 3D engine enabled: ${canUse3D}`);
         
-        // Test basic WebGL functionality
-        if (gl instanceof WebGLRenderingContext || gl instanceof WebGL2RenderingContext) {
-          const renderer = gl.getParameter(gl.RENDERER);
-          const vendor = gl.getParameter(gl.VENDOR);
-          console.log(`✅ WebGL supported - Renderer: ${renderer}, Vendor: ${vendor}`);
+        setShouldUse3D(canUse3D);
+        setPerformanceSettings(webglDetector.getRecommendedSettings());
+        
+        if (!canUse3D) {
+          console.log(`⚠️ Falling back to 2D mode for ${gameId}`);
         }
         
         setIsLoading(false);
       } catch (error) {
-        console.error(`❌ WebGL check failed for ${gameId}:`, error);
+        console.error(`❌ 3D engine initialization failed for ${gameId}:`, error);
+        setShouldUse3D(false);
         setHasError(true);
         setIsLoading(false);
       }
     };
 
-    const timer = setTimeout(checkWebGL, 100);
+    const timer = setTimeout(initializeEngine, 100);
     return () => clearTimeout(timer);
   }, [retryCount, gameId]);
 
@@ -89,13 +94,14 @@ const Game3DEngine = ({
     return <Game3DFallback loading={true} />;
   }
 
-  if (hasError) {
+  if (hasError || !shouldUse3D) {
     return (
       <Game3DFallback 
-        error={true} 
+        error={hasError} 
         retryCount={retryCount}
         onRetry={handleRetry}
         onBackToArcade={handleBackToArcade}
+        fallbackMode={!shouldUse3D}
       />
     );
   }
@@ -170,16 +176,21 @@ const Game3DEngine = ({
         }}
         onCreated={({ gl, scene, camera }) => {
           try {
-            console.log(`🎯 3D Canvas created for ${gameId}`);
+            console.log(`🎯 3D Canvas created for ${gameId} with settings:`, performanceSettings);
             
-            // Basic WebGL setup - less aggressive settings
-            gl.setPixelRatio(Math.min(window.devicePixelRatio, 1.5)); // Reduced from 2
-            gl.shadowMap.enabled = false; // Disable shadows initially
-            gl.toneMapping = THREE.NoToneMapping; // Simpler tone mapping
+            // Apply performance-based settings
+            gl.setPixelRatio(Math.min(window.devicePixelRatio, performanceSettings.renderScale));
+            gl.shadowMap.enabled = performanceSettings.shadows;
+            gl.toneMapping = THREE.NoToneMapping;
+            
+            // Antialias is set in canvas properties, not renderer
+            // The gl.antialias property is read-only
             
             scene.background = new THREE.Color('#000814');
             
-            console.log(`✅ 3D Engine initialized for ${gameId}`);
+            console.log(`✅ 3D Engine initialized for ${gameId} - Performance level: ${webglDetector.detect().performanceLevel}`);
+            console.log(`📊 FPS: ${performanceMetrics.fps}, Memory: ${performanceMetrics.memoryUsage}MB`);
+            
             onRendererReady?.(gl);
             setIsLoading(false);
           } catch (error) {
@@ -189,10 +200,13 @@ const Game3DEngine = ({
         }}
         onError={handleCanvasError}
         gl={{ 
-          antialias: false, // Disabled for performance
+          antialias: performanceSettings.antialias,
           alpha: false,
-          powerPreference: "default", // Changed from high-performance
-          failIfMajorPerformanceCaveat: false
+          powerPreference: performanceSettings.renderScale > 0.8 ? "high-performance" : "default",
+          failIfMajorPerformanceCaveat: false,
+          preserveDrawingBuffer: false,
+          depth: true,
+          stencil: false
         }}
         dpr={1} // Fixed DPR instead of array
         fallback={<Game3DFallback loading={true} />}
