@@ -97,7 +97,6 @@ export const KingKongGame = ({ onScoreChange, onGameEnd, onGameStart, chipCost =
   // Generate tower platforms
   const [platforms] = useState<Platform[]>(() => {
     const platformList: Platform[] = [];
-    const towerHeight = 2000;
     
     // Ground floor
     platformList.push({ x: 0, y: CANVAS_HEIGHT - 20, width: CANVAS_WIDTH, height: 20, type: 'floor' });
@@ -162,39 +161,208 @@ export const KingKongGame = ({ onScoreChange, onGameEnd, onGameStart, chipCost =
     defeated: false
   });
 
-  // Add particles effect
-  const addParticles = useCallback((x: number, y: number, color: string, count = 8) => {
-    const newParticles: Particle[] = [];
-    for (let i = 0; i < count; i++) {
-      newParticles.push({
-        x,
-        y,
-        vx: (Math.random() - 0.5) * 8,
-        vy: Math.random() * -8 - 2,
-        life: 30 + Math.random() * 20,
-        color,
-        size: 2 + Math.random() * 4
+  // Game physics and collision detection
+  const updatePlayer = useCallback(() => {
+    setPlayer(prevPlayer => {
+      let newPlayer = { ...prevPlayer };
+      
+      // Handle input
+      if (keys['ArrowLeft'] || keys['a']) {
+        newPlayer.vx = -3;
+        newPlayer.facing = 'left';
+      } else if (keys['ArrowRight'] || keys['d']) {
+        newPlayer.vx = 3;
+        newPlayer.facing = 'right';
+      } else {
+        newPlayer.vx *= 0.8; // Friction
+      }
+      
+      // Check for ladder climbing
+      const onLadder = platforms.some(platform => 
+        platform.type === 'ladder' &&
+        newPlayer.x + PLAYER_SIZE > platform.x &&
+        newPlayer.x < platform.x + platform.width &&
+        newPlayer.y + PLAYER_SIZE > platform.y &&
+        newPlayer.y < platform.y + platform.height
+      );
+      
+      if (onLadder && (keys['ArrowUp'] || keys['w'])) {
+        newPlayer.climbing = true;
+        newPlayer.vy = -CLIMB_SPEED;
+      } else if (onLadder && (keys['ArrowDown'] || keys['s'])) {
+        newPlayer.climbing = true;
+        newPlayer.vy = CLIMB_SPEED;
+      } else if (newPlayer.climbing && onLadder) {
+        newPlayer.vy = 0;
+      } else {
+        newPlayer.climbing = false;
+        newPlayer.vy += GRAVITY;
+      }
+      
+      // Jump
+      if ((keys[' '] || keys['ArrowUp']) && !newPlayer.climbing) {
+        const onGround = platforms.some(platform => 
+          platform.type === 'floor' &&
+          newPlayer.x + PLAYER_SIZE > platform.x &&
+          newPlayer.x < platform.x + platform.width &&
+          newPlayer.y + PLAYER_SIZE >= platform.y &&
+          newPlayer.y + PLAYER_SIZE <= platform.y + platform.height + 5
+        );
+        
+        if (onGround) {
+          newPlayer.vy = -12;
+        }
+      }
+      
+      // Update position
+      newPlayer.x += newPlayer.vx;
+      newPlayer.y += newPlayer.vy;
+      
+      // Platform collision
+      platforms.forEach(platform => {
+        if (platform.type === 'floor' || platform.type === 'broken') {
+          if (newPlayer.x + PLAYER_SIZE > platform.x &&
+              newPlayer.x < platform.x + platform.width &&
+              newPlayer.y + PLAYER_SIZE > platform.y &&
+              newPlayer.y < platform.y + platform.height) {
+            
+            if (newPlayer.vy > 0) { // Falling down
+              newPlayer.y = platform.y - PLAYER_SIZE;
+              newPlayer.vy = 0;
+            }
+          }
+        }
       });
-    }
-    setParticles(prev => [...prev, ...newParticles]);
-  }, []);
+      
+      // Boundary checks
+      if (newPlayer.x < 0) newPlayer.x = 0;
+      if (newPlayer.x + PLAYER_SIZE > CANVAS_WIDTH) newPlayer.x = CANVAS_WIDTH - PLAYER_SIZE;
+      if (newPlayer.y > CANVAS_HEIGHT) {
+        // Player fell off - lose life
+        setLives(prev => prev - 1);
+        newPlayer.x = CANVAS_WIDTH / 2 - PLAYER_SIZE / 2;
+        newPlayer.y = CANVAS_HEIGHT - 100;
+        newPlayer.vx = 0;
+        newPlayer.vy = 0;
+      }
+      
+      // Update camera to follow player
+      const targetCameraY = Math.max(0, Math.min(newPlayer.y - CANVAS_HEIGHT / 2, CANVAS_HEIGHT * 2));
+      setCameraY(prev => prev + (targetCameraY - prev) * 0.1);
+      
+      // Invulnerability countdown
+      if (newPlayer.invulnerable > 0) {
+        newPlayer.invulnerable--;
+      }
+      
+      return newPlayer;
+    });
+  }, [keys, platforms]);
 
-  // Spawn obstacles from boss
-  const spawnObstacle = useCallback(() => {
-    if (!boss.defeated && Math.random() < 0.02) {
-      const newObstacle: Obstacle = {
-        x: boss.x + 25,
-        y: boss.y + 50,
-        vx: (Math.random() - 0.5) * 3,
-        vy: 2 + Math.random() * 3,
-        type: Math.random() < 0.7 ? 'barrel' : 'fire',
-        size: 20,
-        active: true,
-        rotation: 0
-      };
-      setObstacles(prev => [...prev, newObstacle]);
-    }
+  // Obstacle management
+  const updateObstacles = useCallback(() => {
+    setObstacles(prevObstacles => {
+      let newObstacles = [...prevObstacles];
+      
+      // Spawn new obstacles from boss
+      if (Math.random() < 0.02 && !boss.defeated) {
+        newObstacles.push({
+          x: boss.x + 50,
+          y: boss.y + 50,
+          vx: (Math.random() - 0.5) * 4,
+          vy: 2,
+          type: 'barrel',
+          size: 24,
+          active: true,
+          rotation: 0
+        });
+      }
+      
+      // Update existing obstacles
+      newObstacles = newObstacles.map(obstacle => {
+        if (!obstacle.active) return obstacle;
+        
+        obstacle.x += obstacle.vx;
+        obstacle.y += obstacle.vy;
+        obstacle.vy += GRAVITY * 0.5;
+        obstacle.rotation += 0.1;
+        
+        // Platform collision for barrels
+        if (obstacle.type === 'barrel') {
+          platforms.forEach(platform => {
+            if (platform.type === 'floor' &&
+                obstacle.x + obstacle.size > platform.x &&
+                obstacle.x < platform.x + platform.width &&
+                obstacle.y + obstacle.size > platform.y &&
+                obstacle.y < platform.y + platform.height) {
+              
+              obstacle.y = platform.y - obstacle.size;
+              obstacle.vy = -Math.abs(obstacle.vy) * 0.6;
+              obstacle.vx *= 0.9;
+            }
+          });
+        }
+        
+        // Remove obstacles that fall off screen
+        if (obstacle.y > CANVAS_HEIGHT + 100) {
+          obstacle.active = false;
+        }
+        
+        return obstacle;
+      }).filter(obstacle => obstacle.active);
+      
+      return newObstacles;
+    });
   }, [boss]);
+
+  // Collision detection
+  const checkCollisions = useCallback(() => {
+    if (player.invulnerable > 0) return;
+    
+    obstacles.forEach(obstacle => {
+      if (!obstacle.active) return;
+      
+      const dx = player.x + PLAYER_SIZE/2 - (obstacle.x + obstacle.size/2);
+      const dy = player.y + PLAYER_SIZE/2 - (obstacle.y + obstacle.size/2);
+      const distance = Math.sqrt(dx*dx + dy*dy);
+      
+      if (distance < (PLAYER_SIZE + obstacle.size) / 2) {
+        // Hit by obstacle
+        setPlayer(prev => ({ ...prev, invulnerable: 120 }));
+        setLives(prev => prev - 1);
+        
+        // Create hit particles
+        const newParticles: Particle[] = [];
+        for (let i = 0; i < 10; i++) {
+          newParticles.push({
+            x: player.x + PLAYER_SIZE/2,
+            y: player.y + PLAYER_SIZE/2,
+            vx: (Math.random() - 0.5) * 8,
+            vy: (Math.random() - 0.5) * 8,
+            life: 30,
+            color: 'hsl(0, 100%, 50%)',
+            size: 3
+          });
+        }
+        setParticles(prev => [...prev, ...newParticles]);
+        
+        obstacle.active = false;
+      }
+    });
+  }, [player, obstacles]);
+
+  // Update particles
+  const updateParticles = useCallback(() => {
+    setParticles(prevParticles => 
+      prevParticles.map(particle => ({
+        ...particle,
+        x: particle.x + particle.vx,
+        y: particle.y + particle.vy,
+        vy: particle.vy + 0.2,
+        life: particle.life - 1
+      })).filter(particle => particle.life > 0)
+    );
+  }, []);
 
   // Game rendering
   const render = useCallback(() => {
@@ -433,275 +601,53 @@ export const KingKongGame = ({ onScoreChange, onGameEnd, onGameStart, chipCost =
 
   }, [player, platforms, obstacles, particles, boss, cameraY, lives, level]);
 
-  // Collision detection
-  const checkCollision = useCallback((rect1: any, rect2: any) => {
-    return rect1.x < rect2.x + rect2.width &&
-           rect1.x + rect1.width > rect2.x &&
-           rect1.y < rect2.y + rect2.height &&
-           rect1.y + rect1.height > rect2.y;
-  }, []);
-
-  // Game physics
-  const updateGame = useCallback(() => {
-    if (isPaused || gameOver) return;
-
-    // Spawn obstacles
-    spawnObstacle();
-
-    // Update player
-    setPlayer(prevPlayer => {
-      let newPlayer = { ...prevPlayer };
-      
-      // Decrease invulnerability
-      if (newPlayer.invulnerable > 0) {
-        newPlayer.invulnerable--;
-      }
-      
-      // Handle climbing
-      let onLadder = false;
-      platforms.forEach(platform => {
-        if (platform.type === 'ladder') {
-          const playerRect = {
-            x: newPlayer.x,
-            y: newPlayer.y,
-            width: PLAYER_SIZE,
-            height: PLAYER_SIZE
-          };
-          
-          if (checkCollision(playerRect, platform)) {
-            onLadder = true;
-            if (keys['ArrowUp'] || keys['w']) {
-              newPlayer.vy = -CLIMB_SPEED;
-              newPlayer.climbing = true;
-            } else if (keys['ArrowDown'] || keys['s']) {
-              newPlayer.vy = CLIMB_SPEED;
-              newPlayer.climbing = true;
-            } else {
-              newPlayer.vy = 0;
-            }
-          }
-        }
-      });
-      
-      if (!onLadder) {
-        newPlayer.climbing = false;
-        newPlayer.vy += GRAVITY; // Apply gravity
-      }
-      
-      // Horizontal movement
-      if (keys['ArrowLeft'] || keys['a']) {
-        newPlayer.vx = -3;
-        newPlayer.facing = 'left';
-      } else if (keys['ArrowRight'] || keys['d']) {
-        newPlayer.vx = 3;
-        newPlayer.facing = 'right';
-      } else {
-        newPlayer.vx *= 0.8; // Friction
-      }
-      
-      // Update position
-      newPlayer.x += newPlayer.vx;
-      newPlayer.y += newPlayer.vy;
-      
-      // Platform collisions
-      let grounded = false;
-      platforms.forEach(platform => {
-        if (platform.type !== 'floor') return;
-        
-        const playerRect = {
-          x: newPlayer.x,
-          y: newPlayer.y,
-          width: PLAYER_SIZE,
-          height: PLAYER_SIZE
-        };
-        
-        if (checkCollision(playerRect, platform)) {
-          if (prevPlayer.y + PLAYER_SIZE <= platform.y && newPlayer.vy >= 0) {
-            newPlayer.y = platform.y - PLAYER_SIZE;
-            newPlayer.vy = 0;
-            grounded = true;
-          }
-        }
-      });
-      
-      // World boundaries
-      if (newPlayer.x < 0) newPlayer.x = 0;
-      if (newPlayer.x > CANVAS_WIDTH - PLAYER_SIZE) newPlayer.x = CANVAS_WIDTH - PLAYER_SIZE;
-      
-      // Fall off screen
-      if (newPlayer.y > CANVAS_HEIGHT + 100) {
-        setLives(prev => {
-          if (prev <= 1) {
-            setGameOver(true);
-            setIsPlaying(false);
-            onGameEnd(score);
-            return 0;
-          }
-          return prev - 1;
-        });
-        
-        // Reset player position
-        newPlayer.x = CANVAS_WIDTH / 2 - PLAYER_SIZE / 2;
-        newPlayer.y = CANVAS_HEIGHT - 100;
-        newPlayer.vx = 0;
-        newPlayer.vy = 0;
-        newPlayer.health = 3;
-      }
-      
-      return newPlayer;
-    });
-
-    // Update camera to follow player
-    setCameraY(prev => {
-      const targetY = Math.max(0, Math.min(player.y - CANVAS_HEIGHT / 2, 1500));
-      return prev + (targetY - prev) * 0.1;
-    });
-
-    // Update obstacles
-    setObstacles(prevObstacles => 
-      prevObstacles
-        .map(obstacle => {
-          if (!obstacle.active) return obstacle;
-          
-          let newObstacle = { ...obstacle };
-          
-          // Apply physics
-          newObstacle.vy += GRAVITY * 0.5;
-          newObstacle.x += newObstacle.vx;
-          newObstacle.y += newObstacle.vy;
-          newObstacle.rotation += 0.1;
-          
-          // Platform collisions for bouncing
-          platforms.forEach(platform => {
-            if (platform.type === 'floor') {
-              const obstacleRect = {
-                x: newObstacle.x,
-                y: newObstacle.y,
-                width: newObstacle.size,
-                height: newObstacle.size
-              };
-              
-              if (checkCollision(obstacleRect, platform) && newObstacle.vy > 0) {
-                newObstacle.vy = -newObstacle.vy * 0.7;
-                newObstacle.y = platform.y - newObstacle.size;
-              }
-            }
-          });
-          
-          // Player collision
-          const playerRect = {
-            x: player.x,
-            y: player.y,
-            width: PLAYER_SIZE,
-            height: PLAYER_SIZE
-          };
-          
-          const obstacleRect = {
-            x: newObstacle.x,
-            y: newObstacle.y,
-            width: newObstacle.size,
-            height: newObstacle.size
-          };
-          
-          if (checkCollision(playerRect, obstacleRect) && player.invulnerable === 0) {
-            newObstacle.active = false;
-            
-            setPlayer(prev => {
-              const newHealth = prev.health - 1;
-              if (newHealth <= 0) {
-                setLives(livesCount => {
-                  if (livesCount <= 1) {
-                    setGameOver(true);
-                    setIsPlaying(false);
-                    onGameEnd(score);
-                    return 0;
-                  }
-                  return livesCount - 1;
-                });
-                
-                return {
-                  ...prev,
-                  x: CANVAS_WIDTH / 2 - PLAYER_SIZE / 2,
-                  y: CANVAS_HEIGHT - 100,
-                  vx: 0,
-                  vy: 0,
-                  health: 3,
-                  invulnerable: 120
-                };
-              }
-              
-              return { ...prev, health: newHealth, invulnerable: 60 };
-            });
-            
-            addParticles(newObstacle.x + newObstacle.size/2, newObstacle.y + newObstacle.size/2, 'hsl(0, 100%, 60%)', 8);
-          }
-          
-          // Remove if off screen
-          if (newObstacle.y > CANVAS_HEIGHT + 100 || 
-              newObstacle.x < -50 || newObstacle.x > CANVAS_WIDTH + 50) {
-            newObstacle.active = false;
-          }
-          
-          return newObstacle;
-        })
-        .filter(obstacle => obstacle.active)
-    );
-
-    // Update particles
-    setParticles(prevParticles =>
-      prevParticles
-        .map(particle => ({
-          ...particle,
-          x: particle.x + particle.vx,
-          y: particle.y + particle.vy,
-          vy: particle.vy + 0.1,
-          life: particle.life - 1
-        }))
-        .filter(particle => particle.life > 0)
-    );
-
-    // Check if player reached boss
-    const distanceToBoss = Math.sqrt(
-      Math.pow(player.x - boss.x, 2) + Math.pow(player.y - boss.y, 2)
-    );
+  // Game logic and event handlers
+  const startGame = () => {
+    if (onGameStart && !onGameStart()) return;
     
-    if (distanceToBoss < 80 && !boss.defeated) {
-      // Boss battle!
-      const points = 1000;
-      setScore(prev => {
-        const newScore = prev + points;
-        onScoreChange(newScore);
-        return newScore;
-      });
-      
-      boss.defeated = true;
-      addParticles(boss.x + 50, boss.y + 50, 'hsl(45, 100%, 60%)', 20);
-      
-      // Level complete
-      setLevel(prev => prev + 1);
-    }
+    setIsPlaying(true);
+    setGameOver(false);
+    setScore(0);
+    setLives(1);
+    setLevel(1);
+    setCameraY(0);
+    
+    // Reset player position
+    setPlayer({
+      x: CANVAS_WIDTH / 2 - PLAYER_SIZE / 2,
+      y: CANVAS_HEIGHT - 100,
+      vx: 0,
+      vy: 0,
+      climbing: false,
+      facing: 'right',
+      health: 3,
+      invulnerable: 0
+    });
+    
+    setObstacles([]);
+    setParticles([]);
+  };
 
-    // Add score for climbing height
-    const currentHeight = Math.floor((CANVAS_HEIGHT - player.y - cameraY) / 100);
-    if (currentHeight > 0 && currentHeight % 2 === 0) {
-      setScore(prev => {
-        const heightBonus = currentHeight * 10;
-        if (prev < heightBonus) {
-          const newScore = heightBonus;
-          onScoreChange(newScore);
-          return newScore;
-        }
-        return prev;
-      });
-    }
+  const resetGame = () => {
+    setIsPlaying(false);
+    setGameOver(false);
+    setScore(0);
+    setLives(1);
+    setLevel(1);
+    setCameraY(0);
+  };
 
-  }, [player, obstacles, platforms, boss, keys, score, lives, level, isPaused, gameOver, checkCollision, addParticles, spawnObstacle, onScoreChange, onGameEnd]);
-
-  // Keyboard controls
+  // Keyboard handling
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       setKeys(prev => ({ ...prev, [e.key]: true }));
-      e.preventDefault();
+      
+      if (e.key === ' ') {
+        e.preventDefault();
+        if (isPlaying) {
+          setIsPaused(!isPaused);
+        }
+      }
     };
 
     const handleKeyUp = (e: KeyboardEvent) => {
@@ -710,19 +656,36 @@ export const KingKongGame = ({ onScoreChange, onGameEnd, onGameStart, chipCost =
 
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
-    
+
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
     };
-  }, []);
+  }, [isPlaying, isPaused]);
 
   // Game loop
   useEffect(() => {
     if (isPlaying && !isPaused && !gameOver) {
       gameLoopRef.current = setInterval(() => {
-        updateGame();
-      }, 16); // ~60 FPS
+        updatePlayer();
+        updateObstacles();
+        updateParticles();
+        checkCollisions();
+        render();
+        
+        // Check win condition
+        if (player.y < CANVAS_HEIGHT - 1800) {
+          setScore(prev => prev + 1000);
+          setLevel(prev => prev + 1);
+        }
+        
+        // Check game over
+        if (lives <= 0) {
+          setGameOver(true);
+          setIsPlaying(false);
+          onGameEnd(score);
+        }
+      }, 1000 / 60); // 60 FPS
     } else {
       if (gameLoopRef.current) {
         clearInterval(gameLoopRef.current);
@@ -734,163 +697,136 @@ export const KingKongGame = ({ onScoreChange, onGameEnd, onGameStart, chipCost =
         clearInterval(gameLoopRef.current);
       }
     };
-  }, [isPlaying, isPaused, gameOver, updateGame]);
+  }, [isPlaying, isPaused, gameOver, updatePlayer, updateObstacles, updateParticles, checkCollisions, render, player.y, lives, score, onGameEnd]);
 
-  // Render loop
+  // Initial render
   useEffect(() => {
-    const renderLoop = () => {
-      render();
-      requestAnimationFrame(renderLoop);
-    };
-    renderLoop();
+    render();
   }, [render]);
 
-  const startGame = () => {
-    if (onGameStart && !onGameStart()) {
-      return;
-    }
-    
-    setScore(0);
-    setLives(3);
-    setLevel(1);
-    setGameOver(false);
-    setIsPlaying(true);
-    setIsPaused(false);
-    setCameraY(0);
-    setPlayer({
-      x: CANVAS_WIDTH / 2 - PLAYER_SIZE / 2,
-      y: CANVAS_HEIGHT - 100,
-      vx: 0,
-      vy: 0,
-      climbing: false,
-      facing: 'right',
-      health: 3,
-      invulnerable: 0
-    });
-    setObstacles([]);
-    setParticles([]);
-    boss.defeated = false;
-    boss.health = boss.maxHealth;
-    onScoreChange(0);
-  };
-
-  const pauseGame = () => {
-    setIsPaused(!isPaused);
-  };
+  // Score updates
+  useEffect(() => {
+    onScoreChange(score);
+  }, [score, onScoreChange]);
 
   return (
-    <div className="flex flex-col lg:flex-row gap-6 p-4">
-      {/* Game Canvas */}
-      <Card className="flex-1 p-6 bg-gradient-card border-danger-red backdrop-glass hover-lift">
-        <div className="flex flex-col items-center space-y-4">
-          <h3 className="text-2xl font-bold text-danger-red animate-text-glow drop-shadow-lg">🦍 King Kong Climber</h3>
-          
-          <div className="bg-gradient-to-br from-background/80 to-background/60 p-6 rounded-xl border-2 border-danger-red shadow-intense backdrop-blur-sm">
-            <canvas
-              ref={canvasRef}
-              width={CANVAS_WIDTH}
-              height={CANVAS_HEIGHT}
-              className="border border-primary/30 rounded-lg bg-gradient-to-br from-background/40 to-background/20"
-              style={{ maxWidth: '100%', height: 'auto' }}
-            />
-          </div>
-
-          <div className="flex gap-2">
-            {!isPlaying ? (
-              <Button onClick={startGame} variant="default" className="animate-neon-pulse">
-                <Play className="h-4 w-4 mr-2" />
-                Start Climb
-              </Button>
-            ) : (
-              <Button onClick={pauseGame} variant="secondary">
-                {isPaused ? <Play className="h-4 w-4 mr-2" /> : <Pause className="h-4 w-4 mr-2" />}
-                {isPaused ? 'Resume' : 'Pause'}
-              </Button>
-            )}
-          </div>
-
-          {gameOver && (
-            <div className="text-center space-y-2 animate-zoom-in">
-              <h3 className="text-xl font-bold text-danger-red">Game Over!</h3>
-              <p className="text-muted-foreground">Final Score: {score.toLocaleString()}</p>
-              <p className="text-sm text-muted-foreground">Level Reached: {level}</p>
-            </div>
-          )}
-        </div>
-      </Card>
-
-      {/* Game Info */}
-      <div className="w-full lg:w-64 space-y-4">
-        <Card className="p-4 bg-gradient-card border-neon-blue">
-          <h4 className="font-bold text-neon-blue mb-2">Score</h4>
-          <p className="text-2xl font-bold text-arcade-gold">{score.toLocaleString()}</p>
-        </Card>
-
-        <Card className="p-4 bg-gradient-card border-neon-green">
-          <h4 className="font-bold text-neon-green mb-2">Lives</h4>
-          <p className="text-xl font-bold">{lives}</p>
-        </Card>
-
-        <Card className="p-4 bg-gradient-card border-neon-pink">
-          <h4 className="font-bold text-neon-pink mb-2">Health</h4>
-          <div className="flex gap-1">
-            {[...Array(3)].map((_, i) => (
-              <div 
-                key={i} 
-                className={`w-4 h-4 rounded-full ${
-                  i < player.health ? 'bg-neon-green' : 'bg-muted'
-                }`}
+    <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-background via-purple-900/20 to-background p-2">
+      {/* Classic CRT Monitor Frame */}
+      <div className="relative">
+        {/* Outer Monitor Frame */}
+        <div className="bg-gradient-to-b from-gray-400 via-gray-500 to-gray-600 p-6 rounded-3xl shadow-2xl border-4 border-gray-700" style={{ 
+          background: 'linear-gradient(135deg, #8B9DC3 0%, #DFE3EE 35%, #8B9DC3 100%)',
+          boxShadow: 'inset -2px -2px 6px rgba(0,0,0,0.3), inset 2px 2px 6px rgba(255,255,255,0.7)'
+        }}>
+          {/* Monitor Screen Bezel */}
+          <div className="bg-black p-4 rounded-2xl border-4 border-gray-800" style={{
+            boxShadow: 'inset 0 0 20px rgba(0,0,0,0.8), 0 0 30px rgba(147, 51, 234, 0.3)'
+          }}>
+            {/* Game Screen */}
+            <div className="relative bg-black border-2 border-gray-900 rounded-lg overflow-hidden mx-auto scanlines" 
+                 style={{ 
+                   width: CANVAS_WIDTH * 0.8, 
+                   height: CANVAS_HEIGHT * 0.6,
+                   background: 'radial-gradient(circle at center, #000 60%, #111 100%)',
+                   filter: 'contrast(1.2) brightness(1.1)'
+                 }}>
+              <canvas
+                ref={canvasRef}
+                width={CANVAS_WIDTH}
+                height={CANVAS_HEIGHT}
+                className="w-full h-full"
+                style={{ 
+                  imageRendering: 'pixelated',
+                  filter: 'saturate(1.3) contrast(1.1)'
+                }}
               />
-            ))}
-          </div>
-        </Card>
+              
+              {/* Classic CRT Scanlines Effect */}
+              <div className="absolute inset-0 pointer-events-none" style={{
+                background: 'repeating-linear-gradient(0deg, transparent 0px, transparent 2px, rgba(255,255,255,0.03) 2px, rgba(255,255,255,0.03) 4px)',
+                animation: 'crt-flicker 0.15s infinite linear alternate'
+              }}></div>
+              
+              {!isPlaying && !gameOver && (
+                <div className="absolute inset-0 bg-black/90 flex flex-col items-center justify-center text-white">
+                  <div className="text-center space-y-4 animate-pulse">
+                    <h3 className="text-4xl font-bold mb-4 text-yellow-400 retro-text">KING KONG</h3>
+                    <div className="text-center text-sm space-y-2">
+                      <p className="text-cyan-400">HELP MARIO REACH THE TOP!</p>
+                      <p className="text-white">◄► MOVE • ▲ CLIMB • SPACE PAUSE</p>
+                      <p className="text-red-400">AVOID BARRELS & OBSTACLES</p>
+                    </div>
+                    <div className="mt-6 border-2 border-yellow-400 px-4 py-2 bg-yellow-400/20">
+                      <p className="text-yellow-400 font-bold">INSERT COIN</p>
+                      <p className="text-sm">PRESS START</p>
+                    </div>
+                    <Button onClick={startGame} className="mt-4 bg-red-600 hover:bg-red-700 text-white font-bold px-8 py-3 rounded border-b-4 border-red-800">
+                      START GAME
+                    </Button>
+                  </div>
+                </div>
+              )}
 
-        {/* Mobile Controls */}
-        <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 lg:hidden z-50">
-          <Card className="p-3 bg-gradient-card/95 border-danger-red backdrop-blur-sm">
-            <div className="grid grid-cols-3 gap-2">
-              <Button 
-                variant="outline" 
-                size="sm"
-                onTouchStart={() => setKeys(prev => ({ ...prev, 'ArrowLeft': true }))}
-                onTouchEnd={() => setKeys(prev => ({ ...prev, 'ArrowLeft': false }))}
-                className="h-12 w-12 border-danger-red text-danger-red hover:bg-danger-red/20"
-              >
-                <ArrowLeft className="h-5 w-5" />
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onTouchStart={() => setKeys(prev => ({ ...prev, 'ArrowUp': true }))}
-                onTouchEnd={() => setKeys(prev => ({ ...prev, 'ArrowUp': false }))}
-                className="h-12 w-12 border-danger-red text-danger-red hover:bg-danger-red/20"
-              >
-                <ArrowUp className="h-5 w-5" />
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onTouchStart={() => setKeys(prev => ({ ...prev, 'ArrowRight': true }))}
-                onTouchEnd={() => setKeys(prev => ({ ...prev, 'ArrowRight': false }))}
-                className="h-12 w-12 border-danger-red text-danger-red hover:bg-danger-red/20"
-              >
-                <ArrowRight className="h-5 w-5" />
-              </Button>
+              {gameOver && (
+                <div className="absolute inset-0 bg-black/95 flex flex-col items-center justify-center text-white">
+                  <div className="text-center space-y-4">
+                    <h3 className="text-5xl font-bold mb-4 text-red-500 retro-text animate-pulse">GAME OVER</h3>
+                    <div className="space-y-2 text-lg">
+                      <p>FINAL SCORE: <span className="text-yellow-400 font-bold">{score.toLocaleString()}</span></p>
+                      <p>LEVEL: <span className="text-cyan-400 font-bold">{level}</span></p>
+                    </div>
+                    <div className="flex gap-4 mt-6">
+                      <Button onClick={resetGame} className="bg-green-600 hover:bg-green-700 text-white font-bold px-6 py-2 border-b-4 border-green-800">
+                        PLAY AGAIN
+                      </Button>
+                      <Button variant="outline" onClick={() => window.history.back()} className="border-white text-white hover:bg-white hover:text-black">
+                        EXIT
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {isPaused && isPlaying && (
+                <div className="absolute inset-0 bg-black/90 flex items-center justify-center">
+                  <div className="text-center text-white space-y-4">
+                    <h3 className="text-3xl font-bold text-yellow-400 retro-text animate-pulse">PAUSED</h3>
+                    <Button onClick={() => setIsPaused(false)} className="bg-yellow-600 hover:bg-yellow-700 text-black font-bold px-6 py-2">
+                      RESUME
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
-          </Card>
+          </div>
+          
+          {/* Monitor Controls */}
+          <div className="flex justify-center mt-4 space-x-8">
+            <div className="w-8 h-8 rounded-full bg-red-600 border-2 border-red-800 shadow-inner"></div>
+            <div className="w-6 h-6 rounded-full bg-green-500 border-2 border-green-700 shadow-inner"></div>
+            <div className="w-6 h-6 rounded-full bg-blue-500 border-2 border-blue-700 shadow-inner"></div>
+          </div>
+          
+          {/* Brand Label */}
+          <div className="text-center mt-2">
+            <p className="text-gray-700 font-bold text-sm">ARCADE MASTER 1985</p>
+          </div>
         </div>
 
-        {/* Instructions */}
-        <Card className="p-4 bg-gradient-card border-border">
-          <h4 className="font-bold mb-2">Instructions</h4>
-          <div className="text-sm text-muted-foreground space-y-1">
-            <p>• Arrow keys: Move horizontally</p>
-            <p>• Up/Down on ladders: Climb</p>
-            <p>• Avoid falling obstacles</p>
-            <p>• Reach King Kong at the top</p>
-            <p>• Earn points for climbing height</p>
+        {/* Game Stats Overlay */}
+        {isPlaying && (
+          <div className="absolute top-4 right-4 space-y-2">
+            <div className="bg-black/80 text-yellow-400 px-3 py-1 rounded border border-yellow-400 text-sm font-bold">
+              SCORE: {score.toLocaleString()}
+            </div>
+            <div className="bg-black/80 text-red-400 px-3 py-1 rounded border border-red-400 text-sm font-bold">
+              LIVES: {lives}
+            </div>
+            <div className="bg-black/80 text-cyan-400 px-3 py-1 rounded border border-cyan-400 text-sm font-bold">
+              LEVEL: {level}
+            </div>
           </div>
-        </Card>
+        )}
       </div>
     </div>
   );
