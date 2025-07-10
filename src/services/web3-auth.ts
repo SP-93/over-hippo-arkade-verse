@@ -285,14 +285,46 @@ This signature proves you own this wallet and grants access to Over Hippo Arkade
         throw new Error('User must be authenticated to store wallet verification');
       }
 
-      // Use upsert to prevent duplicate key errors
-      const { error } = await supabase
+      console.log('🔐 Storing wallet verification for:', { address, userId: user.id });
+
+      // First, check if profile exists, create if it doesn't
+      const { data: existingProfile, error: profileCheckError } = await supabase
+        .from('profiles')
+        .select('id, user_id')
+        .eq('user_id', user.id)
+        .single();
+
+      if (profileCheckError && profileCheckError.code !== 'PGRST116') {
+        console.error('Profile check error:', profileCheckError);
+        throw profileCheckError;
+      }
+
+      // Create profile if it doesn't exist
+      if (!existingProfile) {
+        console.log('👤 Creating profile for user:', user.id);
+        const { error: createProfileError } = await supabase
+          .from('profiles')
+          .insert({
+            user_id: user.id,
+            display_name: user.user_metadata?.display_name || `Player_${user.id.slice(0, 8)}`,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          });
+
+        if (createProfileError) {
+          console.error('Profile creation error:', createProfileError);
+          throw createProfileError;
+        }
+      }
+
+      // Store wallet verification with proper upsert
+      const { error: walletError } = await supabase
         .from('wallet_verifications')
         .upsert({
-          wallet_address: address, // Already normalized
+          wallet_address: address,
           message: message,
           signature: signature,
-          user_id: user.id, // Set user_id immediately
+          user_id: user.id,
           verified_at: new Date().toISOString(),
           is_active: true,
           is_banned: false
@@ -301,27 +333,37 @@ This signature proves you own this wallet and grants access to Over Hippo Arkade
           ignoreDuplicates: false 
         });
 
-      if (error) {
-        console.error('Failed to store wallet verification:', error);
-        throw error;
+      if (walletError) {
+        console.error('❌ Wallet verification storage failed:', walletError);
+        throw walletError;
       }
 
+      console.log('✅ Wallet verification stored successfully');
+
       // Update user profile with verified wallet
-      const { error: profileError } = await supabase
+      const { error: profileUpdateError } = await supabase
         .from('profiles')
         .update({
-          verified_wallet_address: address, // Already normalized
-          wallet_verified_at: new Date().toISOString()
+          verified_wallet_address: address,
+          wallet_verified_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
         })
         .eq('user_id', user.id);
 
-      if (profileError) {
-        console.error('Failed to update profile:', profileError);
+      if (profileUpdateError) {
+        console.error('❌ Profile update failed:', profileUpdateError);
         throw new Error('Failed to update user profile with wallet');
       }
 
-    } catch (error) {
-      console.error('Database operation failed:', error);
+      console.log('✅ Profile updated with wallet address');
+
+    } catch (error: any) {
+      console.error('💥 Wallet verification storage failed:', {
+        error: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code
+      });
       throw error;
     }
   }
