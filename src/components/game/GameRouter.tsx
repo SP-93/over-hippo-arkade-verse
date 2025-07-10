@@ -1,12 +1,12 @@
-import { UltraSnake2025 } from "@/components/games/UltraSnake2025";
-import { UltraTetris2025 } from "@/components/games/UltraTetris2025";
-import { PacMan2D } from "@/components/games/PacMan2D";
-import { MarioGame } from "@/components/games/MarioGame";
-import { KingKongGame } from "@/components/games/KingKongGame";
-import { BreakoutGame } from "@/components/games/BreakoutGame";
-import { AsteroidsGame } from "@/components/games/AsteroidsGame";
-import { FlipperGame } from "@/components/games/FlipperGame";
-import { FroggerGame } from "@/components/games/FroggerGame";
+import { Snake3DGame } from "@/components/games/Snake3DGame";
+import { Tetris3DGame } from "@/components/games/Tetris3DGame";
+import { PacMan3DGame } from "@/components/games/PacMan3DGame";
+import { Mario3DGame } from "@/components/games/Mario3DGame";
+import { KingKong3DGame } from "@/components/games/KingKong3DGame";
+import { Breakout3DGame } from "@/components/games/Breakout3DGame";
+import { Asteroids3DGame } from "@/components/games/Asteroids3DGame";
+import { Flipper3DGame } from "@/components/games/Flipper3DGame";
+import { Frogger3DGame } from "@/components/games/Frogger3DGame";
 import { GameTemplate } from "@/components/GameTemplate";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -26,7 +26,7 @@ export const GameRouter = ({ gameId, onScoreChange, onGameEnd, onGameStart }: Ga
 
   if (gameId === 'tetris') {
     return (
-      <UltraTetris2025 
+      <Tetris3DGame 
         onScoreChange={onScoreChange}
         onGameEnd={onGameEnd}
         onGameStart={onGameStart}
@@ -36,7 +36,7 @@ export const GameRouter = ({ gameId, onScoreChange, onGameEnd, onGameStart }: Ga
 
   if (gameId === 'snake') {
     return (
-      <UltraSnake2025 
+      <Snake3DGame 
         onScoreChange={onScoreChange}
         onGameEnd={onGameEnd}
         onGameStart={onGameStart}
@@ -46,7 +46,7 @@ export const GameRouter = ({ gameId, onScoreChange, onGameEnd, onGameStart }: Ga
 
   if (gameId === 'pacman') {
     return (
-      <PacMan2D 
+      <PacMan3DGame 
         onScoreChange={onScoreChange}
         onGameEnd={onGameEnd}
         onGameStart={onGameStart}
@@ -56,7 +56,7 @@ export const GameRouter = ({ gameId, onScoreChange, onGameEnd, onGameStart }: Ga
 
   if (gameId === 'breakout') {
     return (
-      <BreakoutGame 
+      <Breakout3DGame 
         onScoreChange={onScoreChange}
         onGameEnd={onGameEnd}
         onGameStart={onGameStart}
@@ -66,7 +66,7 @@ export const GameRouter = ({ gameId, onScoreChange, onGameEnd, onGameStart }: Ga
 
   if (gameId === 'asteroids') {
     return (
-      <AsteroidsGame 
+      <Asteroids3DGame 
         onScoreChange={onScoreChange}
         onGameEnd={onGameEnd}
         onGameStart={onGameStart}
@@ -76,7 +76,7 @@ export const GameRouter = ({ gameId, onScoreChange, onGameEnd, onGameStart }: Ga
 
   if (gameId === 'flipper') {
     return (
-      <FlipperGame 
+      <Flipper3DGame 
         onScoreChange={onScoreChange}
         onGameEnd={onGameEnd}
         onGameStart={onGameStart}
@@ -86,7 +86,7 @@ export const GameRouter = ({ gameId, onScoreChange, onGameEnd, onGameStart }: Ga
 
   if (gameId === 'mario') {
     return (
-      <MarioGame 
+      <Mario3DGame 
         onScoreChange={onScoreChange}
         onGameEnd={onGameEnd}
         onGameStart={onGameStart}
@@ -96,7 +96,7 @@ export const GameRouter = ({ gameId, onScoreChange, onGameEnd, onGameStart }: Ga
 
   if (gameId === 'kingkong') {
     return (
-      <KingKongGame 
+      <KingKong3DGame 
         onScoreChange={onScoreChange}
         onGameEnd={onGameEnd}
         onGameStart={onGameStart}
@@ -106,7 +106,7 @@ export const GameRouter = ({ gameId, onScoreChange, onGameEnd, onGameStart }: Ga
 
   if (gameId === 'frogger') {
     return (
-      <FroggerGame 
+      <Frogger3DGame 
         onScoreChange={onScoreChange}
         onGameEnd={onGameEnd}
         onGameStart={onGameStart}
