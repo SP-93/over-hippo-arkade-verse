@@ -3,11 +3,12 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Coins, Timer, Zap, ShoppingCart } from "lucide-react";
+import { Coins, Timer, Zap, ShoppingCart, Crown, Star } from "lucide-react";
 import { toast } from "sonner";
 import { securePlayerService } from "@/services/secure-player";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { WatchVideoButton } from "@/components/WatchVideoButton";
+import { usePremiumFeatures } from "@/hooks/usePremiumFeatures";
 
 interface PlayerDashboardProps {
   playerAddress?: string;
@@ -17,6 +18,7 @@ interface PlayerDashboardProps {
 export const PlayerDashboard = ({ playerAddress, playerChips }: PlayerDashboardProps) => {
   const [timeUntilReset, setTimeUntilReset] = useState(18 * 3600 + 45 * 60); // 18h 45m in seconds
   const queryClient = useQueryClient();
+  const { isVipActive, vipTimeRemaining, purchasePremiumChips, purchaseVipStatus } = usePremiumFeatures();
 
   // Fetch real player balance
   const { data: balance, isLoading } = useQuery({
@@ -25,15 +27,15 @@ export const PlayerDashboard = ({ playerAddress, playerChips }: PlayerDashboardP
     refetchInterval: 30000 // Refresh every 30 seconds
   });
 
-  const chips = balance?.gameChips || playerChips || 5;
+  const chips = balance?.gameChips || playerChips || 3; // Updated default from 5 to 3
   const overBalance = balance?.overTokens || 0;
 
   useEffect(() => {
     const timer = setInterval(() => {
       setTimeUntilReset(prev => {
         if (prev <= 0) {
-          // Chips will be reset via backend query refresh
-          toast.success("Your chips have been refilled!");
+          // Chips will be reset via backend query refresh (3 chips instead of 5)
+          toast.success("Your chips have been refilled! (3 chips)");
           queryClient.invalidateQueries({ queryKey: ['player-balance'] });
           return 24 * 3600; // Reset to 24 hours
         }
@@ -68,11 +70,12 @@ export const PlayerDashboard = ({ playerAddress, playerChips }: PlayerDashboardP
     }
   });
 
-  const purchaseChips = (packageType: 'small' | 'medium' | 'large') => {
+  const purchaseChips = (packageType: 'small' | 'medium' | 'large' | 'premium') => {
     const packages = {
-      small: { chips: 5, cost: 5 },
-      medium: { chips: 10, cost: 10 },
-      large: { chips: 20, cost: 17 }
+      small: { chips: 3, cost: 3, type: 'standard' as const },
+      medium: { chips: 7, cost: 7, type: 'standard' as const },
+      large: { chips: 15, cost: 12, type: 'standard' as const },
+      premium: { chips: 5, cost: 8, type: 'premium' as const } // Premium chips give 3 lives each
     };
 
     const selected = packages[packageType];
@@ -83,8 +86,26 @@ export const PlayerDashboard = ({ playerAddress, playerChips }: PlayerDashboardP
       return;
     }
     
-    toast.info(`Purchasing ${selected.chips} chips for ${selected.cost} OVER...`);
-    purchaseMutation.mutate({ chipAmount: selected.chips, overCost: selected.cost });
+    const livesInfo = selected.type === 'premium' ? ' (3 lives each!)' : ' (2 lives each)';
+    toast.info(`Purchasing ${selected.chips} ${selected.type} chips for ${selected.cost} OVER...${livesInfo}`);
+    
+    if (selected.type === 'premium') {
+      purchasePremiumChips.mutate({ 
+        chipAmount: selected.chips, 
+        overCost: selected.cost, 
+        premiumType: 'premium' 
+      });
+    } else {
+      purchaseMutation.mutate({ chipAmount: selected.chips, overCost: selected.cost });
+    }
+  };
+
+  const handleVipPurchase = () => {
+    if (overBalance < 10) {
+      toast.error("Insufficient OVER balance. Need 10 OVER for VIP status.");
+      return;
+    }
+    purchaseVipStatus.mutate(30);
   };
 
   const handleVideoReward = (reward: number) => {
@@ -139,30 +160,84 @@ export const PlayerDashboard = ({ playerAddress, playerChips }: PlayerDashboardP
           className="h-3 mb-2"
         />
         <p className="text-sm text-muted-foreground text-center">
-          {formatTime(timeUntilReset)} until your 5 daily chips are restored
+          {formatTime(timeUntilReset)} until your 3 daily chips are restored
         </p>
       </Card>
+
+      {/* VIP Status Display */}
+      {isVipActive && (
+        <Card className="p-4 bg-gradient-to-r from-yellow-400/10 to-yellow-600/10 border-yellow-500">
+          <div className="flex items-center gap-2">
+            <Crown className="h-5 w-5 text-yellow-500" />
+            <h3 className="font-bold text-yellow-500">VIP Status Active</h3>
+            <Badge variant="secondary">{vipTimeRemaining}</Badge>
+          </div>
+          <p className="text-sm text-muted-foreground mt-2">
+            Enjoy premium features, priority support, and exclusive benefits!
+          </p>
+        </Card>
+      )}
 
       {/* Watch Video for Free Chips */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <WatchVideoButton onRewardEarned={handleVideoReward} />
         
-        {/* Purchase Chips */}
-        <Card className="p-6 bg-gradient-card border-accent">
+        {/* VIP Status Purchase */}
+        {!isVipActive && (
+          <Card className="p-6 bg-gradient-to-r from-yellow-400/5 to-yellow-600/5 border-yellow-500/30">
+            <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+              <Crown className="h-5 w-5 text-yellow-500" />
+              VIP Membership
+            </h3>
+            
+            <div className="space-y-3 mb-4">
+              <div className="flex items-center gap-2 text-sm">
+                <Star className="h-4 w-4 text-yellow-500" />
+                <span>Priority game access</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm">
+                <Star className="h-4 w-4 text-yellow-500" />
+                <span>Exclusive tournaments</span>
+              </div>
+              <div className="flex items-center gap-2 text-sm">
+                <Star className="h-4 w-4 text-yellow-500" />
+                <span>Premium chat features</span>
+              </div>
+            </div>
+            
+            <div className="text-center mb-4">
+              <p className="text-2xl font-black text-yellow-500">10 OVER</p>
+              <p className="text-sm text-muted-foreground">30 days membership</p>
+            </div>
+            
+            <Button 
+              onClick={handleVipPurchase}
+              disabled={purchaseVipStatus.isPending || overBalance < 10}
+              className="w-full bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700"
+            >
+              {purchaseVipStatus.isPending ? 'Processing...' : 'Become VIP'}
+            </Button>
+          </Card>
+        )}
+      </div>
+
+      {/* Purchase Chips */}
+      <Card className="p-6 bg-gradient-card border-accent">
         <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
           <ShoppingCart className="h-5 w-5 text-accent" />
           Purchase Extra Chips
         </h3>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="p-4 border border-border rounded-lg text-center">
-            <h4 className="font-bold text-lg">Small Pack</h4>
-            <p className="text-2xl font-black text-arcade-gold my-2">5 Chips</p>
-            <p className="text-sm text-muted-foreground mb-4">5 Over Coins</p>
+            <h4 className="font-bold text-lg">Basic Pack</h4>
+            <p className="text-2xl font-black text-arcade-gold my-2">3 Chips</p>
+            <p className="text-sm text-muted-foreground mb-2">3 OVER</p>
+            <p className="text-xs text-muted-foreground mb-4">2 lives each</p>
             <Button 
               variant="arcade"
               onClick={() => purchaseChips('small')}
-              disabled={purchaseMutation.isPending || overBalance < 5}
+              disabled={purchaseMutation.isPending || overBalance < 3}
               className="w-full"
             >
               {purchaseMutation.isPending ? 'Processing...' : 'Purchase'}
@@ -170,13 +245,14 @@ export const PlayerDashboard = ({ playerAddress, playerChips }: PlayerDashboardP
           </div>
 
           <div className="p-4 border border-neon-blue rounded-lg text-center">
-            <h4 className="font-bold text-lg">Medium Pack</h4>
-            <p className="text-2xl font-black text-neon-blue my-2">10 Chips</p>
-            <p className="text-sm text-muted-foreground mb-4">10 Over Coins</p>
+            <h4 className="font-bold text-lg">Value Pack</h4>
+            <p className="text-2xl font-black text-neon-blue my-2">7 Chips</p>
+            <p className="text-sm text-muted-foreground mb-2">7 OVER</p>
+            <p className="text-xs text-muted-foreground mb-4">2 lives each</p>
             <Button 
               variant="secondary"
               onClick={() => purchaseChips('medium')}
-              disabled={purchaseMutation.isPending || overBalance < 10}
+              disabled={purchaseMutation.isPending || overBalance < 7}
               className="w-full"
             >
               {purchaseMutation.isPending ? 'Processing...' : 'Purchase'}
@@ -187,21 +263,38 @@ export const PlayerDashboard = ({ playerAddress, playerChips }: PlayerDashboardP
             <Badge className="absolute -top-2 -right-2 bg-neon-pink text-background animate-neon-pulse">
               BEST VALUE
             </Badge>
-            <h4 className="font-bold text-lg">Large Pack</h4>
-            <p className="text-2xl font-black text-neon-pink my-2">20 Chips</p>
-            <p className="text-sm text-muted-foreground mb-4">17 Over Coins</p>
+            <h4 className="font-bold text-lg">Mega Pack</h4>
+            <p className="text-2xl font-black text-neon-pink my-2">15 Chips</p>
+            <p className="text-sm text-muted-foreground mb-2">12 OVER</p>
+            <p className="text-xs text-muted-foreground mb-4">2 lives each</p>
             <Button 
               variant="neon"
               onClick={() => purchaseChips('large')}
-              disabled={purchaseMutation.isPending || overBalance < 17}
+              disabled={purchaseMutation.isPending || overBalance < 12}
               className="w-full"
             >
               {purchaseMutation.isPending ? 'Processing...' : 'Purchase'}
             </Button>
           </div>
+
+          <div className="p-4 border border-yellow-500 rounded-lg text-center relative overflow-hidden">
+            <Badge className="absolute -top-2 -right-2 bg-yellow-500 text-background animate-neon-pulse">
+              PREMIUM
+            </Badge>
+            <h4 className="font-bold text-lg">Premium Pack</h4>
+            <p className="text-2xl font-black text-yellow-500 my-2">5 Chips</p>
+            <p className="text-sm text-muted-foreground mb-2">8 OVER</p>
+            <p className="text-xs text-yellow-500 font-bold mb-4">3 lives each!</p>
+            <Button 
+              onClick={() => purchaseChips('premium')}
+              disabled={purchasePremiumChips.isPending || overBalance < 8}
+              className="w-full bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700"
+            >
+              {purchasePremiumChips.isPending ? 'Processing...' : 'Purchase'}
+            </Button>
+          </div>
         </div>
       </Card>
-      </div>
 
       {/* Player Address */}
       {playerAddress && (

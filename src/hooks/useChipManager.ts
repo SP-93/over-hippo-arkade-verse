@@ -4,7 +4,7 @@ import { securePlayerService } from "@/services/secure-player";
 import { supabase } from "@/integrations/supabase/client";
 
 export const useChipManager = () => {
-  const [playerChips, setPlayerChips] = useState(5);
+  const [playerChips, setPlayerChips] = useState(3);
   const [lastResetTime, setLastResetTime] = useState<string | null>(null);
   const [firstChipConsumed, setFirstChipConsumed] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -35,6 +35,9 @@ export const useChipManager = () => {
         
         if (savedChips) {
           setPlayerChips(parseInt(savedChips));
+        } else {
+          // New default is 3 chips instead of 5
+          setPlayerChips(3);
         }
         
         setFirstChipConsumed(chipConsumed);
@@ -46,22 +49,22 @@ export const useChipManager = () => {
           const hoursElapsed = timeDiff / (1000 * 60 * 60);
           
           if (hoursElapsed >= 24) {
-            // Reset chips to 5 after 24 hours
-            setPlayerChips(5);
-            localStorage.setItem('player_chips', '5');
+            // Reset chips to 3 after 24 hours (new monetization model)
+            setPlayerChips(3);
+            localStorage.setItem('player_chips', '3');
             localStorage.removeItem('chip_reset_time');
             localStorage.removeItem('first_chip_consumed');
             setLastResetTime(null);
             setFirstChipConsumed(false);
-            toast.success("Chips reset! You have 5 new chips!");
+            toast.success("Chips reset! You have 3 new chips!");
           } else {
             setLastResetTime(savedResetTime);
           }
         }
       } catch (error) {
         console.error('Failed to load chip balance:', error);
-        // Set default values
-        setPlayerChips(5);
+        // Set default values (reduced from 5 to 3)
+        setPlayerChips(3);
       } finally {
         setIsLoading(false);
       }

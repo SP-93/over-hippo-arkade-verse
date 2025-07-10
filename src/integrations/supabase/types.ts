@@ -93,9 +93,11 @@ export type Database = {
         Row: {
           chip_amount: number
           created_at: string
+          feature_type: string | null
           game_type: string | null
           id: string
           over_amount: number | null
+          premium_type: string | null
           status: string | null
           transaction_hash: string | null
           transaction_type: string
@@ -104,9 +106,11 @@ export type Database = {
         Insert: {
           chip_amount: number
           created_at?: string
+          feature_type?: string | null
           game_type?: string | null
           id?: string
           over_amount?: number | null
+          premium_type?: string | null
           status?: string | null
           transaction_hash?: string | null
           transaction_type: string
@@ -115,9 +119,11 @@ export type Database = {
         Update: {
           chip_amount?: number
           created_at?: string
+          feature_type?: string | null
           game_type?: string | null
           id?: string
           over_amount?: number | null
+          premium_type?: string | null
           status?: string | null
           transaction_hash?: string | null
           transaction_type?: string
@@ -236,6 +242,36 @@ export type Database = {
         }
         Relationships: []
       }
+      premium_features: {
+        Row: {
+          created_at: string
+          expires_at: string | null
+          feature_data: Json | null
+          feature_type: string
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string | null
+          feature_data?: Json | null
+          feature_type: string
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string | null
+          feature_data?: Json | null
+          feature_type?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -247,6 +283,8 @@ export type Database = {
           updated_at: string
           user_id: string
           verified_wallet_address: string | null
+          vip_expires_at: string | null
+          vip_status: boolean | null
           wallet_address: string | null
           wallet_verified_at: string | null
         }
@@ -260,6 +298,8 @@ export type Database = {
           updated_at?: string
           user_id: string
           verified_wallet_address?: string | null
+          vip_expires_at?: string | null
+          vip_status?: boolean | null
           wallet_address?: string | null
           wallet_verified_at?: string | null
         }
@@ -273,6 +313,8 @@ export type Database = {
           updated_at?: string
           user_id?: string
           verified_wallet_address?: string | null
+          vip_expires_at?: string | null
+          vip_status?: boolean | null
           wallet_address?: string | null
           wallet_verified_at?: string | null
         }
@@ -321,10 +363,12 @@ export type Database = {
           created_at: string
           end_time: string
           entry_fee: number
+          entry_fee_over: number | null
           game_type: string
           id: string
           max_participants: number | null
           name: string
+          premium_tournament: boolean | null
           prize_pool: number
           start_time: string
           status: string | null
@@ -333,10 +377,12 @@ export type Database = {
           created_at?: string
           end_time: string
           entry_fee: number
+          entry_fee_over?: number | null
           game_type: string
           id?: string
           max_participants?: number | null
           name: string
+          premium_tournament?: boolean | null
           prize_pool: number
           start_time: string
           status?: string | null
@@ -345,10 +391,12 @@ export type Database = {
           created_at?: string
           end_time?: string
           entry_fee?: number
+          entry_fee_over?: number | null
           game_type?: string
           id?: string
           max_participants?: number | null
           name?: string
+          premium_tournament?: boolean | null
           prize_pool?: number
           start_time?: string
           status?: string | null
@@ -439,6 +487,18 @@ export type Database = {
       }
       lose_life: {
         Args: { p_session_id: string }
+        Returns: Json
+      }
+      purchase_premium_chips: {
+        Args: {
+          p_chip_amount: number
+          p_over_cost: number
+          p_premium_type?: string
+        }
+        Returns: Json
+      }
+      purchase_vip_status: {
+        Args: { p_duration_days?: number }
         Returns: Json
       }
       start_game_session: {
