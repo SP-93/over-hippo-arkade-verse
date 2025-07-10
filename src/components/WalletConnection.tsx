@@ -1,10 +1,13 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { QrCode, Wallet, LogOut, CheckCircle, AlertCircle } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { QrCode, Wallet, LogOut, CheckCircle, AlertCircle, AlertTriangle, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { web3AuthService, WalletConnectionResult } from "@/services/web3-auth";
+import { BlockchainBalanceDisplay } from "./BlockchainBalanceDisplay";
+import { overProtocolBlockchainService } from "@/services/over-protocol-blockchain";
 
 interface WalletConnectionProps {
   onConnect: (walletType: string, address: string, verified: boolean) => void;
@@ -25,6 +28,34 @@ export const WalletConnection = ({
 }: WalletConnectionProps) => {
   const [showQR, setShowQR] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
+  const [networkInfo, setNetworkInfo] = useState<any>(null);
+  const [isNetworkChecking, setIsNetworkChecking] = useState(false);
+
+  // Check network status
+  const checkNetworkStatus = async () => {
+    setIsNetworkChecking(true);
+    try {
+      const info = await overProtocolBlockchainService.getDetailedNetworkInfo();
+      setNetworkInfo(info);
+      
+      if (info && !info.isOverProtocol) {
+        toast.warning("Please switch to Over Protocol network");
+      }
+    } catch (error) {
+      console.error('Network check failed:', error);
+    } finally {
+      setIsNetworkChecking(false);
+    }
+  };
+
+  // Check network status on mount and set up interval
+  useEffect(() => {
+    if (isConnected) {
+      checkNetworkStatus();
+      const interval = setInterval(checkNetworkStatus, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [isConnected]);
 
   const connectMetaMask = async () => {
     if (isConnecting) return;
@@ -125,39 +156,92 @@ export const WalletConnection = ({
 
   if (isConnected) {
     return (
-      <Card className={`p-4 ${isVerified ? 'bg-gradient-card border-neon-green' : 'bg-gradient-card border-arcade-gold'} animate-glow`}>
-        <div className="flex items-center gap-3">
-          {isVerified ? (
-            <CheckCircle className="h-5 w-5 text-neon-green" />
-          ) : (
-            <AlertCircle className="h-5 w-5 text-arcade-gold" />
-          )}
-          <div className="flex flex-col">
-            <span className={`font-bold text-sm ${isVerified ? 'text-neon-green' : 'text-arcade-gold'}`}>
-              {isVerified ? 'Verified' : 'Connected'}
-            </span>
-            <span className="text-xs text-muted-foreground">{walletType}</span>
-            {walletAddress && (
-              <span className="text-xs text-muted-foreground font-mono">
-                {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}
+      <div className="space-y-4">
+        {/* Network Status Card */}
+        {networkInfo && (
+          <Card className="p-3 bg-gradient-card border-neon-blue">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                {networkInfo.isOverProtocol ? (
+                  <CheckCircle className="h-4 w-4 text-neon-green" />
+                ) : (
+                  <AlertTriangle className="h-4 w-4 text-arcade-gold" />
+                )}
+                <span className="text-sm font-medium">
+                  {networkInfo.isOverProtocol ? 'Over Protocol Mainnet' : 'Wrong Network'}
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Badge variant="outline" className={
+                  networkInfo.networkHealth === 'healthy' 
+                    ? 'border-neon-green text-neon-green'
+                    : networkInfo.networkHealth === 'slow'
+                    ? 'border-arcade-gold text-arcade-gold'
+                    : 'border-red-500 text-red-500'
+                }>
+                  {networkInfo.networkHealth}
+                </Badge>
+                <Button
+                  onClick={checkNetworkStatus}
+                  disabled={isNetworkChecking}
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 w-6 p-0"
+                >
+                  <RefreshCw className={`h-3 w-3 ${isNetworkChecking ? 'animate-spin' : ''}`} />
+                </Button>
+              </div>
+            </div>
+            
+            {!networkInfo.isOverProtocol && (
+              <div className="mt-2 text-sm text-arcade-gold">
+                Please switch to Over Protocol network (Chain ID: 54176)
+              </div>
+            )}
+          </Card>
+        )}
+
+        {/* Blockchain Balance Display */}
+        <BlockchainBalanceDisplay 
+          walletAddress={walletAddress} 
+          onRefresh={checkNetworkStatus}
+        />
+
+        {/* Wallet Connection Status */}
+        <Card className={`p-4 ${isVerified ? 'bg-gradient-card border-neon-green' : 'bg-gradient-card border-arcade-gold'} animate-glow`}>
+          <div className="flex items-center gap-3">
+            {isVerified ? (
+              <CheckCircle className="h-5 w-5 text-neon-green" />
+            ) : (
+              <AlertCircle className="h-5 w-5 text-arcade-gold" />
+            )}
+            <div className="flex flex-col">
+              <span className={`font-bold text-sm ${isVerified ? 'text-neon-green' : 'text-arcade-gold'}`}>
+                {isVerified ? 'Verified Wallet' : 'Connected'}
               </span>
+              <span className="text-xs text-muted-foreground">{walletType}</span>
+              {walletAddress && (
+                <span className="text-xs text-muted-foreground font-mono">
+                  {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}
+                </span>
+              )}
+            </div>
+            {onDisconnect && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  onDisconnect();
+                  toast.success("Wallet disconnected");
+                }}
+                className="h-8 w-8 p-0 ml-auto hover:bg-destructive/10 hover:text-destructive"
+              >
+                <LogOut className="h-4 w-4" />
+              </Button>
             )}
           </div>
-          {onDisconnect && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                onDisconnect();
-                toast.success("Wallet disconnected");
-              }}
-              className="h-8 w-8 p-0 ml-auto hover:bg-destructive/10 hover:text-destructive"
-            >
-              <LogOut className="h-4 w-4" />
-            </Button>
-          )}
-        </div>
-      </Card>
+        </Card>
+      </div>
     );
   }
 
