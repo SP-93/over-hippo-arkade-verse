@@ -1,10 +1,40 @@
-# Welcome to your Lovable project
+# Over Protocol Gaming Arcade - Grant Application
 
-## Project info
+## Project Overview
 
-**URL**: https://lovable.dev/projects/73add468-3a81-4ceb-8300-09c240e1a7a2
+Over Protocol Gaming Arcade is a revolutionary Web3 gaming platform that seamlessly integrates classic arcade games with Over Protocol's blockchain technology. Our platform features 9+ immersive 3D games including Tetris, Snake, Pac-Man, Mario, and more, all powered by Three.js for stunning visual experiences. Players use a chip-based economy where each chip provides 3 lives, creating engaging gameplay sessions while earning OVER tokens through our play-to-earn mechanism. The platform includes comprehensive WOVER support (contract: 0x59c914C8ac6F212bb655737CC80d9Abc79A1e273) with wrap/unwrap functionality, MetaMask integration, secure user authentication, and a robust admin panel for platform management.
 
-## How can I edit this code?
+## Project Description
+
+Our gaming arcade transforms traditional retro gaming into a Web3 experience that appeals to both crypto enthusiasts and mainstream gamers. Each game session requires purchasing chips with OVER tokens, creating sustainable tokenomics while providing familiar gameplay mechanics. Players earn OVER rewards based on their performance, with high scores and achievements unlocking additional benefits.
+
+The platform targets the growing intersection of gaming and DeFi, addressing the $180B gaming market with blockchain innovation. Our target audience includes existing Over Protocol users, retro gaming enthusiasts, and Web3 newcomers seeking accessible entry points into cryptocurrency. The monetization strategy combines transaction fees, premium features, and potential tournament entry fees.
+
+The wrap/unwrap dashboard enables seamless WOVER token management, allowing users to participate in broader DeFi ecosystems while maintaining gaming functionality. This creates multiple revenue streams and enhances user retention through diverse use cases beyond gaming.
+
+## Technical and Business Strengths
+
+### Technical Excellence
+- **Modern Tech Stack**: Built with React, TypeScript, and Three.js for optimal performance and maintainability
+- **Blockchain Integration**: Native ethers.js implementation with MetaMask support and Over Protocol compatibility
+- **Scalable Architecture**: Supabase backend with Row-Level Security (RLS) ensuring data integrity and user privacy
+- **3D Gaming Engine**: Custom Three.js components delivering console-quality gaming experiences in browsers
+- **Security**: Multi-layer authentication system with wallet verification and admin controls
+
+### Business Advantages
+- **First-Mover Advantage**: Pioneering 3D arcade gaming on Over Protocol
+- **User Onboarding**: Familiar game mechanics lower barriers for Web3 adoption
+- **Community Building**: Leaderboards, achievements, and social features drive engagement
+- **Marketing Synergy**: Retro gaming nostalgia combined with cutting-edge blockchain technology
+- **Partnerships Potential**: Ready for collaborations with gaming influencers, arcade manufacturers, and educational institutions
+
+### Market Impact
+- **User Acquisition**: Projected 10,000+ active users within 6 months of launch
+- **Transaction Volume**: Estimated $500K+ in OVER token transactions monthly
+- **Ecosystem Growth**: Drives Over Protocol adoption through gaming accessibility
+- **Innovation Leadership**: Establishes Over Protocol as a gaming-focused blockchain platform
+
+## Development Info
 
 There are several ways of editing your application.
 
