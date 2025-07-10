@@ -8,6 +8,8 @@ import { Label } from "@/components/ui/label";
 import { Shield, Settings, Wallet, Users, TrendingUp, Download, DollarSign, Trophy, Database, AlertTriangle, RefreshCw, Search } from "lucide-react";
 import { BlockchainBalanceChecker } from "./BlockchainBalanceChecker";
 import { WalletAdminPanel } from "./WalletAdminPanel";
+import { AdminOverview } from "./admin/AdminOverview";
+import { AdminUsers } from "./admin/AdminUsers";
 import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { secureAdminService, AdminStats } from "@/services/secure-admin";
@@ -250,184 +252,16 @@ export const AdminPanel = ({ walletAddress, isVisible }: AdminPanelProps) => {
 
         {/* Overview Tab */}
         <TabsContent value="overview" className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <Card className="p-6 bg-gradient-card border-neon-blue">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-2xl font-bold text-neon-blue">
-                    {statsLoading ? '...' : stats?.totalUsers || 0}
-                  </p>
-                  <p className="text-sm text-muted-foreground">Total Users</p>
-                </div>
-                <Users className="h-8 w-8 text-neon-blue" />
-              </div>
-            </Card>
-
-            <Card className="p-6 bg-gradient-card border-neon-green">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-2xl font-bold text-neon-green">
-                    {statsLoading ? '...' : `${stats?.totalRevenue || 0} OVER`}
-                  </p>
-                  <p className="text-sm text-muted-foreground">Total Revenue</p>
-                </div>
-                <DollarSign className="h-8 w-8 text-neon-green" />
-              </div>
-            </Card>
-
-            <Card className="p-6 bg-gradient-card border-neon-pink">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-2xl font-bold text-neon-pink">
-                    {statsLoading ? '...' : stats?.totalTransactions || 0}
-                  </p>
-                  <p className="text-sm text-muted-foreground">Total Transactions</p>
-                </div>
-                <TrendingUp className="h-8 w-8 text-neon-pink" />
-              </div>
-            </Card>
-
-            <Card className="p-6 bg-gradient-card border-arcade-gold">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-2xl font-bold text-arcade-gold">
-                    {statsLoading ? '...' : stats?.activeTournaments || 0}
-                  </p>
-                  <p className="text-sm text-muted-foreground">Active Tournaments</p>
-                </div>
-                <Trophy className="h-8 w-8 text-arcade-gold" />
-              </div>
-            </Card>
-
-            <Card className="p-6 bg-gradient-card border-primary">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-2xl font-bold text-primary">
-                    {statsLoading ? '...' : stats?.totalChipsInCirculation || 0}
-                  </p>
-                  <p className="text-sm text-muted-foreground">Chips in Circulation</p>
-                </div>
-                <Database className="h-8 w-8 text-primary" />
-              </div>
-            </Card>
-          </div>
-
-          {/* Admin Quick Actions */}
-          <Card className="p-6 bg-gradient-card border-destructive/50">
-            <h3 className="text-lg font-semibold mb-4 flex items-center text-destructive">
-              <Settings className="h-5 w-5 mr-2" />
-              Admin Quick Actions
-            </h3>
-            <div className="flex flex-wrap gap-4">
-              <Button
-                variant="destructive"
-                onClick={async () => {
-                  const amount = prompt("Unesite broj cipova za dodavanje (trenutno: 2):");
-                  const numAmount = Number(amount);
-                  if (amount && !isNaN(numAmount) && numAmount > 0) {
-                    console.log('🎯 UI: User wants to add chips:', numAmount);
-                    try {
-                      await addChipsMutation.mutateAsync(numAmount);
-                    } catch (error) {
-                      console.error('🚨 UI: Mutation failed:', error);
-                    }
-                  } else if (amount !== null) {
-                    toast.error("Molimo unesite valjan pozitivan broj");
-                  }
-                }}
-                disabled={addChipsMutation.isPending}
-              >
-                {addChipsMutation.isPending ? '🔄 Dodajem...' : '🎯 Dodaj Cipove'}
-              </Button>
-            </div>
-          </Card>
+          <AdminOverview 
+            isAdmin={adminStatus?.isAdmin || false}
+            stats={stats}
+            onRefreshStats={() => queryClient.invalidateQueries({ queryKey: ['admin-stats'] })}
+          />
         </TabsContent>
 
         {/* Users Tab */}
         <TabsContent value="users" className="space-y-4">
-          <Card className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold flex items-center">
-                <Users className="h-5 w-5 mr-2" />
-                User Management
-              </h3>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => queryClient.invalidateQueries({ queryKey: ['admin-users'] })}
-                disabled={usersLoading}
-              >
-                <RefreshCw className={`h-4 w-4 mr-2 ${usersLoading ? 'animate-spin' : ''}`} />
-                Refresh
-              </Button>
-            </div>
-            
-            <div className="space-y-4 max-h-96 overflow-auto">
-              {usersLoading ? (
-                <p className="text-center text-muted-foreground">Loading users...</p>
-              ) : users?.map((user) => (
-                <Card key={user.id} className="p-4 bg-muted/20">
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <p className="font-medium">{user.display_name || `Player_${user.id.slice(-4)}`}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {user.verified_wallet_address || user.wallet_address || 'No wallet'}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        Joined: {new Date(user.created_at).toLocaleDateString()}
-                      </p>
-                    </div>
-                    <div className="flex items-center space-x-4">
-                      <div className="text-right">
-                        <div className="space-y-1">
-                          {(user as any).player_balances?.[0] && (
-                            <p className="text-sm font-medium">
-                              Chips: {(user as any).player_balances[0].game_chips || 0}
-                            </p>
-                          )}
-                          <p className="text-sm text-neon-green">
-                            Profile OVER: {user.over_balance || 0}
-                          </p>
-                          {(user as any).player_balances?.[0] && (
-                            <p className="text-xs text-muted-foreground">
-                              Game OVER: {(user as any).player_balances[0].over_balance || 0}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                      <div className="flex space-x-2">
-                        <Button 
-                          size="sm" 
-                          variant="outline"
-                          onClick={() => {
-                            const currentChips = (user as any).player_balances?.[0]?.game_chips || 0;
-                            const newChips = prompt(`Current chips: ${currentChips}. Enter new amount:`);
-                            if (newChips && !isNaN(Number(newChips))) {
-                              updateUserMutation.mutate({ userId: user.user_id, chips: Number(newChips) });
-                            }
-                          }}
-                        >
-                          Edit Chips
-                        </Button>
-                        <Button 
-                          size="sm" 
-                          variant="outline"
-                          onClick={() => {
-                            const newOver = prompt(`Current OVER: ${user.over_balance}. Enter new amount:`);
-                            if (newOver && !isNaN(Number(newOver))) {
-                              updateUserMutation.mutate({ userId: user.user_id, over: Number(newOver) });
-                            }
-                          }}
-                        >
-                          Edit OVER
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                </Card>
-              ))}
-            </div>
-          </Card>
+          <AdminUsers isAdmin={adminStatus?.isAdmin || false} />
         </TabsContent>
 
         {/* Wallets Tab */}
