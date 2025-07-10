@@ -10,11 +10,11 @@
     <!-- Content Security Policy for 3D WebGL games -->
     <meta http-equiv="Content-Security-Policy" content="
       default-src 'self';
-      script-src 'self' 'unsafe-eval' 'unsafe-inline' https://cdnjs.cloudflare.com;
+      script-src 'self' 'unsafe-eval' 'unsafe-inline' https://cdnjs.cloudflare.com https://cdn.gpteng.co;
       style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
-      font-src 'self' https://fonts.gstatic.com;
+      font-src 'self' https://fonts.gstatic.com https://use.typekit.net;
       img-src 'self' data: blob: https:;
-      connect-src 'self' https://digjvjghzbxxrrbuddmq.supabase.co wss://digjvjghzbxxrrbuddmq.supabase.co;
+      connect-src 'self' https://digjvjghzbxxrrbuddmq.supabase.co wss://digjvjghzbxxrrbuddmq.supabase.co https://rpc.overprotocol.com;
       worker-src 'self' blob:;
       child-src 'self' blob:;
       object-src 'none';
