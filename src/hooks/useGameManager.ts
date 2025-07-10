@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useChipManager } from "./useChipManager";
+import { useGlobalBalance } from "@/contexts/GlobalBalanceContext";
 import { toast } from "sonner";
 
 export const useGameManager = () => {
@@ -10,8 +11,9 @@ export const useGameManager = () => {
   const [currentLives, setCurrentLives] = useState(2);
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
 
-  // Initialize chip manager
+  // Initialize chip manager and global balance
   const chipManager = useChipManager();
+  const { gameChips, refreshBalance } = useGlobalBalance();
 
   // Check for existing session on load
   useEffect(() => {
@@ -111,10 +113,11 @@ export const useGameManager = () => {
     gameTime,
     currentScore,
     gameStatus,
-    playerChips: chipManager.playerChips,
+    playerChips: gameChips, // Use global balance instead
     hasGameStarted,
     currentLives,
     chipManager,
+    refreshBalance,
     setCurrentScore,
     setGameStatus,
     endGame,

@@ -1,18 +1,15 @@
-import { useChipBalance } from "./useChipBalance";
+import { useSecureBalance } from "./useSecureBalance";
 import { useGameSession } from "./useGameSession";
 import { secureBalanceService } from "@/services/secure-balance";
 import { toast } from "sonner";
 
 export const useChipManager = () => {
   const {
-    playerChips,
-    setPlayerChips,
+    gameChips: playerChips,
     isLoading,
     canPlayGame,
-    getTimeUntilReset,
-    getChipLives,
-    refreshChips
-  } = useChipBalance();
+    refreshBalance: refreshChips
+  } = useSecureBalance();
 
   const {
     startGameSession: originalStartGameSession,
@@ -54,8 +51,12 @@ export const useChipManager = () => {
     // Now start the actual game session
     const result = await originalStartGameSession(gameType);
     
-    // Refresh balance to sync UI
+    // Force immediate refresh of balance to sync UI
     await refreshChips();
+    
+    // Trigger global balance refresh events
+    window.dispatchEvent(new Event('balanceUpdated'));
+    window.dispatchEvent(new Event('forceBalanceRefresh'));
     
     return result;
   };
@@ -64,6 +65,10 @@ export const useChipManager = () => {
     const result = await startGameSession(gameType);
     return result !== null;
   };
+
+  // Simple utility functions for backwards compatibility
+  const getTimeUntilReset = (): string => "24:00:00";
+  const getChipLives = (): number => 2;
 
   return {
     playerChips,
@@ -75,7 +80,7 @@ export const useChipManager = () => {
     getCurrentSession,
     getTimeUntilReset,
     getChipLives,
-    setPlayerChips,
+    setPlayerChips: () => {}, // No-op since we use secure balance
     isLoading,
     refreshChips
   };

@@ -1,3 +1,4 @@
+import React, { useEffect } from "react";
 import { Snake3DGame } from "@/components/games/Snake3DGame";
 import { Tetris3DGame } from "@/components/games/Tetris3DGame";
 import { PacMan3DGame } from "@/components/games/PacMan3DGame";
@@ -12,6 +13,8 @@ import { Game3DErrorBoundary } from "@/components/Game3DErrorBoundary";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import { webglDetector } from "@/utils/webglDetector";
+import { toast } from "sonner";
 
 interface GameRouterProps {
   gameId?: string;
@@ -24,6 +27,18 @@ export const GameRouter = ({ gameId, onScoreChange, onGameEnd, onGameStart }: Ga
   const navigate = useNavigate();
 
   const availableGames = ['tetris', 'snake', 'pacman', 'breakout', 'asteroids', 'flipper', 'mario', 'kingkong', 'frogger'];
+
+  // Check WebGL support on component mount
+  useEffect(() => {
+    const webglCapabilities = webglDetector.detect();
+    if (!webglCapabilities.webgl1) {
+      toast.error("WebGL not supported. 3D games may not work properly.");
+      console.warn("WebGL Detection:", webglCapabilities);
+    } else {
+      console.log("✅ WebGL supported:", webglCapabilities);
+      toast.success(`3D Games Ready! Performance: ${webglCapabilities.performanceLevel}`);
+    }
+  }, []);
 
   if (gameId === 'tetris') {
     return (

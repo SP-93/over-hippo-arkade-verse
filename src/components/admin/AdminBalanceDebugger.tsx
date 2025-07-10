@@ -2,11 +2,12 @@ import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { RefreshCw, Database, Zap, AlertTriangle } from "lucide-react";
+import { RefreshCw, Database, Zap, AlertTriangle, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { secureAdminService } from "@/services/secure-admin";
 import { useSecureBalance } from "@/hooks/useSecureBalance";
+import { useGlobalBalance } from "@/contexts/GlobalBalanceContext";
 
 interface BalanceDebugInfo {
   databaseBalance: number;
@@ -25,6 +26,7 @@ export const AdminBalanceDebugger = ({ isAdmin }: AdminBalanceDebuggerProps) => 
   const [loading, setLoading] = useState(false);
   const [chipAmount, setChipAmount] = useState(10);
   const { balance, refreshBalance } = useSecureBalance();
+  const { gameChips: globalGameChips, refreshBalance: globalRefreshBalance } = useGlobalBalance();
 
   const loadDebugInfo = async () => {
     if (!isAdmin) return;
@@ -93,16 +95,64 @@ export const AdminBalanceDebugger = ({ isAdmin }: AdminBalanceDebuggerProps) => 
   const addChipsToSelf = async () => {
     try {
       setLoading(true);
-      await secureAdminService.addChipsToSelf(chipAmount);
-      toast.success(`Added ${chipAmount} chips`);
       
-      // Wait a bit then refresh debug info
-      setTimeout(async () => {
-        await loadDebugInfo();
-      }, 1500);
+      // Optimistic update for UI responsiveness
+      const previousChips = globalGameChips;
+      toast.loading(`Adding ${chipAmount} chips...`);
+      
+      await secureAdminService.addChipsToSelf(chipAmount);
+      
+      // Force immediate refresh of all balance components
+      await Promise.all([
+        refreshBalance(),
+        globalRefreshBalance(),
+        loadDebugInfo()
+      ]);
+      
+      // Trigger multiple refresh events to ensure sync
+      window.dispatchEvent(new Event('balanceUpdated'));
+      window.dispatchEvent(new Event('forceBalanceRefresh'));
+      window.dispatchEvent(new CustomEvent('adminBalanceUpdated', { 
+        detail: { chipAmount, previousChips, newChips: globalGameChips + chipAmount }
+      }));
+      
+      toast.success(`✅ Successfully added ${chipAmount} chips! (${previousChips} → ${globalGameChips + chipAmount})`);
+      
     } catch (error) {
       console.error('Add chips failed:', error);
-      toast.error("Failed to add chips");
+      toast.error("Failed to add chips: " + (error as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const emergencySync = async () => {
+    try {
+      setLoading(true);
+      toast.loading("🚨 Emergency sync in progress...");
+      
+      // Force refresh everything
+      await Promise.all([
+        secureAdminService.forceRefreshBalances(),
+        refreshBalance(),
+        globalRefreshBalance(),
+        loadDebugInfo()
+      ]);
+      
+      // Clear any cached data
+      localStorage.removeItem('player_chips');
+      sessionStorage.clear();
+      
+      // Trigger all possible refresh events
+      window.dispatchEvent(new Event('balanceUpdated'));
+      window.dispatchEvent(new Event('chipBalanceUpdated'));
+      window.dispatchEvent(new Event('forceBalanceRefresh'));
+      
+      toast.success("🔄 Emergency sync completed!");
+      
+    } catch (error) {
+      console.error('Emergency sync failed:', error);
+      toast.error("Emergency sync failed");
     } finally {
       setLoading(false);
     }
@@ -168,7 +218,7 @@ export const AdminBalanceDebugger = ({ isAdmin }: AdminBalanceDebuggerProps) => 
           </div>
 
           {/* Balance Comparison */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-3 gap-4">
             <div className="p-3 bg-background/50 rounded-lg">
               <div className="text-xs text-muted-foreground">Database Balance</div>
               <div className="text-lg font-bold">{debugInfo.databaseBalance} chips</div>
@@ -176,6 +226,10 @@ export const AdminBalanceDebugger = ({ isAdmin }: AdminBalanceDebuggerProps) => 
             <div className="p-3 bg-background/50 rounded-lg">
               <div className="text-xs text-muted-foreground">Hook Balance</div>
               <div className="text-lg font-bold">{debugInfo.hookBalance} chips</div>
+            </div>
+            <div className="p-3 bg-background/50 rounded-lg">
+              <div className="text-xs text-muted-foreground">Global Balance</div>
+              <div className="text-lg font-bold">{globalGameChips} chips</div>
             </div>
           </div>
 
@@ -189,33 +243,47 @@ export const AdminBalanceDebugger = ({ isAdmin }: AdminBalanceDebuggerProps) => 
           </div>
 
           {/* Admin Actions */}
-          <div className="flex gap-2 pt-2 border-t">
-            <div className="flex-1">
-              <input
-                type="number"
-                value={chipAmount}
-                onChange={(e) => setChipAmount(parseInt(e.target.value) || 1)}
-                min="1"
-                max="100"
-                className="w-full px-3 py-2 text-sm border rounded-md bg-background"
-                placeholder="Chip amount"
-              />
+          <div className="space-y-3 pt-2 border-t">
+            <div className="flex gap-2">
+              <div className="flex-1">
+                <input
+                  type="number"
+                  value={chipAmount}
+                  onChange={(e) => setChipAmount(parseInt(e.target.value) || 1)}
+                  min="1"
+                  max="100"
+                  className="w-full px-3 py-2 text-sm border rounded-md bg-background"
+                  placeholder="Chip amount"
+                />
+              </div>
+              <Button
+                onClick={addChipsToSelf}
+                disabled={loading}
+                size="sm"
+              >
+                Add Chips
+              </Button>
             </div>
-            <Button
-              onClick={addChipsToSelf}
-              disabled={loading}
-              size="sm"
-            >
-              Add Chips
-            </Button>
-            <Button
-              onClick={forceSync}
-              disabled={loading}
-              size="sm"
-              variant="outline"
-            >
-              Force Sync
-            </Button>
+            <div className="flex gap-2">
+              <Button
+                onClick={forceSync}
+                disabled={loading}
+                size="sm"
+                variant="outline"
+              >
+                <RefreshCw className={`h-4 w-4 mr-1 ${loading ? 'animate-spin' : ''}`} />
+                Force Sync
+              </Button>
+              <Button
+                onClick={emergencySync}
+                disabled={loading}
+                size="sm"
+                variant="destructive"
+              >
+                <ShieldCheck className="h-4 w-4 mr-1" />
+                Emergency Sync
+              </Button>
+            </div>
           </div>
         </div>
       )}

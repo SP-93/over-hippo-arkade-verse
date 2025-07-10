@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Play, Gift } from "lucide-react";
 import { toast } from "sonner";
 import { useSecureBalance } from "@/hooks/useSecureBalance";
+import { useGlobalBalance } from "@/contexts/GlobalBalanceContext";
 
 interface WatchVideoButtonProps {
   onRewardEarned?: (reward: number) => void;
@@ -15,6 +16,7 @@ export const WatchVideoButton = ({ onRewardEarned }: WatchVideoButtonProps) => {
   const [dailyWatched, setDailyWatched] = useState(0);
   const maxDailyWatches = 5;
   const { addChips } = useSecureBalance();
+  const { gameChips, refreshBalance: globalRefreshBalance } = useGlobalBalance();
 
   const handleWatchVideo = async () => {
     if (dailyWatched >= maxDailyWatches) {
@@ -37,11 +39,23 @@ export const WatchVideoButton = ({ onRewardEarned }: WatchVideoButtonProps) => {
           setDailyWatched(prev => prev + 1);
           setIsWatching(false);
           onRewardEarned?.(reward);
-          toast.success(`Video completed! You earned ${reward} chip! Total: ${result.new_chips}`);
           
-          // Trigger balance update events
+          // Force immediate global balance refresh
+          await globalRefreshBalance();
+          
+          toast.success(`Video completed! You earned ${reward} chip! (${gameChips} → ${result.new_chips || gameChips + reward})`);
+          
+          // Trigger comprehensive balance update events
           window.dispatchEvent(new Event('balanceUpdated'));
           window.dispatchEvent(new Event('chipBalanceUpdated'));
+          window.dispatchEvent(new Event('forceBalanceRefresh'));
+          window.dispatchEvent(new CustomEvent('videoRewardEarned', { 
+            detail: { 
+              chipsAdded: reward,
+              previousChips: gameChips,
+              newChips: result.new_chips || gameChips + reward
+            }
+          }));
         } else {
           setIsWatching(false);
           toast.error(`Failed to add reward: ${result.error}`);
