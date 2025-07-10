@@ -1,18 +1,20 @@
 import { supabase } from "@/integrations/supabase/client";
 
-// Complete security cleanup function
-export const performSecurityCleanup = async () => {
-  console.log('🧹 Starting comprehensive security cleanup...');
+// Complete security cleanup function with options
+export const performSecurityCleanup = async (preserveWallet: boolean = false) => {
+  console.log('🧹 Starting comprehensive security cleanup...', preserveWallet ? '(preserving wallet)' : '');
   
   try {
-    // 1. Clear all localStorage data
-    clearLocalStorage();
+    // 1. Clear localStorage data (optionally preserve wallet)
+    clearLocalStorage(preserveWallet);
     
-    // 2. Clear all sessionStorage data
-    clearSessionStorage();
+    // 2. Clear sessionStorage data (but preserve wallet backup if needed)
+    clearSessionStorage(preserveWallet);
     
-    // 3. Disconnect wallet extensions
-    await disconnectWalletExtensions();
+    // 3. Disconnect wallet extensions only if not preserving
+    if (!preserveWallet) {
+      await disconnectWalletExtensions();
+    }
     
     // 4. Sign out from Supabase (with global scope)
     await performSupabaseSignOut();
@@ -24,10 +26,17 @@ export const performSecurityCleanup = async () => {
   }
 };
 
+// Gentle cleanup that preserves wallet connection
+export const performGentleCleanup = async () => {
+  console.log('🧽 Starting gentle cleanup (preserving wallet)...');
+  await performSecurityCleanup(true);
+};
+
 // Clear localStorage with specific focus on auth and wallet data
-const clearLocalStorage = () => {
+// Enhanced with whitelist to preserve critical wallet data during normal cleanup
+const clearLocalStorage = (preserveWallet: boolean = false) => {
   try {
-    console.log('🗄️ Clearing localStorage...');
+    console.log('🗄️ Clearing localStorage...', preserveWallet ? '(preserving wallet)' : '');
     
     // Supabase auth keys to remove
     const supabaseKeys = Object.keys(localStorage).filter(key => 
@@ -36,14 +45,17 @@ const clearLocalStorage = () => {
       key.startsWith('sb-')
     );
     
-    // App-specific keys to remove
+    // App-specific keys to remove (conditional wallet preservation)
     const appKeys = [
-      'wallet_connection',
-      'current_view',
       'player_chips',
       'user_session',
       'auth_state'
     ];
+    
+    // Only add wallet keys if not preserving
+    if (!preserveWallet) {
+      appKeys.push('wallet_connection', 'current_view');
+    }
     
     // Remove Supabase auth keys
     supabaseKeys.forEach(key => {
@@ -59,27 +71,37 @@ const clearLocalStorage = () => {
       }
     });
     
+    if (preserveWallet) {
+      console.log('💾 Preserved wallet connection data during cleanup');
+    }
+    
   } catch (error) {
     console.error('Error clearing localStorage:', error);
   }
 };
 
-// Clear sessionStorage
-const clearSessionStorage = () => {
+// Clear sessionStorage with optional wallet preservation
+const clearSessionStorage = (preserveWallet: boolean = false) => {
   try {
-    console.log('📋 Clearing sessionStorage...');
+    console.log('📋 Clearing sessionStorage...', preserveWallet ? '(preserving wallet backup)' : '');
     
     if (typeof sessionStorage !== 'undefined') {
-      const sessionKeys = Object.keys(sessionStorage).filter(key => 
-        key.startsWith('supabase') || 
-        key.includes('auth') ||
-        key.includes('wallet')
-      );
+      const sessionKeys = Object.keys(sessionStorage).filter(key => {
+        const isAuth = key.startsWith('supabase') || key.includes('auth');
+        const isWallet = key.includes('wallet');
+        
+        // If preserving wallet, only remove auth keys, not wallet keys
+        return preserveWallet ? isAuth : (isAuth || isWallet);
+      });
       
       sessionKeys.forEach(key => {
         sessionStorage.removeItem(key);
         console.log(`🗑️ Removed sessionStorage key: ${key}`);
       });
+      
+      if (preserveWallet) {
+        console.log('💾 Preserved wallet backup in sessionStorage');
+      }
     }
   } catch (error) {
     console.error('Error clearing sessionStorage:', error);

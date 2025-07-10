@@ -22,7 +22,8 @@ import heroLogo from "@/assets/hero-logo.jpg";
 import { useQuery } from "@tanstack/react-query";
 import { secureAdminService } from "@/services/secure-admin";
 import { supabase } from "@/integrations/supabase/client";
-import { performSecurityCleanup, emergencyCleanup } from "@/utils/securityCleanup";
+import { emergencyCleanup } from "@/utils/securityCleanup";
+import { WalletDebugPanel } from "@/components/WalletDebugPanel";
 
 // Admin wallet now managed securely in backend
 
@@ -42,48 +43,26 @@ const Index = () => {
   const chipManager = useChipManager();
   const playerStats = usePlayerStats(walletAddress);
 
-  // Enhanced security cleanup handler
-  const handleSecurityCleanup = async () => {
-    console.log('🔒 Comprehensive security cleanup initiated');
-    
-    try {
-      // Perform comprehensive cleanup
-      await performSecurityCleanup();
+  // Initialize security handler with gentle cleanup to preserve wallet
+  const { triggerCleanup } = useSecurityHandler({
+    onSecurityCleanup: async () => {
+      console.log('🔒 Gentle security cleanup initiated');
+      const { performGentleCleanup } = await import('@/utils/securityCleanup');
+      await performGentleCleanup();
       
-      // Reset all local state
+      // Reset auth state but preserve wallet connection
       setUser(null);
-      setIsWalletConnected(false);
-      setWalletAddress("");
-      setWalletType("");
-      setIsWalletVerified(false);
       setCurrentView('home');
-      setOverBalance(0);
       
       // Show security toast (if user is still on page)
       if (document.visibilityState === 'visible') {
-        toast.success("Session secured - automatic logout completed", {
-          description: "Your account has been safely disconnected"
+        toast.success("Session secured - wallet preserved", {
+          description: "Authentication cleared, wallet connection maintained"
         });
       }
-      
-    } catch (error) {
-      console.error('Security cleanup error:', error);
-      // Still perform basic cleanup even if full cleanup fails
-      emergencyCleanup();
-      setUser(null);
-      setIsWalletConnected(false);
-      setWalletAddress("");
-      setWalletType("");
-      setIsWalletVerified(false);
-      setCurrentView('home');
-    }
-  };
-
-  // Initialize security handler with 15-minute timeout
-  const { triggerCleanup, updateActivity } = useSecurityHandler({
-    onSecurityCleanup: handleSecurityCleanup,
-    sessionTimeoutMs: 15 * 60 * 1000, // 15 minutes
-    debounceMs: 500 // 500ms debounce
+    },
+    sessionTimeoutMs: 60 * 60 * 1000, // 1 hour (increased)
+    debounceMs: 10000 // 10 seconds (increased)
   });
 
   // Check authentication state
@@ -229,41 +208,60 @@ const Index = () => {
     loadPlayerBalance();
   }, [walletAddress]);
 
-  // Load wallet state from localStorage - trust the stored state after refresh
+  // Enhanced wallet state restoration with backup storage and silent reconnection
   useEffect(() => {
-    const savedWallet = localStorage.getItem('wallet_connection');
-    const savedView = localStorage.getItem('current_view');
-    
-    console.log('📱 Page refresh - checking localStorage:', { savedWallet, savedView });
-    
-    if (savedWallet) {
+    const initializeWalletState = async () => {
+      console.log('📱 Page refresh - initializing wallet state...');
+      
+      // Use enhanced persistence manager
+      const { walletPersistence } = await import('@/utils/walletPersistence');
+      
       try {
-        const walletData = JSON.parse(savedWallet);
-        console.log('✅ Restoring wallet state after refresh:', walletData);
+        // Try to load wallet data from primary or backup storage
+        const walletData = walletPersistence.loadWalletData();
+        const viewData = walletPersistence.loadViewData();
         
-        // After page refresh, trust the localStorage state
-        // This prevents wallet disconnection on every refresh
-        if (walletData.isConnected) {
+        if (walletData?.isConnected) {
+          console.log('✅ Found wallet data, attempting restoration...');
+          
+          // For better UX, trust the stored state initially
           setIsWalletConnected(true);
           setWalletAddress(walletData.address);
           setWalletType(walletData.type);
           setIsWalletVerified(walletData.verified || false);
           
-          // Also restore the view if it was saved
-          if (savedView && savedView !== 'home') {
-            console.log('✅ Restoring view after refresh:', savedView);
-            setCurrentView(savedView as 'home' | 'dashboard' | 'games' | 'admin');
+          // Restore view if available
+          if (viewData?.currentView && viewData.currentView !== 'home') {
+            console.log('✅ Restoring view after refresh:', viewData.currentView);
+            setCurrentView(viewData.currentView as 'home' | 'dashboard' | 'games' | 'admin');
             setHasRestoredView(true);
           }
+          
+          // Attempt silent reconnection in background to verify wallet is still connected
+          walletPersistence.attemptSilentReconnection().then(success => {
+            if (!success) {
+              console.log('🔌 Wallet no longer connected, showing login...');
+              setIsWalletConnected(false);
+              setWalletAddress('');
+              setWalletType('');
+              setIsWalletVerified(false);
+              setCurrentView('home');
+            }
+          });
+        } else {
+          console.log('📱 No valid wallet data found');
         }
       } catch (error) {
-        console.error('Failed to parse wallet data:', error);
-        localStorage.removeItem('wallet_connection');
-        localStorage.removeItem('current_view');
+        console.error('Failed to initialize wallet state:', error);
+        // Clear corrupted data
+        const { walletPersistence } = await import('@/utils/walletPersistence');
+        walletPersistence.clearWalletData();
       }
-    }
+      
+      setIsInitialized(true);
+    };
     
-    setIsInitialized(true);
+    initializeWalletState();
   }, []);
 
   // Restore view when both user and wallet are ready
@@ -277,18 +275,34 @@ const Index = () => {
     }
   }, [user, isWalletConnected, hasRestoredView]); // Run when both user and wallet state are ready
 
-  // Save wallet state to localStorage whenever it changes (backup)
+  // Enhanced wallet state saving with backup storage
   useEffect(() => {
-    if (isWalletConnected) {
-      localStorage.setItem('wallet_connection', JSON.stringify({
-        isConnected: isWalletConnected,
-        address: walletAddress,
-        type: walletType,
-        verified: isWalletVerified
-      }));
-      localStorage.setItem('current_view', currentView);
-    }
-  }, [isWalletConnected, walletAddress, walletType, isWalletVerified, currentView]);
+    const saveWalletState = async () => {
+      if (isWalletConnected && walletAddress) {
+        const { walletPersistence } = await import('@/utils/walletPersistence');
+        walletPersistence.saveWalletData({
+          isConnected: isWalletConnected,
+          address: walletAddress,
+          type: walletType,
+          verified: isWalletVerified
+        });
+      }
+    };
+    
+    saveWalletState();
+  }, [isWalletConnected, walletAddress, walletType, isWalletVerified]);
+
+  // Enhanced view state saving with backup storage
+  useEffect(() => {
+    const saveViewState = async () => {
+      if (currentView && currentView !== 'home') {
+        const { walletPersistence } = await import('@/utils/walletPersistence');
+        walletPersistence.saveViewData(currentView);
+      }
+    };
+    
+    saveViewState();
+  }, [currentView]);
 
   const handleWalletConnect = (connectedWalletType: string, address: string, verified: boolean) => {
     setIsWalletConnected(true);
@@ -304,15 +318,19 @@ const Index = () => {
     });
   };
 
-  const handleWalletDisconnect = () => {
+  const handleWalletDisconnect = async () => {
     setIsWalletConnected(false);
     setWalletAddress("");
     setWalletType("");
     setIsWalletVerified(false);
     setCurrentView('home');
     setHasRestoredView(false); // Reset view restoration state
-    localStorage.removeItem('wallet_connection');
-    localStorage.removeItem('current_view');
+    
+    // Clear stored data from all storages
+    const { walletPersistence } = await import('@/utils/walletPersistence');
+    walletPersistence.clearWalletData();
+    
+    console.log('🔌 Wallet disconnected and all data cleared');
   };
 
   const handleChipPurchase = (chips: number) => {
@@ -574,18 +592,19 @@ const Index = () => {
                       isVerified={isWalletVerified}
                     />
                   )}
-                  {user && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={handleSignOut}
-                      className="h-8 px-3 text-xs hover:bg-destructive/10 hover:text-destructive"
-                    >
-                      <LogOut className="h-3 w-3 mr-1" />
-                      Sign Out
-                    </Button>
-                  )}
-                </div>
+                   {user && (
+                     <Button
+                       variant="ghost"
+                       size="sm"
+                       onClick={handleSignOut}
+                       className="h-8 px-3 text-xs hover:bg-destructive/10 hover:text-destructive"
+                     >
+                       <LogOut className="h-3 w-3 mr-1" />
+                       Sign Out
+                     </Button>
+                   )}
+                   <WalletDebugPanel />
+                 </div>
               </div>
             </div>
           </nav>

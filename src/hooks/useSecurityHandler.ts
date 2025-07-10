@@ -122,14 +122,14 @@ export const useSecurityHandler = ({
       console.log('🔚 Page unload - emergency cleanup only');
       // Use emergency cleanup for unload (synchronous only)
       try {
-        // Only clear sensitive data, don't sign out (no async operations)
-        const sensitiveKeys = ['wallet_connection'];
+        // Only clear truly sensitive data, preserve wallet for page refresh
+        const sensitiveKeys = ['user_session', 'auth_state'];
         sensitiveKeys.forEach(key => {
           if (localStorage.getItem(key)) {
             localStorage.removeItem(key);
           }
         });
-        console.log('🗑️ Emergency cleanup: cleared sensitive data');
+        console.log('🗑️ Emergency cleanup: cleared auth data only (preserved wallet)');
       } catch (error) {
         console.error('Emergency cleanup error:', error);
       }
