@@ -279,7 +279,6 @@ export type Database = {
           display_name: string | null
           id: string
           over_balance: number | null
-          total_chips: number | null
           updated_at: string
           user_id: string
           verified_wallet_address: string | null
@@ -294,7 +293,6 @@ export type Database = {
           display_name?: string | null
           id?: string
           over_balance?: number | null
-          total_chips?: number | null
           updated_at?: string
           user_id: string
           verified_wallet_address?: string | null
@@ -309,7 +307,6 @@ export type Database = {
           display_name?: string | null
           id?: string
           over_balance?: number | null
-          total_chips?: number | null
           updated_at?: string
           user_id?: string
           verified_wallet_address?: string | null
