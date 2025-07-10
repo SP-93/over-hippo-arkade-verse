@@ -229,55 +229,41 @@ const Index = () => {
     loadPlayerBalance();
   }, [walletAddress]);
 
-  // Load wallet state from localStorage and verify actual connection
+  // Load wallet state from localStorage - trust the stored state after refresh
   useEffect(() => {
-    const initializeWallet = async () => {
-      const savedWallet = localStorage.getItem('wallet_connection');
-      const savedView = localStorage.getItem('current_view');
-      
-      if (savedWallet) {
-        try {
-          const walletData = JSON.parse(savedWallet);
-          console.log('🔄 Loading wallet from localStorage:', walletData);
-          
-          // Check if wallet is actually still connected
-          if (walletData.isConnected && typeof window.ethereum !== 'undefined') {
-            try {
-              // Check if MetaMask is still connected without prompting user
-              const accounts = await window.ethereum.request({ method: 'eth_accounts' });
-              const isStillConnected = accounts.length > 0 && accounts[0].toLowerCase() === walletData.address?.toLowerCase();
-              
-              if (isStillConnected) {
-                // Wallet is actually still connected
-                setIsWalletConnected(true);
-                setWalletAddress(walletData.address);
-                setWalletType(walletData.type);
-                setIsWalletVerified(walletData.verified || false);
-                
-                if (savedView) {
-                  setHasRestoredView(true);
-                }
-              } else {
-                // Wallet was disconnected, clear localStorage
-                console.log('🔌 Wallet was disconnected, clearing localStorage');
-                localStorage.removeItem('wallet_connection');
-                localStorage.removeItem('current_view');
-              }
-            } catch (error) {
-              console.error('Failed to verify wallet connection:', error);
-              localStorage.removeItem('wallet_connection');
-            }
-          }
-        } catch (error) {
-          console.error('Failed to parse wallet data:', error);
-          localStorage.removeItem('wallet_connection');
-        }
-      }
-      
-      setIsInitialized(true);
-    };
+    const savedWallet = localStorage.getItem('wallet_connection');
+    const savedView = localStorage.getItem('current_view');
     
-    initializeWallet();
+    console.log('📱 Page refresh - checking localStorage:', { savedWallet, savedView });
+    
+    if (savedWallet) {
+      try {
+        const walletData = JSON.parse(savedWallet);
+        console.log('✅ Restoring wallet state after refresh:', walletData);
+        
+        // After page refresh, trust the localStorage state
+        // This prevents wallet disconnection on every refresh
+        if (walletData.isConnected) {
+          setIsWalletConnected(true);
+          setWalletAddress(walletData.address);
+          setWalletType(walletData.type);
+          setIsWalletVerified(walletData.verified || false);
+          
+          // Also restore the view if it was saved
+          if (savedView && savedView !== 'home') {
+            console.log('✅ Restoring view after refresh:', savedView);
+            setCurrentView(savedView as 'home' | 'dashboard' | 'games' | 'admin');
+            setHasRestoredView(true);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to parse wallet data:', error);
+        localStorage.removeItem('wallet_connection');
+        localStorage.removeItem('current_view');
+      }
+    }
+    
+    setIsInitialized(true);
   }, []);
 
   // Restore view when both user and wallet are ready
