@@ -15,6 +15,7 @@ import { SecurityDashboard } from "@/components/admin/SecurityDashboard";
 import { WalletAdminPanel } from "@/components/WalletAdminPanel";
 import { AdminUsers } from "@/components/admin/AdminUsers";
 import { AdminBalanceDebugger } from "@/components/admin/AdminBalanceDebugger";
+import { AdminChipBonus } from "@/components/admin/AdminChipBonus";
 import { AdminTab } from "./AdminTabNavigation";
 
 interface AdminStats {
@@ -43,7 +44,10 @@ export const AdminContent: React.FC<AdminContentProps> = ({
       case "overview":
         return (
           <div className="space-y-6">
-            <AdminBalanceDebugger isAdmin={isAdmin} />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <AdminChipBonus />
+              <AdminBalanceDebugger isAdmin={isAdmin} />
+            </div>
             <AdminOverview
               isAdmin={isAdmin}
               stats={stats}
@@ -55,8 +59,13 @@ export const AdminContent: React.FC<AdminContentProps> = ({
       case "advanced_users":
         return (
           <div className="space-y-6">
-            <AdminBalanceDebugger isAdmin={isAdmin} />
-            <AdminUsers isAdmin={isAdmin} />
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <AdminUsers isAdmin={isAdmin} />
+              <div className="space-y-6">
+                <AdminChipBonus />
+                <AdminBalanceDebugger isAdmin={isAdmin} />
+              </div>
+            </div>
             <AdvancedUserManagement isAdmin={isAdmin} />
           </div>
         );

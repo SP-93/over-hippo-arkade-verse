@@ -75,12 +75,16 @@ export class SecureAdminService {
       if (error) throw error;
       
       if (data.success) {
-        // Trigger balance update events if the updated user is the current admin
-        const { data: session } = await supabase.auth.getSession();
-        if (session.session?.user?.id === userId) {
-          console.log('🔄 ADMIN: Updated own balance, triggering refresh');
-          await this.forceRefreshBalances();
-        }
+        // Always trigger balance update events for better UI sync
+        console.log('🔄 ADMIN: Balance updated, triggering refresh events');
+        await this.forceRefreshBalances();
+        
+        // Additional immediate events
+        window.dispatchEvent(new Event('balanceUpdated'));
+        window.dispatchEvent(new Event('chipBalanceUpdated'));
+        window.dispatchEvent(new CustomEvent('adminBalanceUpdated', { 
+          detail: { userId, chipAmount: chips, overAmount: over }
+        }));
       }
       
       return data.success;
@@ -159,6 +163,9 @@ export class SecureAdminService {
         
         // 🔥 CRITICAL: Trigger balance update events to sync UI
         console.log('🔄 FRONTEND: Triggering balance update events');
+        await this.forceRefreshBalances();
+        
+        // Additional events for immediate UI sync
         window.dispatchEvent(new Event('balanceUpdated'));
         window.dispatchEvent(new Event('chipBalanceUpdated'));
         window.dispatchEvent(new CustomEvent('adminBalanceUpdated', { 

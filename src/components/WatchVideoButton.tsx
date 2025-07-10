@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Play, Gift } from "lucide-react";
 import { toast } from "sonner";
+import { useSecureBalance } from "@/hooks/useSecureBalance";
 
 interface WatchVideoButtonProps {
   onRewardEarned?: (reward: number) => void;
@@ -13,6 +14,7 @@ export const WatchVideoButton = ({ onRewardEarned }: WatchVideoButtonProps) => {
   const [isWatching, setIsWatching] = useState(false);
   const [dailyWatched, setDailyWatched] = useState(0);
   const maxDailyWatches = 5;
+  const { addChips } = useSecureBalance();
 
   const handleWatchVideo = async () => {
     if (dailyWatched >= maxDailyWatches) {
@@ -24,12 +26,31 @@ export const WatchVideoButton = ({ onRewardEarned }: WatchVideoButtonProps) => {
     toast.info("Video starting... Please watch the full ad to earn chips!");
     
     // Simulate video watching (in real implementation, this would integrate with Google Ads)
-    setTimeout(() => {
+    setTimeout(async () => {
       const reward = 1; // 1 extra chip per video
-      setDailyWatched(prev => prev + 1);
-      setIsWatching(false);
-      onRewardEarned?.(reward);
-      toast.success(`Video completed! You earned ${reward} chip!`);
+      
+      try {
+        // Actually add chips to secure balance
+        const result = await addChips(reward, `video_reward_${Date.now()}`);
+        
+        if (result.success) {
+          setDailyWatched(prev => prev + 1);
+          setIsWatching(false);
+          onRewardEarned?.(reward);
+          toast.success(`Video completed! You earned ${reward} chip! Total: ${result.new_chips}`);
+          
+          // Trigger balance update events
+          window.dispatchEvent(new Event('balanceUpdated'));
+          window.dispatchEvent(new Event('chipBalanceUpdated'));
+        } else {
+          setIsWatching(false);
+          toast.error(`Failed to add reward: ${result.error}`);
+        }
+      } catch (error) {
+        setIsWatching(false);
+        console.error('Video reward error:', error);
+        toast.error("Failed to process video reward");
+      }
     }, 3000); // 3 second simulation
   };
 

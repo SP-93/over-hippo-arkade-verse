@@ -1,1 +1,4 @@
 project_id = "digjvjghzbxxrrbuddmq"
+
+[functions.video-rewards]
+verify_jwt = true

@@ -194,6 +194,11 @@ export const GameGrid = ({ playerChips, onPlayGame }: GameGridProps) => {
                     }}>
                       {game.name.toUpperCase()}
                     </h3>
+                    <div className="mb-2">
+                      <Badge className="bg-cyan-500 text-black text-xs font-bold">
+                        3D
+                      </Badge>
+                    </div>
                     {game.isAvailable ? (
                       <Gamepad className="h-8 w-8 mx-auto text-yellow-400 animate-bounce" />
                     ) : (
