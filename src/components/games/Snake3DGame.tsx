@@ -14,7 +14,7 @@ const INITIAL_DIRECTION = { x: 1, y: 0, z: 0 };
 interface Snake3DGameProps {
   onScoreChange?: (score: number) => void;
   onGameEnd?: () => void;
-  onGameStart?: () => boolean;
+  onGameStart?: () => Promise<boolean>;
 }
 
 interface SnakeSegmentProps {

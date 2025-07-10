@@ -11,7 +11,7 @@ import * as THREE from "three";
 interface Asteroids3DGameProps {
   onScoreChange?: (score: number) => void;
   onGameEnd?: () => void;
-  onGameStart?: () => boolean;
+  onGameStart?: () => Promise<boolean>;
 }
 
 export const Asteroids3DGame = ({ onScoreChange, onGameEnd, onGameStart }: Asteroids3DGameProps = {}) => {

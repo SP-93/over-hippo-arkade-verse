@@ -16,7 +16,7 @@ interface GameRouterProps {
   gameId?: string;
   onScoreChange: (score: number) => void;
   onGameEnd: () => void;
-  onGameStart: () => boolean;
+  onGameStart: () => Promise<boolean>;
 }
 
 export const GameRouter = ({ gameId, onScoreChange, onGameEnd, onGameStart }: GameRouterProps) => {

@@ -12,7 +12,7 @@ import * as THREE from "three";
 interface Tetris3DGameProps {
   onScoreChange?: (score: number) => void;
   onGameEnd?: () => void;
-  onGameStart?: () => boolean;
+  onGameStart?: () => Promise<boolean>;
 }
 
 interface Block3D {

@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { securePlayerService } from "@/services/secure-player";
+import { supabase } from "@/integrations/supabase/client";
 
 export const useChipManager = () => {
   const [playerChips, setPlayerChips] = useState(5);
@@ -78,33 +79,65 @@ export const useChipManager = () => {
     return playerChips > 0;
   };
 
-  const consumeChip = async (gameType: string): Promise<boolean> => {
-    if (!canPlayGame(gameType)) {
-      toast.error("Not enough chips to play!");
-      return false;
-    }
-    
+  const startGameSession = async (gameType: string): Promise<{ sessionId?: string; livesRemaining: number; resumed: boolean } | null> => {
     try {
-      // In a real implementation, this would call the backend to consume a chip
-      // For now, just update locally
-      
-      // Start 24h timer when first chip is consumed
-      if (!firstChipConsumed) {
-        const now = new Date();
-        localStorage.setItem('chip_reset_time', now.toISOString());
-        localStorage.setItem('first_chip_consumed', 'true');
-        setLastResetTime(now.toISOString());
-        setFirstChipConsumed(true);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) {
+        toast.error("Please log in to play!");
+        return null;
       }
+
+      const sessionToken = `${Date.now()}_${Math.random().toString(36).substring(2, 15)}`;
       
-      setPlayerChips(prev => prev - 1);
-      toast.success(`Chip consumed! You have ${playerChips - 1} chips remaining.`);
-      return true;
+      const { data, error } = await supabase.rpc('start_game_session', {
+        p_game_type: gameType,
+        p_session_token: sessionToken
+      });
+
+      if (error) {
+        console.error('Game session error:', error);
+        toast.error("Failed to start game session");
+        return null;
+      }
+
+      const sessionData = data as any;
+      
+      if (sessionData.error) {
+        toast.error(sessionData.error);
+        return null;
+      }
+
+      // Update local chip count if chip was consumed
+      if (sessionData.chip_consumed && !sessionData.resumed) {
+        setPlayerChips(prev => Math.max(0, prev - 1));
+        toast.success(`Chip consumed! You have 2 lives for this game.`);
+      } else if (sessionData.resumed) {
+        toast.info(`Game resumed! You have ${sessionData.lives_remaining} lives remaining.`);
+      }
+
+      // Store session info in localStorage for persistence
+      localStorage.setItem('current_game_session', JSON.stringify({
+        sessionId: sessionData.session_id,
+        gameType,
+        livesRemaining: sessionData.lives_remaining,
+        sessionToken
+      }));
+
+      return {
+        sessionId: sessionData.session_id,
+        livesRemaining: sessionData.lives_remaining,
+        resumed: sessionData.resumed
+      };
     } catch (error) {
-      console.error('Failed to consume chip:', error);
-      toast.error("Failed to consume chip");
-      return false;
+      console.error('Failed to start game session:', error);
+      toast.error("Failed to start game session");
+      return null;
     }
+  };
+
+  const consumeChip = async (gameType: string): Promise<boolean> => {
+    const result = await startGameSession(gameType);
+    return result !== null;
   };
 
   const getTimeUntilReset = (): string => {
@@ -124,15 +157,67 @@ export const useChipManager = () => {
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   };
 
-  // Each chip gives 1 life
+  // Each chip gives 2 lives
   const getChipLives = (): number => {
-    return 1;
+    return 2;
+  };
+
+  const loseLife = async (sessionId: string): Promise<{ livesRemaining: number; gameOver: boolean } | null> => {
+    try {
+      const { data, error } = await supabase.rpc('lose_life', {
+        p_session_id: sessionId
+      });
+
+      if (error) {
+        console.error('Lose life error:', error);
+        return null;
+      }
+
+      const result = data as any;
+      return {
+        livesRemaining: result.lives_remaining,
+        gameOver: result.game_over
+      };
+    } catch (error) {
+      console.error('Failed to lose life:', error);
+      return null;
+    }
+  };
+
+  const endGameSession = async (sessionId: string, finalScore: number = 0): Promise<boolean> => {
+    try {
+      const { data, error } = await supabase.rpc('end_game_session', {
+        p_session_id: sessionId,
+        p_final_score: finalScore
+      });
+
+      if (error) {
+        console.error('End game session error:', error);
+        return false;
+      }
+
+      // Clear session from localStorage
+      localStorage.removeItem('current_game_session');
+      return data as boolean;
+    } catch (error) {
+      console.error('Failed to end game session:', error);
+      return false;
+    }
+  };
+
+  const getCurrentSession = () => {
+    const sessionData = localStorage.getItem('current_game_session');
+    return sessionData ? JSON.parse(sessionData) : null;
   };
 
   return {
     playerChips,
     canPlayGame,
     consumeChip,
+    startGameSession,
+    loseLife,
+    endGameSession,
+    getCurrentSession,
     getTimeUntilReset,
     getChipLives,
     setPlayerChips,

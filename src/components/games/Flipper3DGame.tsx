@@ -10,7 +10,7 @@ import * as THREE from "three";
 interface Flipper3DGameProps {
   onScoreChange?: (score: number) => void;
   onGameEnd?: () => void;
-  onGameStart?: () => boolean;
+  onGameStart?: () => Promise<boolean>;
 }
 
 export const Flipper3DGame = ({ onScoreChange, onGameEnd, onGameStart }: Flipper3DGameProps = {}) => {
@@ -34,8 +34,8 @@ export const Flipper3DGame = ({ onScoreChange, onGameEnd, onGameStart }: Flipper
     };
   }, []);
 
-  const startGame = () => {
-    if (onGameStart && !onGameStart()) return;
+  const startGame = async () => {
+    if (onGameStart && !(await onGameStart())) return;
     if (!handleGameStart('flipper')) return;
     setScore(0);
     setGameOver(false);

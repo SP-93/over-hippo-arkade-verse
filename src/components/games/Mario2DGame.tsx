@@ -7,7 +7,7 @@ import { Pause, Play, RotateCcw } from "lucide-react";
 interface MarioGameProps {
   onScoreChange: (score: number) => void;
   onGameEnd: () => void;
-  onGameStart: () => boolean;
+  onGameStart: () => Promise<boolean>;
 }
 
 interface Player {
@@ -296,8 +296,9 @@ export const Mario2DGame = ({ onScoreChange, onGameEnd, onGameStart }: MarioGame
     }
   }, [player, enemies, coins, platforms, gameState, score]);
 
-  const startGame = () => {
-    if (onGameStart()) {
+  const startGame = async () => {
+    const canStart = await onGameStart();
+    if (canStart) {
       initializeGame();
       setGameState('playing');
     }

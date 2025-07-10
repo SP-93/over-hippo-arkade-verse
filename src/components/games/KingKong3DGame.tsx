@@ -12,7 +12,7 @@ import * as THREE from "three";
 interface KingKong3DGameProps {
   onScoreChange?: (score: number) => void;
   onGameEnd?: () => void;
-  onGameStart?: () => boolean;
+  onGameStart?: () => Promise<boolean>;
 }
 
 interface Player3D {
@@ -427,8 +427,8 @@ export const KingKong3DGame = ({ onScoreChange, onGameEnd, onGameStart }: KingKo
     }
   }, [lives, score, onGameEnd]);
 
-  const startGame = () => {
-    if (onGameStart && !onGameStart()) return;
+  const startGame = async () => {
+    if (onGameStart && !(await onGameStart())) return;
     if (!handleGameStart('kingkong')) return;
     
     setScore(0);

@@ -13,7 +13,7 @@ const CELL_SIZE = 1;
 interface PacMan3DGameProps {
   onScoreChange?: (score: number) => void;
   onGameEnd?: () => void;
-  onGameStart?: () => boolean;
+  onGameStart?: () => Promise<boolean>;
 }
 
 // Maze layout (1 = wall, 2 = dot, 3 = power pellet, 0 = empty)

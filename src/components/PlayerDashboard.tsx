@@ -7,6 +7,7 @@ import { Coins, Timer, Zap, ShoppingCart } from "lucide-react";
 import { toast } from "sonner";
 import { securePlayerService } from "@/services/secure-player";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { WatchVideoButton } from "@/components/WatchVideoButton";
 
 interface PlayerDashboardProps {
   playerAddress?: string;
@@ -86,6 +87,12 @@ export const PlayerDashboard = ({ playerAddress, playerChips }: PlayerDashboardP
     purchaseMutation.mutate({ chipAmount: selected.chips, overCost: selected.cost });
   };
 
+  const handleVideoReward = (reward: number) => {
+    // This would call the backend to add chips
+    toast.success(`You earned ${reward} chip from watching the video!`);
+    queryClient.invalidateQueries({ queryKey: ['player-balance'] });
+  };
+
   return (
     <div className="space-y-6">
       {/* Player Stats */}
@@ -136,8 +143,12 @@ export const PlayerDashboard = ({ playerAddress, playerChips }: PlayerDashboardP
         </p>
       </Card>
 
-      {/* Purchase Chips */}
-      <Card className="p-6 bg-gradient-card border-accent">
+      {/* Watch Video for Free Chips */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <WatchVideoButton onRewardEarned={handleVideoReward} />
+        
+        {/* Purchase Chips */}
+        <Card className="p-6 bg-gradient-card border-accent">
         <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
           <ShoppingCart className="h-5 w-5 text-accent" />
           Purchase Extra Chips
@@ -190,6 +201,7 @@ export const PlayerDashboard = ({ playerAddress, playerChips }: PlayerDashboardP
           </div>
         </div>
       </Card>
+      </div>
 
       {/* Player Address */}
       {playerAddress && (

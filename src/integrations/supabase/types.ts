@@ -158,6 +158,54 @@ export type Database = {
         }
         Relationships: []
       }
+      game_sessions: {
+        Row: {
+          chip_consumed: boolean
+          created_at: string
+          game_type: string
+          id: string
+          is_paused: boolean | null
+          last_activity: string
+          lives_remaining: number
+          score: number | null
+          session_end: string | null
+          session_start: string
+          session_token: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          chip_consumed?: boolean
+          created_at?: string
+          game_type: string
+          id?: string
+          is_paused?: boolean | null
+          last_activity?: string
+          lives_remaining?: number
+          score?: number | null
+          session_end?: string | null
+          session_start?: string
+          session_token: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          chip_consumed?: boolean
+          created_at?: string
+          game_type?: string
+          id?: string
+          is_paused?: boolean | null
+          last_activity?: string
+          lives_remaining?: number
+          score?: number | null
+          session_end?: string | null
+          session_start?: string
+          session_token?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       player_balances: {
         Row: {
           created_at: string | null
@@ -365,6 +413,10 @@ export type Database = {
         Args: { wallet_addr: string; amount: number }
         Returns: number
       }
+      end_game_session: {
+        Args: { p_session_id: string; p_final_score?: number }
+        Returns: boolean
+      }
       increment_chips: {
         Args: { wallet_addr: string; amount: number }
         Returns: number
@@ -384,6 +436,14 @@ export type Database = {
       log_admin_check: {
         Args: { wallet_address: string }
         Returns: boolean
+      }
+      lose_life: {
+        Args: { p_session_id: string }
+        Returns: Json
+      }
+      start_game_session: {
+        Args: { p_game_type: string; p_session_token: string }
+        Returns: Json
       }
       unban_wallet: {
         Args: { p_wallet_address: string; p_admin_user_id: string }

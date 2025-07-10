@@ -28,7 +28,10 @@ export const Game = () => {
     navigate('/');
   };
 
-  const onGameStart = () => handleGameStart(gameId || '');
+  const onGameStart = async () => {
+    const result = await handleGameStart(gameId || '');
+    return result;
+  };
 
   return (
     <div className="min-h-screen max-w-screen-2xl mx-auto bg-gradient-bg p-4 overflow-x-hidden">

@@ -12,7 +12,7 @@ import * as THREE from "three";
 interface Frogger3DGameProps {
   onScoreChange?: (score: number) => void;
   onGameEnd?: () => void;
-  onGameStart?: () => boolean;
+  onGameStart?: () => Promise<boolean>;
 }
 
 interface Frog3D {
@@ -445,8 +445,8 @@ export const Frogger3DGame = ({ onScoreChange, onGameEnd, onGameStart }: Frogger
     }
   }, [lives, score, onGameEnd]);
 
-  const startGame = () => {
-    if (onGameStart && !onGameStart()) return;
+  const startGame = async () => {
+    if (onGameStart && !(await onGameStart())) return;
     if (!handleGameStart('frogger')) return;
     
     setScore(0);
