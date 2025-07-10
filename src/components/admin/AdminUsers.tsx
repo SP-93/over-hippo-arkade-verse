@@ -61,6 +61,11 @@ export const AdminUsers = ({ isAdmin }: AdminUsersProps) => {
         setSelectedUserId("");
         setChipAmount(5);
         setOverAmount(0);
+        
+        // Auto-refresh after successful update
+        setTimeout(() => {
+          loadUsers();
+        }, 1000);
       } else {
         toast.error("Failed to update user balance");
       }
@@ -162,13 +167,21 @@ export const AdminUsers = ({ isAdmin }: AdminUsersProps) => {
               step="0.1"
             />
           </div>
-          <div className="flex items-end">
+          <div className="flex items-end gap-2">
             <Button 
               onClick={updateUserBalance}
               disabled={!selectedUserId}
-              className="w-full"
+              className="flex-1"
             >
               Update Balance
+            </Button>
+            <Button 
+              onClick={() => secureAdminService.forceRefreshBalances()}
+              variant="outline"
+              size="sm"
+              title="Force refresh all balances"
+            >
+              Sync
             </Button>
           </div>
         </div>

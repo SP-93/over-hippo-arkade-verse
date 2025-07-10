@@ -52,16 +52,32 @@ export const useChipBalance = () => {
 
     loadChipBalance();
 
-    // Listen for chip balance updates
+  // Listen for chip balance updates
     const handleChipUpdate = () => {
       console.log('🔄 Chip balance update event received');
       loadChipBalance();
     };
 
+    const handleForceRefresh = () => {
+      console.log('🔄 Force chip balance refresh event received');
+      loadChipBalance();
+    };
+
+    const handleAdminUpdate = (event: any) => {
+      console.log('🔄 Admin chip balance update event received:', event.detail);
+      loadChipBalance();
+    };
+
     window.addEventListener('chipBalanceUpdated', handleChipUpdate);
+    window.addEventListener('balanceUpdated', handleChipUpdate); // Also listen to general balance updates
+    window.addEventListener('forceBalanceRefresh', handleForceRefresh);
+    window.addEventListener('adminBalanceUpdated', handleAdminUpdate);
     
     return () => {
       window.removeEventListener('chipBalanceUpdated', handleChipUpdate);
+      window.removeEventListener('balanceUpdated', handleChipUpdate);
+      window.removeEventListener('forceBalanceRefresh', handleForceRefresh);
+      window.removeEventListener('adminBalanceUpdated', handleAdminUpdate);
     };
   }, []);
 

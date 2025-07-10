@@ -13,6 +13,8 @@ import { PrivilegeEscalationMonitor } from "@/components/admin/PrivilegeEscalati
 import { PerformanceDashboard } from "@/components/admin/PerformanceDashboard";
 import { SecurityDashboard } from "@/components/admin/SecurityDashboard";
 import { WalletAdminPanel } from "@/components/WalletAdminPanel";
+import { AdminUsers } from "@/components/admin/AdminUsers";
+import { AdminBalanceDebugger } from "@/components/admin/AdminBalanceDebugger";
 import { AdminTab } from "./AdminTabNavigation";
 
 interface AdminStats {
@@ -40,39 +42,24 @@ export const AdminContent: React.FC<AdminContentProps> = ({
     switch (activeTab) {
       case "overview":
         return (
-          <AdminOverview
-            isAdmin={isAdmin}
-            stats={stats}
-            onRefreshStats={onRefreshStats}
-          />
+          <div className="space-y-6">
+            <AdminBalanceDebugger isAdmin={isAdmin} />
+            <AdminOverview
+              isAdmin={isAdmin}
+              stats={stats}
+              onRefreshStats={onRefreshStats}
+            />
+          </div>
         );
       
-      case "analytics":
-        return <AnalyticsDashboard />;
-      
-      case "advanced_analytics":
-        return <AdvancedAnalyticsDashboard />;
-      
-      case "wallets":
-        return <WalletAdminPanel isAdmin={isAdmin} />;
-      
-      case "accounts":
-        return <AccountManagement />;
-      
-      case "compliance":
-        return <ComplianceReporting />;
-      
-      case "incidents":
-        return <SecurityIncidentManager />;
-      
-      case "audit":
-        return <AdminAuditLog isAdmin={isAdmin} />;
-      
-      case "security":
-        return <AdminSecurityMonitor isAdmin={isAdmin} />;
-      
       case "advanced_users":
-        return <AdvancedUserManagement isAdmin={isAdmin} />;
+        return (
+          <div className="space-y-6">
+            <AdminBalanceDebugger isAdmin={isAdmin} />
+            <AdminUsers isAdmin={isAdmin} />
+            <AdvancedUserManagement isAdmin={isAdmin} />
+          </div>
+        );
       
       case "maintenance":
         return <SystemMaintenancePanel isAdmin={isAdmin} />;

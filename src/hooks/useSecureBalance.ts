@@ -64,13 +64,75 @@ export const useSecureBalance = () => {
       loadBalance();
     };
 
+    const handleForceRefresh = () => {
+      console.log('🔄 Force balance refresh event received');
+      loadBalance();
+    };
+
+    const handleAdminBalanceUpdate = (event: any) => {
+      console.log('🔄 Admin balance update event received:', event.detail);
+      loadBalance();
+    };
+
     window.addEventListener('balanceUpdated', handleBalanceUpdate);
     window.addEventListener('chipBalanceUpdated', handleBalanceUpdate); // Legacy compatibility
+    window.addEventListener('forceBalanceRefresh', handleForceRefresh);
+    window.addEventListener('adminBalanceUpdated', handleAdminBalanceUpdate);
     
     return () => {
       window.removeEventListener('balanceUpdated', handleBalanceUpdate);
       window.removeEventListener('chipBalanceUpdated', handleBalanceUpdate);
+      window.removeEventListener('forceBalanceRefresh', handleForceRefresh);
+      window.removeEventListener('adminBalanceUpdated', handleAdminBalanceUpdate);
     };
+  }, []);
+
+  // Real-time synchronization with Supabase
+  useEffect(() => {
+    const setupRealtimeListener = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) return;
+
+      // Get user's wallet address
+      const getUserWallet = async () => {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('verified_wallet_address')
+          .eq('user_id', session.user.id)
+          .single();
+        
+        return profile?.verified_wallet_address;
+      };
+
+      const walletAddress = await getUserWallet();
+      if (!walletAddress) return;
+
+      console.log('🔄 Setting up realtime listener for wallet:', walletAddress);
+      
+      const channel = supabase
+        .channel('balance-changes')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'player_balances',
+            filter: `wallet_address=eq.${walletAddress}`
+          },
+          (payload) => {
+            console.log('🔄 Realtime balance change detected:', payload);
+            loadBalance();
+          }
+        )
+        .subscribe();
+
+      return () => {
+        console.log('🔄 Cleaning up realtime listener');
+        supabase.removeChannel(channel);
+      };
+    };
+
+    setupRealtimeListener();
   }, []);
 
   // Chip operations

@@ -73,6 +73,16 @@ export class SecureAdminService {
       });
 
       if (error) throw error;
+      
+      if (data.success) {
+        // Trigger balance update events if the updated user is the current admin
+        const { data: session } = await supabase.auth.getSession();
+        if (session.session?.user?.id === userId) {
+          console.log('🔄 ADMIN: Updated own balance, triggering refresh');
+          await this.forceRefreshBalances();
+        }
+      }
+      
       return data.success;
     } catch (error) {
       console.error('User balance update failed:', error);
@@ -146,6 +156,19 @@ export class SecureAdminService {
 
       if (data?.success) {
         console.log('✅ FRONTEND: Chips added successfully:', data);
+        
+        // 🔥 CRITICAL: Trigger balance update events to sync UI
+        console.log('🔄 FRONTEND: Triggering balance update events');
+        window.dispatchEvent(new Event('balanceUpdated'));
+        window.dispatchEvent(new Event('chipBalanceUpdated'));
+        window.dispatchEvent(new CustomEvent('adminBalanceUpdated', { 
+          detail: { 
+            chipAmount, 
+            newBalance: data.new_balance,
+            previousBalance: data.previous_balance 
+          }
+        }));
+        
         return true;
       } else {
         console.error('❌ FRONTEND: Add chips failed - invalid response:', data);
@@ -155,6 +178,14 @@ export class SecureAdminService {
       console.error('💥 FRONTEND: Add chips operation failed:', error);
       throw error;
     }
+  }
+
+  // Force refresh all balance-related UI components
+  async forceRefreshBalances(): Promise<void> {
+    console.log('🔄 ADMIN: Force refreshing all balances');
+    window.dispatchEvent(new Event('balanceUpdated'));
+    window.dispatchEvent(new Event('chipBalanceUpdated'));
+    window.dispatchEvent(new Event('forceBalanceRefresh'));
   }
 
   // Get users list for admin panel
