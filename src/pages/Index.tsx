@@ -7,6 +7,7 @@ import { ChipDisplay } from "@/components/ChipManager";
 import { ChipPurchaseModal } from "@/components/ChipPurchaseModal";
 import { OverProtocolIntegration } from "@/components/OverProtocolIntegration";
 import { HippoBackground } from "@/components/HippoBackground";
+import { BalanceErrorBoundary } from "@/components/BalanceErrorBoundary";
 
 import { AuthPage } from "@/components/AuthPage";
 import { SecurityDebugPanel } from "@/components/SecurityDebugPanel";
@@ -409,7 +410,9 @@ const Index = () => {
       case 'dashboard':
         return (
           <div className="space-y-6">
-            <PlayerDashboard playerAddress={walletAddress} playerChips={chipManager.playerChips} />
+            <BalanceErrorBoundary>
+              <PlayerDashboard playerAddress={walletAddress} playerChips={chipManager.playerChips} />
+            </BalanceErrorBoundary>
             <Card className="p-6 bg-gradient-card border-primary animate-glow">
               <h3 className="text-xl font-bold text-primary mb-4">Player Statistics</h3>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

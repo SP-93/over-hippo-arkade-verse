@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { sanitizeOperationInput, checkRateLimit } from "@/utils/inputSanitization";
 
 export interface BalanceInfo {
   success: boolean;
@@ -70,13 +71,24 @@ export class SecureBalanceService {
   // Spend chip securely (for game sessions)
   async spendChip(amount: number = 1, gameType?: string): Promise<BalanceOperationResult> {
     try {
-      console.log(`🎯 Spending ${amount} chip(s) for game:`, gameType);
+      // Rate limiting check
+      if (!checkRateLimit('spend_chip', 10, 60000)) {
+        return {
+          success: false,
+          error: 'Too many requests. Please wait before trying again.',
+          error_type: 'operation_locked'
+        };
+      }
+
+      // Input sanitization
+      const sanitized = sanitizeOperationInput({ amount, gameType });
+      console.log(`🎯 Spending ${sanitized.amount} chip(s) for game:`, sanitized.gameType);
       
       const { data, error } = await supabase.functions.invoke('balance-operations', {
         body: { 
           action: 'spend_chip',
-          amount,
-          game_type: gameType,
+          amount: sanitized.amount,
+          game_type: sanitized.gameType,
           transaction_ref: `game_start_${Date.now()}`
         }
       });
@@ -113,13 +125,24 @@ export class SecureBalanceService {
   // Add chips securely (for purchases)
   async addChips(amount: number, transactionRef?: string): Promise<BalanceOperationResult> {
     try {
-      console.log(`🎯 Adding ${amount} chip(s)`);
+      // Rate limiting check
+      if (!checkRateLimit('add_chips', 5, 60000)) {
+        return {
+          success: false,
+          error: 'Too many requests. Please wait before trying again.',
+          error_type: 'operation_locked'
+        };
+      }
+
+      // Input sanitization
+      const sanitized = sanitizeOperationInput({ amount, transactionRef });
+      console.log(`🎯 Adding ${sanitized.amount} chip(s)`);
       
       const { data, error } = await supabase.functions.invoke('balance-operations', {
         body: { 
           action: 'add_chips',
-          amount,
-          transaction_ref: transactionRef || `chip_purchase_${Date.now()}`
+          amount: sanitized.amount,
+          transaction_ref: sanitized.transactionRef || `chip_purchase_${Date.now()}`
         }
       });
 
@@ -155,12 +178,23 @@ export class SecureBalanceService {
   // Spend OVER tokens securely
   async spendOver(amount: number, purpose?: string): Promise<BalanceOperationResult> {
     try {
-      console.log(`🎯 Spending ${amount} OVER for:`, purpose);
+      // Rate limiting check
+      if (!checkRateLimit('spend_over', 10, 60000)) {
+        return {
+          success: false,
+          error: 'Too many requests. Please wait before trying again.',
+          error_type: 'operation_locked'
+        };
+      }
+
+      // Input sanitization
+      const sanitized = sanitizeOperationInput({ overAmount: amount });
+      console.log(`🎯 Spending ${sanitized.overAmount} OVER for:`, purpose);
       
       const { data, error } = await supabase.functions.invoke('balance-operations', {
         body: { 
           action: 'spend_over',
-          over_amount: amount,
+          over_amount: sanitized.overAmount,
           transaction_ref: `over_spend_${Date.now()}`
         }
       });
@@ -197,13 +231,24 @@ export class SecureBalanceService {
   // Add OVER tokens securely  
   async addOver(amount: number, transactionRef?: string): Promise<BalanceOperationResult> {
     try {
-      console.log(`🎯 Adding ${amount} OVER`);
+      // Rate limiting check
+      if (!checkRateLimit('add_over', 5, 60000)) {
+        return {
+          success: false,
+          error: 'Too many requests. Please wait before trying again.',
+          error_type: 'operation_locked'
+        };
+      }
+
+      // Input sanitization
+      const sanitized = sanitizeOperationInput({ overAmount: amount, transactionRef });
+      console.log(`🎯 Adding ${sanitized.overAmount} OVER`);
       
       const { data, error } = await supabase.functions.invoke('balance-operations', {
         body: { 
           action: 'add_over',
-          over_amount: amount,
-          transaction_ref: transactionRef || `over_add_${Date.now()}`
+          over_amount: sanitized.overAmount,
+          transaction_ref: sanitized.transactionRef || `over_add_${Date.now()}`
         }
       });
 

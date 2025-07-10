@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { useSecureBalance } from "@/hooks/useSecureBalance";
 import { WatchVideoButton } from "@/components/WatchVideoButton";
 import { usePremiumFeatures } from "@/hooks/usePremiumFeatures";
+import { BalanceErrorBoundary } from "@/components/BalanceErrorBoundary";
 
 interface PlayerDashboardProps {
   playerAddress?: string;
@@ -125,25 +126,29 @@ export const PlayerDashboard = ({ playerAddress, playerChips }: PlayerDashboardP
     <div className="space-y-6">
       {/* Player Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="p-6 bg-gradient-card border-neon-pink animate-glow">
-          <div className="flex items-center gap-3">
-            <Coins className="h-8 w-8 text-arcade-gold animate-float" />
-            <div>
-              <p className="text-sm text-muted-foreground">Chips Remaining</p>
-              <p className="text-3xl font-black text-arcade-gold">{chips}</p>
+        <BalanceErrorBoundary>
+          <Card className="p-6 bg-gradient-card border-neon-pink animate-glow">
+            <div className="flex items-center gap-3">
+              <Coins className="h-8 w-8 text-arcade-gold animate-float" />
+              <div>
+                <p className="text-sm text-muted-foreground">Chips Remaining</p>
+                <p className="text-3xl font-black text-arcade-gold">{chips}</p>
+              </div>
             </div>
-          </div>
-        </Card>
+          </Card>
+        </BalanceErrorBoundary>
 
-        <Card className="p-6 bg-gradient-card border-neon-blue">
-          <div className="flex items-center gap-3">
-            <Zap className="h-8 w-8 text-neon-green animate-neon-pulse" />
-            <div>
-              <p className="text-sm text-muted-foreground">OVER Balance</p>
-              <p className="text-3xl font-black text-neon-green">{displayOverBalance.toFixed(3)}</p>
+        <BalanceErrorBoundary>
+          <Card className="p-6 bg-gradient-card border-neon-blue">
+            <div className="flex items-center gap-3">
+              <Zap className="h-8 w-8 text-neon-green animate-neon-pulse" />
+              <div>
+                <p className="text-sm text-muted-foreground">OVER Balance</p>
+                <p className="text-3xl font-black text-neon-green">{displayOverBalance.toFixed(3)}</p>
+              </div>
             </div>
-          </div>
-        </Card>
+          </Card>
+        </BalanceErrorBoundary>
 
         <Card className="p-6 bg-gradient-card border-primary">
           <div className="flex items-center gap-3">
