@@ -95,7 +95,8 @@ serve(async (req) => {
             p_amount: amount || 0,
             p_over_amount: over_amount,
             p_game_type: game_type,
-            p_transaction_ref: transaction_ref
+            p_transaction_ref: transaction_ref,
+            p_user_id: user.id
           })
 
         console.log('⚙️ Operation result:', { operationData, operationError })

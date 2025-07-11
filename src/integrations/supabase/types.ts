@@ -905,13 +905,22 @@ export type Database = {
     }
     Functions: {
       atomic_balance_operation: {
-        Args: {
-          p_operation_type: string
-          p_amount: number
-          p_over_amount?: number
-          p_game_type?: string
-          p_transaction_ref?: string
-        }
+        Args:
+          | {
+              p_operation_type: string
+              p_amount: number
+              p_over_amount?: number
+              p_game_type?: string
+              p_transaction_ref?: string
+            }
+          | {
+              p_operation_type: string
+              p_amount: number
+              p_over_amount?: number
+              p_game_type?: string
+              p_transaction_ref?: string
+              p_user_id?: string
+            }
         Returns: Json
       }
       check_admin_config_access: {
