@@ -1,6 +1,6 @@
 import { useRef } from "react";
 import { useFrame } from "@react-three/fiber";
-import { Box, Text3D, RoundedBox } from "@react-three/drei";
+import { Box, RoundedBox } from "@react-three/drei";
 import * as THREE from "three";
 
 interface TetrisBlockProps {
@@ -317,16 +317,17 @@ export const NextPieceDisplay = ({ piece }: NextPieceDisplayProps) => {
         )
       )}
       
-      {/* "NEXT" label */}
-      <Text3D
+      {/* "NEXT" label indicator */}
+      <Box
         position={[-1.5, 2.5, 0]}
-        font="/fonts/helvetiker_regular.typeface.json"
-        size={0.3}
-        height={0.05}
+        args={[2, 0.3, 0.1]}
       >
-        NEXT
-        <meshBasicMaterial color="#ffffff" />
-      </Text3D>
+        <meshBasicMaterial 
+          color="#ffffff"
+          transparent
+          opacity={0.8}
+        />
+      </Box>
     </group>
   );
 };
