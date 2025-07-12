@@ -26,6 +26,7 @@ import { secureAdminService } from "@/services/secure-admin";
 import { supabase } from "@/integrations/supabase/client";
 import { emergencyCleanup } from "@/utils/securityCleanup";
 import { WalletDebugPanel } from "@/components/WalletDebugPanel";
+import { SwapButton } from "@/components/SwapButton";
 
 // Admin wallet now managed securely in backend
 
@@ -569,6 +570,7 @@ const Index = () => {
                   >
                     Games
                   </Button>
+                  <SwapButton className="text-sm md:text-base px-3 md:px-4" />
                   {/* Debug admin status */}
                   {adminLoading && (
                     <Badge variant="secondary" className="animate-pulse">

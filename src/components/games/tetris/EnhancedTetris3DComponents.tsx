@@ -1,6 +1,7 @@
 import { useRef } from "react";
 import { useFrame } from "@react-three/fiber";
 import { Box, RoundedBox } from "@react-three/drei";
+import { Enhanced3DErrorBoundary } from "@/components/Enhanced3DErrorBoundary";
 import * as THREE from "three";
 
 interface TetrisBlockProps {
@@ -329,5 +330,59 @@ export const NextPieceDisplay = ({ piece }: NextPieceDisplayProps) => {
         />
       </Box>
     </group>
+  );
+};
+
+interface Enhanced3DTetrisUIProps {
+  score: number;
+  level: number;
+  lines: number;
+  isPaused: boolean;
+  nextPiece?: any;
+  onRestart: () => void;
+}
+
+export const Enhanced3DTetrisUI = ({ score, level, lines, isPaused, nextPiece, onRestart }: Enhanced3DTetrisUIProps) => {
+  return (
+    <Enhanced3DErrorBoundary gameId="tetris">
+      <group position={[0, 0, 0]}>
+        {/* Score display as simple boxes */}
+        <group position={[-15, 8, 0]}>
+          <Box args={[2, 0.5, 0.1]}>
+            <meshBasicMaterial color="#00ff00" transparent opacity={0.8} />
+          </Box>
+        </group>
+        
+        {/* Level display */}
+        <group position={[-15, 5, 0]}>
+          <Box args={[2, 0.5, 0.1]}>
+            <meshBasicMaterial color="#ffff00" transparent opacity={0.8} />
+          </Box>
+        </group>
+        
+        {/* Lines display */}
+        <group position={[-15, 2, 0]}>
+          <Box args={[2, 0.5, 0.1]}>
+            <meshBasicMaterial color="#ff00ff" transparent opacity={0.8} />
+          </Box>
+        </group>
+        
+        {/* Next piece preview placeholder */}
+        <group position={[-15, -2, 0]}>
+          <Box args={[2, 2, 0.1]}>
+            <meshBasicMaterial color="#ffffff" transparent opacity={0.3} />
+          </Box>
+        </group>
+        
+        {/* Pause overlay */}
+        {isPaused && (
+          <group position={[0, 0, 2]}>
+            <Box args={[10, 6, 0.1]}>
+              <meshBasicMaterial color="#000000" transparent opacity={0.7} />
+            </Box>
+          </group>
+        )}
+      </group>
+    </Enhanced3DErrorBoundary>
   );
 };

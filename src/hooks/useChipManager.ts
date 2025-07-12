@@ -1,15 +1,17 @@
-import { useSecureBalance } from "./useSecureBalance";
+import { useOptimizedBalance } from "./useOptimizedBalance";
 import { useGameSession } from "./useGameSession";
 import { secureBalanceService } from "@/services/secure-balance";
 import { toast } from "sonner";
 
 export const useChipManager = () => {
   const {
-    gameChips: playerChips,
+    balance,
     isLoading,
-    canPlayGame,
     refreshBalance: refreshChips
-  } = useSecureBalance();
+  } = useOptimizedBalance();
+  
+  const playerChips = balance?.game_chips || 3;
+  const canPlayGame = (gameType: string): boolean => playerChips > 0;
 
   const {
     startGameSession: originalStartGameSession,
