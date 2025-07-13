@@ -3,6 +3,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { PythonServiceStatus } from "@/components/PythonServiceStatus";
 import { ArrowUpDown, ArrowLeft, Wallet, Info, ExternalLink } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -233,6 +234,11 @@ export const Swap = () => {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <h1 className="text-2xl font-bold text-white">OVER ↔ WOVER Swap</h1>
+        </div>
+
+        {/* Python Services Status */}
+        <div className="mb-6">
+          <PythonServiceStatus />
         </div>
 
         {/* Wallet Connection */}

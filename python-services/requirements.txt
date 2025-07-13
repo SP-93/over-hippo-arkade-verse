@@ -1,0 +1,20 @@
+# Over Protocol Python Services
+# Basic blockchain interaction dependencies
+web3==6.15.1
+fastapi==0.108.0
+uvicorn==0.25.0
+pydantic==2.5.3
+python-dotenv==1.0.0
+requests==2.31.0
+aiohttp==3.9.1
+
+# Database and storage
+psycopg2-binary==2.9.9
+asyncpg==0.29.0
+
+# Monitoring and logging
+structlog==23.2.0
+
+# Optional: Advanced blockchain analytics
+numpy==1.26.2
+pandas==2.1.4

@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  # Main React application (existing)
+  frontend:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+    depends_on:
+      - python-services
+
+  # Python services (new - optional)
+  python-services:
+    build: ./python-services
+    ports:
+      - "8000:8000"
+    environment:
+      - OVER_PROTOCOL_RPC=https://rpc.overprotocol.com
+      - CHAIN_ID=54176
+      - LOG_LEVEL=INFO
+    volumes:
+      - ./python-services:/app
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+
+  # Optional: Database for analytics (if needed)
+  postgres:
+    image: postgres:15
+    environment:
+      - POSTGRES_DB=over_protocol_analytics
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
