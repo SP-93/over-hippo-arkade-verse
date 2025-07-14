@@ -9,7 +9,7 @@ import { Asteroids3DGame } from "@/components/games/Asteroids3DGame";
 import { Flipper3DGame } from "@/components/games/Flipper3DGame";
 import { Frogger3DGame } from "@/components/games/Frogger3DGame";
 import { GameTemplate } from "@/components/GameTemplate";
-import { Game3DErrorBoundary } from "@/components/Game3DErrorBoundary";
+import { Enhanced3DErrorBoundary } from "@/components/Enhanced3DErrorBoundary";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
@@ -67,112 +67,112 @@ export const GameRouter = ({ gameId, onScoreChange, onGameEnd, onGameStart }: Ga
 
   if (gameId === 'tetris') {
     return (
-      <Game3DErrorBoundary 
+      <Enhanced3DErrorBoundary 
         gameId={gameId}
-        onRetry={() => window.location.reload()}
+        onReset={() => window.location.reload()}
       >
         <Tetris3DGame 
           onScoreChange={onScoreChange}
           onGameEnd={onGameEnd}
           onGameStart={onGameStart}
         />
-      </Game3DErrorBoundary>
+      </Enhanced3DErrorBoundary>
     );
   }
 
   if (gameId === 'snake') {
     return (
-      <Game3DErrorBoundary gameId={gameId}>
+      <Enhanced3DErrorBoundary gameId={gameId}>
         <Snake3DGame 
           onScoreChange={onScoreChange}
           onGameEnd={onGameEnd}
           onGameStart={onGameStart}
         />
-      </Game3DErrorBoundary>
+      </Enhanced3DErrorBoundary>
     );
   }
 
   if (gameId === 'pacman') {
     return (
-      <Game3DErrorBoundary gameId={gameId}>
+      <Enhanced3DErrorBoundary gameId={gameId}>
         <PacMan3DGame 
           onScoreChange={onScoreChange}
           onGameEnd={onGameEnd}
           onGameStart={onGameStart}
         />
-      </Game3DErrorBoundary>
+      </Enhanced3DErrorBoundary>
     );
   }
 
   if (gameId === 'breakout') {
     return (
-      <Game3DErrorBoundary gameId={gameId}>
+      <Enhanced3DErrorBoundary gameId={gameId}>
         <Breakout3DGame 
           onScoreChange={onScoreChange}
           onGameEnd={onGameEnd}
           onGameStart={onGameStart}
         />
-      </Game3DErrorBoundary>
+      </Enhanced3DErrorBoundary>
     );
   }
 
   if (gameId === 'asteroids') {
     return (
-      <Game3DErrorBoundary gameId={gameId}>
+      <Enhanced3DErrorBoundary gameId={gameId}>
         <Asteroids3DGame 
           onScoreChange={onScoreChange}
           onGameEnd={onGameEnd}
           onGameStart={onGameStart}
         />
-      </Game3DErrorBoundary>
+      </Enhanced3DErrorBoundary>
     );
   }
 
   if (gameId === 'flipper') {
     return (
-      <Game3DErrorBoundary gameId={gameId}>
+      <Enhanced3DErrorBoundary gameId={gameId}>
         <Flipper3DGame 
           onScoreChange={onScoreChange}
           onGameEnd={onGameEnd}
           onGameStart={onGameStart}
         />
-      </Game3DErrorBoundary>
+      </Enhanced3DErrorBoundary>
     );
   }
 
   if (gameId === 'mario') {
     return (
-      <Game3DErrorBoundary gameId={gameId}>
+      <Enhanced3DErrorBoundary gameId={gameId}>
         <Mario3DGame 
           onScoreChange={onScoreChange}
           onGameEnd={onGameEnd}
           onGameStart={onGameStart}
         />
-      </Game3DErrorBoundary>
+      </Enhanced3DErrorBoundary>
     );
   }
 
   if (gameId === 'kingkong') {
     return (
-      <Game3DErrorBoundary gameId={gameId}>
+      <Enhanced3DErrorBoundary gameId={gameId}>
         <KingKong3DGame 
           onScoreChange={onScoreChange}
           onGameEnd={onGameEnd}
           onGameStart={onGameStart}
         />
-      </Game3DErrorBoundary>
+      </Enhanced3DErrorBoundary>
     );
   }
 
   if (gameId === 'frogger') {
     return (
-      <Game3DErrorBoundary gameId={gameId}>
+      <Enhanced3DErrorBoundary gameId={gameId}>
         <Frogger3DGame 
           onScoreChange={onScoreChange}
           onGameEnd={onGameEnd}
           onGameStart={onGameStart}
         />
-      </Game3DErrorBoundary>
+      </Enhanced3DErrorBoundary>
     );
   }
 

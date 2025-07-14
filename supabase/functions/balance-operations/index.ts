@@ -8,12 +8,53 @@ const corsHeaders = {
   'X-Frame-Options': 'DENY',
 }
 
+// Rate limiting and caching
+const userRequestCounts = new Map<string, { count: number; windowStart: number; lastRequest?: number }>();
+const balanceCache = new Map<string, { data: any; timestamp: number }>();
+const RATE_LIMIT_WINDOW = 60000; // 1 minute
+const MAX_REQUESTS_PER_MINUTE = 30; // Increased from default
+const CACHE_DURATION = 5000; // 5 seconds cache
+const DEBOUNCE_DELAY = 200; // 200ms debounce
+
+// Request pooling for identical requests
+const pendingRequests = new Map<string, Promise<any>>();
+
 interface BalanceRequest {
   action: 'get_balance' | 'spend_chip' | 'add_chips' | 'spend_over' | 'add_over';
   amount?: number;
   over_amount?: number;
   game_type?: string;
   transaction_ref?: string;
+}
+
+// Rate limiting helper
+function checkRateLimit(userId: string): { allowed: boolean; retryAfter?: number } {
+  const now = Date.now();
+  const userRequests = userRequestCounts.get(userId);
+  
+  if (!userRequests || now - userRequests.windowStart > RATE_LIMIT_WINDOW) {
+    // New window
+    userRequestCounts.set(userId, { count: 1, windowStart: now, lastRequest: now });
+    return { allowed: true };
+  }
+  
+  // Check debounce
+  if (userRequests.lastRequest && now - userRequests.lastRequest < DEBOUNCE_DELAY) {
+    return { allowed: false, retryAfter: DEBOUNCE_DELAY - (now - userRequests.lastRequest) };
+  }
+  
+  // Check rate limit
+  if (userRequests.count >= MAX_REQUESTS_PER_MINUTE) {
+    const retryAfter = RATE_LIMIT_WINDOW - (now - userRequests.windowStart);
+    return { allowed: false, retryAfter };
+  }
+  
+  // Update count
+  userRequests.count++;
+  userRequests.lastRequest = now;
+  userRequestCounts.set(userId, userRequests);
+  
+  return { allowed: true };
 }
 
 serve(async (req) => {
@@ -38,6 +79,23 @@ serve(async (req) => {
       })
     }
 
+    // Rate limiting check
+    const rateLimitResult = checkRateLimit(user.id);
+    if (!rateLimitResult.allowed) {
+      console.warn(`🚫 Rate limit exceeded for user ${user.id}`);
+      return new Response(JSON.stringify({ 
+        error: 'Too many requests',
+        retry_after: rateLimitResult.retryAfter
+      }), {
+        status: 429,
+        headers: { 
+          ...corsHeaders, 
+          'Content-Type': 'application/json',
+          'Retry-After': Math.ceil((rateLimitResult.retryAfter || 0) / 1000).toString()
+        },
+      })
+    }
+
     const requestBody = await req.json() as BalanceRequest
     const { action, amount, over_amount, game_type, transaction_ref } = requestBody
 
@@ -47,8 +105,34 @@ serve(async (req) => {
       case 'get_balance':
         console.log(`🔍 Getting balance for user: ${user.id}`)
         
-        const { data: balanceData, error: balanceError } = await supabaseClient
-          .rpc('get_secure_wallet_balance', { p_user_id: user.id })
+        // Check cache first
+        const cacheKey = `balance:${user.id}`;
+        const cached = balanceCache.get(cacheKey);
+        if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+          console.log('📦 Returning cached balance data');
+          return new Response(JSON.stringify(cached.data), {
+            status: 200,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+
+        // Check if there's already a pending request for this user
+        const pendingKey = `balance:${user.id}`;
+        if (pendingRequests.has(pendingKey)) {
+          console.log('⏳ Reusing pending balance request');
+          const pendingResult = await pendingRequests.get(pendingKey);
+          return new Response(JSON.stringify(pendingResult), {
+            status: 200,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          });
+        }
+        
+        // Create new request promise
+        const balancePromise = supabaseClient.rpc('get_secure_wallet_balance', { p_user_id: user.id });
+        pendingRequests.set(pendingKey, balancePromise);
+        
+        const { data: balanceData, error: balanceError } = await balancePromise;
+        pendingRequests.delete(pendingKey);
 
         console.log('💰 Balance result:', { balanceData, balanceError })
 
@@ -67,6 +151,9 @@ serve(async (req) => {
           })
         }
 
+        // Cache the result
+        balanceCache.set(cacheKey, { data: balanceData, timestamp: Date.now() });
+        
         console.log('✅ Balance fetched successfully:', balanceData)
 
         return new Response(JSON.stringify(balanceData), {

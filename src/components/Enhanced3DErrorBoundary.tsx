@@ -18,6 +18,8 @@ interface State {
 }
 
 export class Enhanced3DErrorBoundary extends Component<Props, State> {
+  private canvasRef = React.createRef<HTMLCanvasElement>();
+
   constructor(props: Props) {
     super(props);
     this.state = { 
@@ -25,6 +27,9 @@ export class Enhanced3DErrorBoundary extends Component<Props, State> {
       retryCount: 0,
       errorType: 'unknown'
     };
+    
+    // Set up WebGL context recovery
+    this.setupWebGLRecovery();
   }
 
   static getDerivedStateFromError(error: Error): Partial<State> {
@@ -70,6 +75,43 @@ export class Enhanced3DErrorBoundary extends Component<Props, State> {
     this.cleanup3DResources();
   }
 
+  setupWebGLRecovery = () => {
+    // Listen for WebGL context loss and recovery
+    const handleContextLost = (event: any) => {
+      console.warn('🔥 WebGL context lost:', event);
+      event.preventDefault();
+      this.setState({ 
+        hasError: true, 
+        errorType: 'webgl',
+        error: new Error('WebGL context lost - GPU crashed or driver reset')
+      });
+    };
+
+    const handleContextRestored = (event: any) => {
+      console.log('✨ WebGL context restored:', event);
+      // Auto-retry after context restoration
+      setTimeout(() => {
+        this.handleRetry();
+      }, 1000);
+    };
+
+    // Add global listeners for WebGL context events
+    document.addEventListener('webglcontextlost', handleContextLost);
+    document.addEventListener('webglcontextrestored', handleContextRestored);
+
+    // Cleanup on unmount
+    this.webglCleanup = () => {
+      document.removeEventListener('webglcontextlost', handleContextLost);
+      document.removeEventListener('webglcontextrestored', handleContextRestored);
+    };
+  };
+
+  webglCleanup = () => {};
+
+  componentWillUnmount() {
+    this.webglCleanup();
+  }
+
   cleanup3DResources = () => {
     try {
       // Clear Three.js cache
@@ -77,6 +119,29 @@ export class Enhanced3DErrorBoundary extends Component<Props, State> {
         // Clear cache if available
         if ((window as any).THREE.Cache) {
           (window as any).THREE.Cache.clear();
+        }
+        
+        // Force dispose any WebGL contexts
+        const gl = document.querySelector('canvas')?.getContext('webgl2') || 
+                   document.querySelector('canvas')?.getContext('webgl');
+        if (gl && gl.getExtension) {
+          try {
+            const loseContext = gl.getExtension('WEBGL_lose_context');
+            if (loseContext) {
+              loseContext.loseContext();
+            }
+          } catch (e) {
+            console.warn('Could not force context loss:', e);
+          }
+        }
+      }
+      
+      // Force garbage collection if available
+      if ((window as any).gc) {
+        try {
+          (window as any).gc();
+        } catch (e) {
+          console.warn('Manual GC failed:', e);
         }
       }
     } catch (e) {
