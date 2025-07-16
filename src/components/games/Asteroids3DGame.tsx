@@ -13,6 +13,7 @@ import {
   ExplosionEffect3D, 
   StarField3D 
 } from "./engine/EnhancedAsteroids3DComponents";
+import { use3DDefensive } from "@/hooks/use3DDefensive";
 import * as THREE from "three";
 
 interface Asteroids3DGameProps {
@@ -65,11 +66,12 @@ export const Asteroids3DGame = ({ onScoreChange, onGameEnd, onGameStart }: Aster
   const [keys, setKeys] = useState<{ [key: string]: boolean }>({});
   
   const { handleGameStart } = useGameManager();
+  const { safeVector3, safeGetProperty } = use3DDefensive();
   
   // Game objects
   const [ship, setShip] = useState<Ship3D>({
-    position: new THREE.Vector3(0, 1, 0),
-    velocity: new THREE.Vector3(0, 0, 0),
+    position: safeVector3(0, 1, 0),
+    velocity: safeVector3(0, 0, 0),
     rotation: 0,
     thrust: false,
     invulnerable: 0
@@ -86,19 +88,24 @@ export const Asteroids3DGame = ({ onScoreChange, onGameEnd, onGameStart }: Aster
       
       // Shooting
       if (e.key === ' ' && isPlaying && !isPaused && !gameOver) {
-        const bulletDirection = new THREE.Vector3(
-          Math.sin(ship.rotation),
-          0,
-          Math.cos(ship.rotation)
-        ).normalize();
-        
-        setBullets(prev => [...prev, {
-          id: Date.now(),
-          position: ship.position.clone(),
-          velocity: bulletDirection.multiplyScalar(0.8),
-          active: true,
-          timeAlive: 0
-        }]);
+        try {
+          const bulletDirection = safeVector3(
+            Math.sin(ship.rotation),
+            0,
+            Math.cos(ship.rotation)
+          );
+          bulletDirection.normalize();
+          
+          setBullets(prev => [...prev, {
+            id: Date.now(),
+            position: ship.position.clone(),
+            velocity: bulletDirection.multiplyScalar(0.8),
+            active: true,
+            timeAlive: 0
+          }]);
+        } catch (error) {
+          console.warn('⚠️ Failed to create bullet:', error);
+        }
       }
     };
     
@@ -132,12 +139,17 @@ export const Asteroids3DGame = ({ onScoreChange, onGameEnd, onGameStart }: Aster
         newShip.thrust = keys['ArrowUp'] || keys['w'];
         
         if (newShip.thrust) {
-          const thrustDirection = new THREE.Vector3(
-            Math.sin(newShip.rotation),
-            0,
-            Math.cos(newShip.rotation)
-          ).multiplyScalar(0.02);
-          newShip.velocity.add(thrustDirection);
+          try {
+            const thrustDirection = safeVector3(
+              Math.sin(newShip.rotation),
+              0,
+              Math.cos(newShip.rotation)
+            );
+            thrustDirection.multiplyScalar(0.02);
+            newShip.velocity.add(thrustDirection);
+          } catch (error) {
+            console.warn('⚠️ Failed to apply thrust:', error);
+          }
         }
         
         // Apply drag
@@ -208,56 +220,60 @@ export const Asteroids3DGame = ({ onScoreChange, onGameEnd, onGameStart }: Aster
       asteroids.forEach(asteroid => {
         if (asteroid.destroyed || !bullet.active) return;
         
-        const distance = bullet.position.distanceTo(asteroid.position);
-        if (distance < asteroid.size) {
-          // Destroy bullet
-          bullet.active = false;
-          
-          // Damage asteroid
-          asteroid.health--;
-          
-          if (asteroid.health <= 0) {
-            asteroid.destroyed = true;
+        try {
+          const distance = bullet.position.distanceTo(asteroid.position);
+          if (distance < asteroid.size) {
+            // Destroy bullet
+            bullet.active = false;
             
-            // Add explosion
-            setExplosions(prev => [...prev, {
-              id: Date.now(),
-              position: asteroid.position.clone(),
-              size: asteroid.size,
-              color: "#FF6B35",
-              active: true
-            }]);
+            // Damage asteroid
+            asteroid.health--;
             
-            // Split asteroid if large enough
-            if (asteroid.size > 0.8) {
-              const newAsteroids = Array.from({ length: 2 }, (_, i) => ({
-                id: Date.now() + i,
-                position: asteroid.position.clone().add(
-                  new THREE.Vector3((Math.random() - 0.5) * 2, 0, (Math.random() - 0.5) * 2)
-                ),
-                velocity: new THREE.Vector3(
-                  (Math.random() - 0.5) * 0.3,
-                  0,
-                  (Math.random() - 0.5) * 0.3
-                ),
-                size: asteroid.size * 0.6,
-                health: 1,
-                rotationSpeed: Math.random() * 2 + 1,
-                destroyed: false
-              }));
-              setAsteroids(prev => [...prev, ...newAsteroids]);
+            if (asteroid.health <= 0) {
+              asteroid.destroyed = true;
+              
+              // Add explosion
+              setExplosions(prev => [...prev, {
+                id: Date.now(),
+                position: asteroid.position.clone(),
+                size: asteroid.size,
+                color: "#FF6B35",
+                active: true
+              }]);
+              
+              // Split asteroid if large enough
+              if (asteroid.size > 0.8) {
+                const newAsteroids = Array.from({ length: 2 }, (_, i) => ({
+                  id: Date.now() + i,
+                  position: asteroid.position.clone().add(
+                    new THREE.Vector3((Math.random() - 0.5) * 2, 0, (Math.random() - 0.5) * 2)
+                  ),
+                  velocity: new THREE.Vector3(
+                    (Math.random() - 0.5) * 0.3,
+                    0,
+                    (Math.random() - 0.5) * 0.3
+                  ),
+                  size: asteroid.size * 0.6,
+                  health: 1,
+                  rotationSpeed: Math.random() * 2 + 1,
+                  destroyed: false
+                }));
+                setAsteroids(prev => [...prev, ...newAsteroids]);
+              }
+              
+              // Score
+              const points = Math.floor((2 - asteroid.size) * 100 + 50);
+              setScore(prev => {
+                const newScore = prev + points;
+                onScoreChange?.(newScore);
+                return newScore;
+              });
+              
+              toast.success(`Asteroid destroyed! +${points} points`);
             }
-            
-            // Score
-            const points = Math.floor((2 - asteroid.size) * 100 + 50);
-            setScore(prev => {
-              const newScore = prev + points;
-              onScoreChange?.(newScore);
-              return newScore;
-            });
-            
-            toast.success(`Asteroid destroyed! +${points} points`);
           }
+        } catch (error) {
+          console.warn('⚠️ Collision detection failed:', error);
         }
       });
     });
@@ -267,11 +283,15 @@ export const Asteroids3DGame = ({ onScoreChange, onGameEnd, onGameStart }: Aster
       asteroids.forEach(asteroid => {
         if (asteroid.destroyed) return;
         
-        const distance = ship.position.distanceTo(asteroid.position);
-        if (distance < asteroid.size + 0.5) {
-          setLives(prev => prev - 1);
-          setShip(prev => ({ ...prev, invulnerable: 120 }));
-          toast.error("Ship hit! Lives: " + (lives - 1));
+        try {
+          const distance = ship.position.distanceTo(asteroid.position);
+          if (distance < asteroid.size + 0.5) {
+            setLives(prev => prev - 1);
+            setShip(prev => ({ ...prev, invulnerable: 120 }));
+            toast.error("Ship hit! Lives: " + (lives - 1));
+          }
+        } catch (error) {
+          console.warn('⚠️ Ship collision detection failed:', error);
         }
       });
     }
@@ -295,12 +315,12 @@ export const Asteroids3DGame = ({ onScoreChange, onGameEnd, onGameStart }: Aster
       setTimeout(() => {
         const newAsteroids = Array.from({ length: 4 + level * 2 }, (_, i) => ({
           id: Date.now() + i,
-          position: new THREE.Vector3(
+          position: safeVector3(
             (Math.random() - 0.5) * 25,
             1,
             (Math.random() - 0.5) * 25
           ),
-          velocity: new THREE.Vector3(
+          velocity: safeVector3(
             (Math.random() - 0.5) * (0.1 + level * 0.05),
             0,
             (Math.random() - 0.5) * (0.1 + level * 0.05)
@@ -326,8 +346,8 @@ export const Asteroids3DGame = ({ onScoreChange, onGameEnd, onGameStart }: Aster
     setIsPlaying(true);
     setIsPaused(false);
     setShip({
-      position: new THREE.Vector3(0, 1, 0),
-      velocity: new THREE.Vector3(0, 0, 0),
+      position: safeVector3(0, 1, 0),
+      velocity: safeVector3(0, 0, 0),
       rotation: 0,
       thrust: false,
       invulnerable: 120
@@ -338,12 +358,12 @@ export const Asteroids3DGame = ({ onScoreChange, onGameEnd, onGameStart }: Aster
     // Initial asteroids
     setAsteroids(Array.from({ length: 6 }, (_, i) => ({
       id: i,
-      position: new THREE.Vector3(
+      position: safeVector3(
         (Math.random() - 0.5) * 20,
         1,
         (Math.random() - 0.5) * 20
       ),
-      velocity: new THREE.Vector3(
+      velocity: safeVector3(
         (Math.random() - 0.5) * 0.2,
         0,
         (Math.random() - 0.5) * 0.2

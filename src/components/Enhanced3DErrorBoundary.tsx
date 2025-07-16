@@ -2,12 +2,15 @@ import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle, RefreshCw, ArrowLeft } from "lucide-react";
+import { toast } from "sonner";
+import { globalWebGLManager } from "@/utils/webglContextManager";
 
 interface Props {
   children: ReactNode;
   gameId?: string;
   fallback?: ReactNode;
   onReset?: () => void;
+  onRecovery?: () => void;
 }
 
 interface State {
@@ -15,6 +18,7 @@ interface State {
   error?: Error;
   retryCount: number;
   errorType: 'webgl' | 'texture' | 'font' | 'memory' | 'unknown';
+  isRecovering: boolean;
 }
 
 export class Enhanced3DErrorBoundary extends Component<Props, State> {
@@ -25,7 +29,8 @@ export class Enhanced3DErrorBoundary extends Component<Props, State> {
     this.state = { 
       hasError: false, 
       retryCount: 0,
-      errorType: 'unknown'
+      errorType: 'unknown',
+      isRecovering: false
     };
     
     // Set up WebGL context recovery
@@ -54,6 +59,58 @@ export class Enhanced3DErrorBoundary extends Component<Props, State> {
     };
   }
 
+  setupWebGLRecovery = () => {
+    // Listen for WebGL context loss and recovery
+    const handleContextLost = (event: any) => {
+      console.warn('🔥 WebGL context lost:', event);
+      event.preventDefault();
+      this.setState({ 
+        hasError: true, 
+        errorType: 'webgl',
+        error: new Error('WebGL context lost - GPU crashed or driver reset'),
+        isRecovering: true
+      });
+      toast.error('Graphics context lost - recovering...');
+    };
+
+    const handleContextRestored = (event: any) => {
+      console.log('✨ WebGL context restored:', event);
+      this.setState({ 
+        hasError: false, 
+        error: undefined,
+        isRecovering: false,
+        retryCount: 0 
+      });
+      toast.success('Graphics context restored!');
+      this.props.onRecovery?.();
+      
+      // Auto-retry after context restoration
+      setTimeout(() => {
+        this.handleRetry();
+      }, 1000);
+    };
+
+    // Add global listeners for WebGL context events
+    document.addEventListener('webglcontextlost', handleContextLost);
+    document.addEventListener('webglcontextrestored', handleContextRestored);
+
+    // Set up global WebGL manager listeners
+    if (globalWebGLManager) {
+      // The manager will handle WebGL context automatically
+      // We just need to listen for the custom events it dispatches
+      window.addEventListener('webglContextLost', () => handleContextLost({}));
+      window.addEventListener('webglContextRestored', () => handleContextRestored({}));
+    }
+
+    // Cleanup on unmount
+    this.webglCleanup = () => {
+      document.removeEventListener('webglcontextlost', handleContextLost);
+      document.removeEventListener('webglcontextrestored', handleContextRestored);
+      window.removeEventListener('webglContextLost', () => handleContextLost({}));
+      window.removeEventListener('webglContextRestored', () => handleContextRestored({}));
+    };
+  };
+
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('Enhanced 3D Error Boundary:', {
       error,
@@ -74,37 +131,6 @@ export class Enhanced3DErrorBoundary extends Component<Props, State> {
     // Clear any problematic Three.js resources
     this.cleanup3DResources();
   }
-
-  setupWebGLRecovery = () => {
-    // Listen for WebGL context loss and recovery
-    const handleContextLost = (event: any) => {
-      console.warn('🔥 WebGL context lost:', event);
-      event.preventDefault();
-      this.setState({ 
-        hasError: true, 
-        errorType: 'webgl',
-        error: new Error('WebGL context lost - GPU crashed or driver reset')
-      });
-    };
-
-    const handleContextRestored = (event: any) => {
-      console.log('✨ WebGL context restored:', event);
-      // Auto-retry after context restoration
-      setTimeout(() => {
-        this.handleRetry();
-      }, 1000);
-    };
-
-    // Add global listeners for WebGL context events
-    document.addEventListener('webglcontextlost', handleContextLost);
-    document.addEventListener('webglcontextrestored', handleContextRestored);
-
-    // Cleanup on unmount
-    this.webglCleanup = () => {
-      document.removeEventListener('webglcontextlost', handleContextLost);
-      document.removeEventListener('webglcontextrestored', handleContextRestored);
-    };
-  };
 
   webglCleanup = () => {};
 
