@@ -9,7 +9,7 @@ interface BalanceCache {
   expiresIn: number;
 }
 
-export const useOptimizedBalance = () => {
+export const useOptimizedBalance = (userId?: string) => {
   const [balance, setBalance] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -47,6 +47,12 @@ export const useOptimizedBalance = () => {
 
   // Optimized balance loading with caching and debouncing
   const loadBalance = useCallback(async (forceRefresh = false): Promise<any> => {
+    if (!userId) {
+      setBalance(null);
+      setIsLoading(false);
+      return null;
+    }
+
     // Check cache first (unless force refresh)
     if (!forceRefresh && isCacheValid()) {
       console.log('📦 Using cached balance data');
@@ -72,11 +78,6 @@ export const useOptimizedBalance = () => {
     setError(null);
 
     try {
-      // Check authentication
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user) {
-        throw new Error('Not authenticated');
-      }
 
       // Create the request promise
       const balancePromise = secureBalanceService.getBalance();
@@ -116,7 +117,7 @@ export const useOptimizedBalance = () => {
       setIsLoading(false);
       pendingRequestRef.current = null;
     }
-  }, [isCacheValid, isRateLimited]);
+  }, [isCacheValid, isRateLimited, userId]);
 
   // Optimized refresh function
   const refreshBalance = useCallback(async () => {
@@ -125,8 +126,10 @@ export const useOptimizedBalance = () => {
 
   // Initial load
   useEffect(() => {
-    loadBalance();
-  }, []);
+    if (userId) {
+      loadBalance();
+    }
+  }, [loadBalance, userId]);
 
   // Listen for balance update events with debouncing
   useEffect(() => {

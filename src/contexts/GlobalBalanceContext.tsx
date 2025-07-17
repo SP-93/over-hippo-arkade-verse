@@ -1,5 +1,6 @@
 import React, { createContext, useContext, ReactNode } from 'react';
 import { useOptimizedBalance } from '@/hooks/useOptimizedBalance';
+import { useAuth } from './AuthContext';
 
 interface GlobalBalanceContextType {
   balance: any;
@@ -18,17 +19,18 @@ interface GlobalBalanceProviderProps {
 }
 
 export const GlobalBalanceProvider = ({ children }: GlobalBalanceProviderProps) => {
+  const { user } = useAuth();
   const {
     balance,
     isLoading,
     refreshBalance
-  } = useOptimizedBalance();
+  } = useOptimizedBalance(user?.id);
 
-  // Extract values with safe defaults
-  const gameChips = balance?.game_chips || 3;
-  const overBalance = balance?.over_balance || 0;
-  const hasWallet = balance?.has_wallet || false;
-  const canPlayGame = (gameType: string) => gameChips > 0;
+  // Extract values with safe defaults - only if user is authenticated
+  const gameChips = user ? (balance?.game_chips || 3) : 0;
+  const overBalance = user ? (balance?.over_balance || 0) : 0;
+  const hasWallet = user ? (balance?.has_wallet || false) : false;
+  const canPlayGame = (gameType: string) => user && gameChips > 0;
 
   const contextValue: GlobalBalanceContextType = {
     balance,

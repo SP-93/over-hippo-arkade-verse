@@ -3,6 +3,7 @@ import { useFrame } from "@react-three/fiber";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useGameManager } from "@/hooks/useGameManager";
+import { use3DDefensive } from "@/hooks/use3DDefensive";
 import { toast } from "sonner";
 import Game3DEngine from "./engine/Game3DEngine";
 import { EnhancedSnakeSegment, EnhancedFood, SnakeTrail, GameBoundaries } from "./snake/EnhancedSnake3DComponents";
@@ -38,6 +39,7 @@ export const Snake3DGame = ({ onScoreChange, onGameEnd, onGameStart }: Snake3DGa
   const gameLoopRef = useRef<NodeJS.Timeout>();
   
   const { handleGameStart } = useGameManager();
+  const { safeVector3, safeSetPosition, safeGetProperty, isValidVector3 } = use3DDefensive();
 
   const generateFood = useCallback(() => {
     let newFood;
@@ -52,15 +54,32 @@ export const Snake3DGame = ({ onScoreChange, onGameEnd, onGameStart }: Snake3DGa
   }, [snake]);
 
   const checkCollision = useCallback((head: any) => {
-    // Wall collision
-    if (head.x < -GRID_SIZE/2 || head.x >= GRID_SIZE/2 || 
-        head.z < -GRID_SIZE/2 || head.z >= GRID_SIZE/2) {
-      return true;
+    try {
+      // Wall collision - safe property access
+      const headX = safeGetProperty(head, 'x', 0);
+      const headZ = safeGetProperty(head, 'z', 0);
+      
+      if (headX < -GRID_SIZE/2 || headX >= GRID_SIZE/2 || 
+          headZ < -GRID_SIZE/2 || headZ >= GRID_SIZE/2) {
+        return true;
+      }
+      
+      // Self collision - safe iteration
+      return snake.some(segment => {
+        try {
+          const segX = safeGetProperty(segment, 'x', 0);
+          const segZ = safeGetProperty(segment, 'z', 0);
+          return segX === headX && segZ === headZ;
+        } catch (error) {
+          console.warn('⚠️ Collision check segment error:', error);
+          return false;
+        }
+      });
+    } catch (error) {
+      console.warn('⚠️ Collision check failed:', error);
+      return false;
     }
-    
-    // Self collision
-    return snake.some(segment => segment.x === head.x && segment.z === head.z);
-  }, [snake]);
+  }, [snake, safeGetProperty]);
 
   const moveSnake = useCallback(() => {
     if (!isPlaying || isPaused || gameOver) return;
