@@ -8,6 +8,7 @@ export interface BalanceInfo {
   wallet_address?: string;
   game_chips: number;
   over_balance: number;
+  wover_balance: number;
   total_earnings: number;
   last_updated?: string;
   error?: string;
@@ -19,6 +20,8 @@ export interface BalanceOperationResult {
   new_chips?: number;
   previous_over?: number;
   new_over?: number;
+  previous_wover?: number;
+  new_wover?: number;
   operation_type?: string;
   wallet_address?: string;
   error?: string;
@@ -41,6 +44,7 @@ export class SecureBalanceService {
           has_wallet: false,
           game_chips: 0,
           over_balance: 0,
+          wover_balance: 0,
           total_earnings: 0,
           error: error.message || 'Failed to fetch balance'
         };
@@ -52,6 +56,7 @@ export class SecureBalanceService {
         wallet_address: data.wallet_address,
         game_chips: data.game_chips || 0,
         over_balance: data.over_balance || 0,
+        wover_balance: data.wover_balance || 0,
         total_earnings: data.total_earnings || 0,
         last_updated: data.last_updated,
         error: data.error
@@ -63,6 +68,7 @@ export class SecureBalanceService {
         has_wallet: false,
         game_chips: 0,
         over_balance: 0,
+        wover_balance: 0,
         total_earnings: 0,
         error: 'Network error'
       };

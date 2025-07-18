@@ -9,6 +9,7 @@ export const useSecureBalance = () => {
     has_wallet: false,
     game_chips: 0,
     over_balance: 0,
+    wover_balance: 0,
     total_earnings: 0
   });
   const [isLoading, setIsLoading] = useState(false);
@@ -36,6 +37,7 @@ export const useSecureBalance = () => {
           has_wallet: false,
           game_chips: 3, // Default chips for non-authenticated users
           over_balance: 0,
+          wover_balance: 0,
           total_earnings: 0
         });
       }
@@ -46,6 +48,7 @@ export const useSecureBalance = () => {
         has_wallet: false,
         game_chips: 3,
         over_balance: 0,
+        wover_balance: 0,
         total_earnings: 0,
         error: 'Network error'
       });
@@ -217,6 +220,7 @@ export const useSecureBalance = () => {
     // Quick access to individual values
     gameChips: balance.game_chips,
     overBalance: balance.over_balance,
+    woverBalance: balance.wover_balance,
     totalEarnings: balance.total_earnings,
     hasWallet: balance.has_wallet,
     

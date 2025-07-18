@@ -97,7 +97,7 @@ export const useOptimizedBalance = (userId?: string) => {
         };
         
         setBalance(balanceData);
-        console.log('✅ Balance loaded and cached:', balanceData.game_chips, `WOVER: ${balanceData.wover_balance || 0}`);
+        console.log('✅ Balance loaded and cached:', balanceData.game_chips, `WOVER: ${(balanceData as any).wover_balance || 0}`);
         return balanceData;
       } else {
         throw new Error(balanceData.error || 'Failed to load balance');
