@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 export interface PlayerBalance {
   address: string;
   overTokens: number;
+  woverTokens: number;
   gameChips: number;
   totalEarnings: number;
   lastUpdated: string;

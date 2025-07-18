@@ -8,6 +8,7 @@ interface GlobalBalanceContextType {
   refreshBalance: () => Promise<void>;
   gameChips: number;
   overBalance: number;
+  woverBalance: number;
   hasWallet: boolean;
   canPlayGame: (gameType: string) => boolean;
 }
@@ -29,6 +30,7 @@ export const GlobalBalanceProvider = ({ children }: GlobalBalanceProviderProps) 
   // Extract values with safe defaults - only if user is authenticated
   const gameChips = user ? (balance?.game_chips || 3) : 0;
   const overBalance = user ? (balance?.over_balance || 0) : 0;
+  const woverBalance = user ? (balance?.wover_balance || 0) : 0;
   const hasWallet = user ? (balance?.has_wallet || false) : false;
   const canPlayGame = (gameType: string) => user && gameChips > 0;
 
@@ -38,6 +40,7 @@ export const GlobalBalanceProvider = ({ children }: GlobalBalanceProviderProps) 
     refreshBalance,
     gameChips,
     overBalance,
+    woverBalance,
     hasWallet,
     canPlayGame
   };

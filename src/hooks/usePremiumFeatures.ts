@@ -64,7 +64,7 @@ export const usePremiumFeatures = () => {
     }
   });
 
-  // Purchase VIP status mutation
+  // Purchase VIP status mutation (now uses WOVER instead of OVER)
   const purchaseVipStatus = useMutation({
     mutationFn: async (durationDays: number = 30) => {
       const { data, error } = await supabase.rpc('purchase_vip_status', {
@@ -76,7 +76,7 @@ export const usePremiumFeatures = () => {
     },
     onSuccess: (result: any) => {
       if (result?.success) {
-        toast.success(`VIP status activated for ${result.vip_duration} days!`);
+        toast.success(`VIP status activated for ${result.vip_duration} days! Spent ${result.wover_spent} WOVER.`);
         queryClient.invalidateQueries({ queryKey: ['user-profile'] });
         queryClient.invalidateQueries({ queryKey: ['player-balance'] });
       } else {

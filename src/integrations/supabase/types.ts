@@ -582,6 +582,7 @@ export type Database = {
           over_balance: number | null
           total_earnings: number | null
           wallet_address: string
+          wover_balance: number | null
         }
         Insert: {
           created_at?: string | null
@@ -591,6 +592,7 @@ export type Database = {
           over_balance?: number | null
           total_earnings?: number | null
           wallet_address: string
+          wover_balance?: number | null
         }
         Update: {
           created_at?: string | null
@@ -600,6 +602,7 @@ export type Database = {
           over_balance?: number | null
           total_earnings?: number | null
           wallet_address?: string
+          wover_balance?: number | null
         }
         Relationships: []
       }
@@ -896,6 +899,42 @@ export type Database = {
           user_id?: string | null
           verified_at?: string | null
           wallet_address?: string
+        }
+        Relationships: []
+      }
+      wover_transactions: {
+        Row: {
+          created_at: string | null
+          feature_type: string | null
+          id: string
+          metadata: Json | null
+          status: string | null
+          transaction_hash: string | null
+          transaction_type: string
+          user_id: string
+          wover_amount: number
+        }
+        Insert: {
+          created_at?: string | null
+          feature_type?: string | null
+          id?: string
+          metadata?: Json | null
+          status?: string | null
+          transaction_hash?: string | null
+          transaction_type: string
+          user_id: string
+          wover_amount: number
+        }
+        Update: {
+          created_at?: string | null
+          feature_type?: string | null
+          id?: string
+          metadata?: Json | null
+          status?: string | null
+          transaction_hash?: string | null
+          transaction_type?: string
+          user_id?: string
+          wover_amount?: number
         }
         Relationships: []
       }
