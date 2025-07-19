@@ -1,140 +1,202 @@
-import React, { useEffect, useCallback, useRef } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useEffect, useCallback, useRef } from 'react';
+import * as THREE from 'three';
+import { globalWebGLManager, withWebGLContext } from '@/utils/webglContextManager';
 
-interface MemoryStats {
-  usedHeapSize: number;
-  totalHeapSize: number;
-  heapSizeLimit: number;
+interface MemoryOptimizerOptions {
+  gameId: string;
+  autoCleanupInterval?: number;
+  maxMemoryUsage?: number;
+  enableProfiling?: boolean;
 }
 
-export const useMemoryOptimizer = () => {
-  const cleanupTasks = useRef<(() => void)[]>([]);
-  const lastCleanupTime = useRef<number>(Date.now());
+export const useMemoryOptimizer = (options: MemoryOptimizerOptions) => {
+  const {
+    gameId,
+    autoCleanupInterval = 30000, // 30 seconds
+    maxMemoryUsage = 100, // 100MB
+    enableProfiling = true
+  } = options;
 
-  // Get memory statistics if available
-  const getMemoryStats = useCallback((): MemoryStats | null => {
-    if ('memory' in performance) {
-      const memory = (performance as any).memory;
-      return {
-        usedHeapSize: memory.usedJSHeapSize,
-        totalHeapSize: memory.totalJSHeapSize,
-        heapSizeLimit: memory.jsHeapSizeLimit
-      };
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const memoryProfileRef = useRef<{
+    geometries: Set<THREE.BufferGeometry>;
+    materials: Set<THREE.Material>;
+    textures: Set<THREE.Texture>;
+  }>({
+    geometries: new Set(),
+    materials: new Set(),
+    textures: new Set()
+  });
+
+  // Register Three.js objects for tracking
+  const registerGeometry = useCallback((geometry: THREE.BufferGeometry) => {
+    if (enableProfiling) {
+      memoryProfileRef.current.geometries.add(geometry);
     }
-    return null;
-  }, []);
+  }, [enableProfiling]);
 
-  // Register cleanup task
-  const registerCleanup = useCallback((cleanupFn: () => void) => {
-    cleanupTasks.current.push(cleanupFn);
-    
-    return () => {
-      const index = cleanupTasks.current.indexOf(cleanupFn);
-      if (index > -1) {
-        cleanupTasks.current.splice(index, 1);
-      }
-    };
-  }, []);
+  const registerMaterial = useCallback((material: THREE.Material) => {
+    if (enableProfiling) {
+      memoryProfileRef.current.materials.add(material);
+    }
+  }, [enableProfiling]);
 
-  // Force garbage collection and cleanup
-  const performCleanup = useCallback(async () => {
-    console.log('🧹 Performing memory cleanup...');
-    
-    // Run all registered cleanup tasks
-    cleanupTasks.current.forEach(cleanup => {
-      try {
-        cleanup();
-      } catch (error) {
-        console.error('Cleanup task failed:', error);
-      }
-    });
+  const registerTexture = useCallback((texture: THREE.Texture) => {
+    if (enableProfiling) {
+      memoryProfileRef.current.textures.add(texture);
+    }
+  }, [enableProfiling]);
 
-    // Clear WeakMap and WeakSet references
-    if (typeof window !== 'undefined') {
-      // Clear any cached data
-      if ('caches' in window) {
+  // Cleanup specific object types
+  const cleanupGeometries = useCallback(() => {
+    withWebGLContext(() => {
+      memoryProfileRef.current.geometries.forEach(geometry => {
         try {
-          const cacheNames = await caches.keys();
-          await Promise.all(
-            cacheNames.map(name => caches.delete(name))
-          );
+          if (geometry && typeof geometry.dispose === 'function') {
+            geometry.dispose();
+          }
         } catch (error) {
-          console.error('Cache cleanup failed:', error);
+          console.warn('Error disposing geometry:', error);
+        }
+      });
+      memoryProfileRef.current.geometries.clear();
+      console.log(`🧹 Cleaned up geometries for ${gameId}`);
+    });
+  }, [gameId]);
+
+  const cleanupMaterials = useCallback(() => {
+    withWebGLContext(() => {
+      memoryProfileRef.current.materials.forEach(material => {
+        try {
+          if (material && typeof material.dispose === 'function') {
+            material.dispose();
+          }
+        } catch (error) {
+          console.warn('Error disposing material:', error);
+        }
+      });
+      memoryProfileRef.current.materials.clear();
+      console.log(`🧹 Cleaned up materials for ${gameId}`);
+    });
+  }, [gameId]);
+
+  const cleanupTextures = useCallback(() => {
+    withWebGLContext(() => {
+      memoryProfileRef.current.textures.forEach(texture => {
+        try {
+          if (texture && typeof texture.dispose === 'function') {
+            texture.dispose();
+          }
+        } catch (error) {
+          console.warn('Error disposing texture:', error);
+        }
+      });
+      memoryProfileRef.current.textures.clear();
+      console.log(`🧹 Cleaned up textures for ${gameId}`);
+    });
+  }, [gameId]);
+
+  // Comprehensive memory cleanup
+  const performMemoryCleanup = useCallback(() => {
+    withWebGLContext((gl) => {
+      console.log(`🧽 Starting memory cleanup for ${gameId}...`);
+      
+      // Cleanup tracked objects
+      cleanupGeometries();
+      cleanupMaterials();
+      cleanupTextures();
+      
+      // Force garbage collection if available
+      if (window.gc) {
+        window.gc();
+        console.log(`♻️ Forced garbage collection for ${gameId}`);
+      }
+      
+      // WebGL context cleanup
+      if (gl) {
+        const ext = gl.getExtension('WEBGL_lose_context');
+        if (ext && Math.random() < 0.01) { // Rare context reset
+          console.log(`🔄 Performing rare WebGL context reset for ${gameId}`);
+          ext.restoreContext();
         }
       }
-    }
+      
+      console.log(`✅ Memory cleanup completed for ${gameId}`);
+    });
+  }, [gameId, cleanupGeometries, cleanupMaterials, cleanupTextures]);
 
-    // Log memory stats after cleanup
-    const memStats = getMemoryStats();
-    if (memStats) {
-      console.log('📊 Memory after cleanup:', {
-        used: `${(memStats.usedHeapSize / 1024 / 1024).toFixed(2)}MB`,
-        total: `${(memStats.totalHeapSize / 1024 / 1024).toFixed(2)}MB`,
-        limit: `${(memStats.heapSizeLimit / 1024 / 1024).toFixed(2)}MB`
-      });
-
-      // Log to database
-      try {
-        await supabase.rpc('record_performance_metric', {
-          p_metric_type: 'memory',
-          p_metric_name: 'cleanup_performed',
-          p_metric_value: memStats.usedHeapSize / 1024 / 1024,
-          p_metric_unit: 'MB'
-        });
-      } catch (error) {
-        console.error('Failed to log memory metric:', error);
+  // Check memory usage and trigger cleanup if needed
+  const checkMemoryUsage = useCallback(() => {
+    if ((performance as any).memory) {
+      const memoryUsage = (performance as any).memory.usedJSHeapSize / 1024 / 1024; // MB
+      
+      if (memoryUsage > maxMemoryUsage) {
+        console.log(`⚠️ High memory usage detected: ${memoryUsage.toFixed(2)}MB for ${gameId}`);
+        performMemoryCleanup();
       }
     }
+  }, [maxMemoryUsage, gameId, performMemoryCleanup]);
 
-    lastCleanupTime.current = Date.now();
-  }, [getMemoryStats]);
+  // Force cleanup (for manual trigger)
+  const forceCleanup = useCallback(() => {
+    performMemoryCleanup();
+  }, [performMemoryCleanup]);
 
-  // Auto cleanup based on memory pressure
-  const checkMemoryPressure = useCallback(() => {
-    const memStats = getMemoryStats();
-    if (!memStats) return;
-
-    const usagePercent = (memStats.usedHeapSize / memStats.heapSizeLimit) * 100;
-    const timeSinceLastCleanup = Date.now() - lastCleanupTime.current;
-
-    // Trigger cleanup if memory usage is high or it's been a while
-    if (usagePercent > 75 || timeSinceLastCleanup > 300000) { // 5 minutes
-      performCleanup();
+  // Get memory stats
+  const getMemoryStats = useCallback(() => {
+    const stats = {
+      geometries: memoryProfileRef.current.geometries.size,
+      materials: memoryProfileRef.current.materials.size,
+      textures: memoryProfileRef.current.textures.size,
+      totalObjects: memoryProfileRef.current.geometries.size + 
+                   memoryProfileRef.current.materials.size + 
+                   memoryProfileRef.current.textures.size
+    };
+    
+    if ((performance as any).memory) {
+      return {
+        ...stats,
+        heapUsed: Math.round((performance as any).memory.usedJSHeapSize / 1024 / 1024),
+        heapTotal: Math.round((performance as any).memory.totalJSHeapSize / 1024 / 1024),
+        heapLimit: Math.round((performance as any).memory.jsHeapSizeLimit / 1024 / 1024)
+      };
     }
-  }, [getMemoryStats, performCleanup]);
+    
+    return stats;
+  }, []);
 
-  // Monitor memory pressure
+  // Setup automatic cleanup interval
   useEffect(() => {
-    const interval = setInterval(checkMemoryPressure, 30000); // Check every 30 seconds
+    if (autoCleanupInterval > 0) {
+      intervalRef.current = setInterval(() => {
+        checkMemoryUsage();
+      }, autoCleanupInterval);
+      
+      console.log(`⏰ Memory optimizer started for ${gameId} (interval: ${autoCleanupInterval}ms)`);
+    }
     
     return () => {
-      clearInterval(interval);
-      // Run final cleanup on unmount
-      performCleanup();
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
     };
-  }, [checkMemoryPressure, performCleanup]);
+  }, [autoCleanupInterval, checkMemoryUsage, gameId]);
 
-  // Memory-aware component factory
-  const createMemoryAwareComponent = useCallback(<T extends Record<string, any>>(
-    component: React.ComponentType<T>,
-    displayName: string
-  ) => {
-    const MemoryAwareComponent = React.memo(component);
-    MemoryAwareComponent.displayName = `MemoryOptimized(${displayName})`;
-    
-    // Register cleanup for this component
-    registerCleanup(() => {
-      console.log(`🧹 Cleaning up ${displayName}`);
-    });
-    
-    return MemoryAwareComponent;
-  }, [registerCleanup]);
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      console.log(`🧹 Final cleanup for ${gameId} on unmount`);
+      performMemoryCleanup();
+    };
+  }, [gameId, performMemoryCleanup]);
 
   return {
+    registerGeometry,
+    registerMaterial,
+    registerTexture,
+    forceCleanup,
     getMemoryStats,
-    performCleanup,
-    registerCleanup,
-    createMemoryAwareComponent,
-    checkMemoryPressure
+    checkMemoryUsage
   };
 };

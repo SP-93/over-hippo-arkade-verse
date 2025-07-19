@@ -16,6 +16,8 @@ import {
 } from "./engine/EnhancedKingKong3DComponents";
 import { Box, Cylinder } from "@react-three/drei";
 import * as THREE from "three";
+import { use3DDefensive } from "@/hooks/use3DDefensive";
+import { globalWebGLManager, withWebGLContext } from "@/utils/webglContextManager";
 
 interface KingKong3DGameProps {
   onScoreChange?: (score: number) => void;
@@ -46,16 +48,19 @@ interface Platform3D {
   type: 'floor' | 'ladder';
 }
 
-// King Kong Boss Component
+// King Kong Boss Component with defensive programming
 const KingKong3D = ({ position, defeated }: { position: THREE.Vector3, defeated: boolean }) => {
   const bossRef = useRef<THREE.Group>(null);
+  const { safeSetPosition, safeSetRotation, isValidVector3 } = use3DDefensive();
   
   useFrame((state) => {
-    if (bossRef.current && !defeated) {
-      const bounce = Math.sin(state.clock.elapsedTime * 2) * 0.5;
-      bossRef.current.position.y = position.y + bounce;
-      bossRef.current.rotation.y = Math.sin(state.clock.elapsedTime * 0.5) * 0.3;
-    }
+    withWebGLContext(() => {
+      if (bossRef.current && !defeated && isValidVector3(position)) {
+        const bounce = Math.sin(state.clock.elapsedTime * 2) * 0.5;
+        safeSetPosition(bossRef.current, position.x, position.y + bounce, position.z);
+        safeSetRotation(bossRef.current, 0, Math.sin(state.clock.elapsedTime * 0.5) * 0.3, 0);
+      }
+    });
   });
 
   if (defeated) return null;
@@ -91,15 +96,23 @@ const KingKong3D = ({ position, defeated }: { position: THREE.Vector3, defeated:
   );
 };
 
-// 3D Barrel Component
+// 3D Barrel Component with defensive programming
 const Barrel3D = ({ obstacle }: { obstacle: Obstacle3D }) => {
   const barrelRef = useRef<THREE.Mesh>(null);
+  const { safeSetPosition, safeSetRotation, isValidVector3 } = use3DDefensive();
   
   useFrame(() => {
-    if (barrelRef.current) {
-      barrelRef.current.position.copy(obstacle.position);
-      barrelRef.current.rotation.z = obstacle.rotation;
-    }
+    withWebGLContext(() => {
+      if (barrelRef.current && isValidVector3(obstacle.position)) {
+        safeSetPosition(
+          barrelRef.current,
+          obstacle.position.x,
+          obstacle.position.y,
+          obstacle.position.z
+        );
+        safeSetRotation(barrelRef.current, 0, 0, obstacle.rotation);
+      }
+    });
   });
 
   return (
@@ -182,11 +195,12 @@ export const KingKong3DGame = ({ onScoreChange, onGameEnd, onGameStart }: KingKo
   const [keys, setKeys] = useState<{ [key: string]: boolean }>({});
   
   const { handleGameStart } = useGameManager();
+  const { safeVector3, safeDispose } = use3DDefensive();
   
-  // Game objects
+  // Game objects with defensive programming
   const [player, setPlayer] = useState<Player3D>({
-    position: new THREE.Vector3(0, 1, 0),
-    velocity: new THREE.Vector3(0, 0, 0),
+    position: safeVector3(0, 1, 0),
+    velocity: safeVector3(0, 0, 0),
     climbing: false,
     health: 3,
     invulnerable: 0
@@ -195,7 +209,7 @@ export const KingKong3DGame = ({ onScoreChange, onGameEnd, onGameStart }: KingKo
   const [obstacles, setObstacles] = useState<Obstacle3D[]>([]);
   const [bossDefeated, setBossDefeated] = useState(false);
   
-  const bossPosition = new THREE.Vector3(0, 25, 0); // Top of tower
+  const bossPosition = safeVector3(0, 25, 0); // Top of tower
   
   // Generate tower platforms
   const platforms: Platform3D[] = [

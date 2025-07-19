@@ -9,6 +9,8 @@ import { GameFloor3D, ParticleSystem3D } from "./engine/Game3DComponents";
 import { EnhancedTetrisBlock, EnhancedTetrisGameField, LineCompleteEffect, NextPieceDisplay } from "./tetris/EnhancedTetris3DComponents";
 import { Box } from "@react-three/drei";
 import * as THREE from "three";
+import { use3DDefensive } from "@/hooks/use3DDefensive";
+import { globalWebGLManager, withWebGLContext } from "@/utils/webglContextManager";
 
 interface Tetris3DGameProps {
   onScoreChange?: (score: number) => void;
@@ -86,15 +88,18 @@ const TETRIS_PIECES = {
   }
 };
 
-// 3D Block Component
+// 3D Block Component with defensive programming
 const Block3D = ({ block, isGhost = false }: { block: Block3D, isGhost?: boolean }) => {
   const blockRef = useRef<THREE.Mesh>(null);
+  const { safeSetPosition, safeSetScale } = use3DDefensive();
   
   useFrame((state) => {
-    if (blockRef.current && block.falling) {
-      const glow = Math.sin(state.clock.elapsedTime * 8) * 0.1 + 1;
-      blockRef.current.scale.setScalar(glow);
-    }
+    withWebGLContext(() => {
+      if (blockRef.current && block.falling) {
+        const glow = Math.sin(state.clock.elapsedTime * 8) * 0.1 + 1;
+        safeSetScale(blockRef.current, glow, glow, glow);
+      }
+    });
   });
 
   return (
@@ -118,15 +123,28 @@ const Block3D = ({ block, isGhost = false }: { block: Block3D, isGhost?: boolean
   );
 };
 
-// 3D Tetris Piece Component
+// 3D Tetris Piece Component with defensive programming
 const TetrisPiece3D = ({ piece, isGhost = false }: { piece: Piece3D, isGhost?: boolean }) => {
   const pieceRef = useRef<THREE.Group>(null);
+  const { safeSetPosition, safeSetRotation, isValidVector3 } = use3DDefensive();
   
   useFrame((state) => {
-    if (pieceRef.current && !isGhost) {
-      pieceRef.current.position.copy(piece.position);
-      pieceRef.current.rotation.copy(piece.rotation);
-    }
+    withWebGLContext(() => {
+      if (pieceRef.current && !isGhost && isValidVector3(piece.position)) {
+        safeSetPosition(
+          pieceRef.current,
+          piece.position.x,
+          piece.position.y,
+          piece.position.z
+        );
+        safeSetRotation(
+          pieceRef.current,
+          piece.rotation.x,
+          piece.rotation.y,
+          piece.rotation.z
+        );
+      }
+    });
   });
 
   return (
@@ -148,6 +166,7 @@ export const Tetris3DGame = ({ onScoreChange, onGameEnd, onGameStart }: Tetris3D
   const [dropSpeed, setDropSpeed] = useState(1000);
   
   const { handleGameStart } = useGameManager();
+  const { safeVector3, safeDispose } = use3DDefensive();
   
   // Game state
   const [board, setBoard] = useState<(Block3D | null)[][][]>(() => 
@@ -161,7 +180,7 @@ export const Tetris3DGame = ({ onScoreChange, onGameEnd, onGameStart }: Tetris3D
   const [currentPiece, setCurrentPiece] = useState<Piece3D | null>(null);
   const [nextPiece, setNextPiece] = useState<Piece3D | null>(null);
 
-  // Create a new piece
+  // Create a new piece with defensive programming
   const createPiece = useCallback((type?: string): Piece3D => {
     const pieceTypes = Object.keys(TETRIS_PIECES) as Array<keyof typeof TETRIS_PIECES>;
     const pieceType = type || pieceTypes[Math.floor(Math.random() * pieceTypes.length)];
@@ -174,36 +193,40 @@ export const Tetris3DGame = ({ onScoreChange, onGameEnd, onGameStart }: Tetris3D
         type: pieceType,
         falling: true
       })),
-      position: new THREE.Vector3(0, 18, 0),
+      position: safeVector3(0, 18, 0),
       rotation: new THREE.Euler(0, 0, 0),
       type: pieceType,
       color: template.color
     };
-  }, []);
+  }, [safeVector3]);
 
-  // Check collision
+  // Check collision with defensive programming
   const checkCollision = useCallback((piece: Piece3D, deltaPos = new THREE.Vector3(0, 0, 0)): boolean => {
-    const testPos = piece.position.clone().add(deltaPos);
+    if (!piece?.position || !piece?.blocks) return true;
     
-    return piece.blocks.some(block => {
-      const worldX = Math.floor(testPos.x + block.x);
-      const worldY = Math.floor(testPos.y + block.y);
-      const worldZ = Math.floor(testPos.z + block.z);
+    return withWebGLContext(() => {
+      const testPos = piece.position.clone().add(deltaPos);
       
-      // Check boundaries
-      if (worldX < -5 || worldX >= 5 || worldY < 0 || worldZ < -5 || worldZ >= 5) {
-        return true;
-      }
-      
-      // Check collision with placed blocks
-      const boardX = worldX + 5;
-      const boardZ = worldZ + 5;
-      if (board[boardX] && board[boardX][worldY] && board[boardX][worldY][boardZ]) {
-        return true;
-      }
-      
-      return false;
-    });
+      return piece.blocks.some(block => {
+        const worldX = Math.floor(testPos.x + block.x);
+        const worldY = Math.floor(testPos.y + block.y);
+        const worldZ = Math.floor(testPos.z + block.z);
+        
+        // Check boundaries
+        if (worldX < -5 || worldX >= 5 || worldY < 0 || worldZ < -5 || worldZ >= 5) {
+          return true;
+        }
+        
+        // Check collision with placed blocks
+        const boardX = worldX + 5;
+        const boardZ = worldZ + 5;
+        if (board[boardX] && board[boardX][worldY] && board[boardX][worldY][boardZ]) {
+          return true;
+        }
+        
+        return false;
+      });
+    }, () => true) || false;
   }, [board]);
 
   // Place piece on board

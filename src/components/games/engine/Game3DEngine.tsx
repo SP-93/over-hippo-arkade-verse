@@ -1,10 +1,12 @@
-import { ReactNode, useState, useEffect, useCallback } from "react";
+import { ReactNode, useState, useEffect, useCallback, useRef } from "react";
 import { Canvas } from "@react-three/fiber";
 import { OrbitControls, Environment, Lightformer } from "@react-three/drei";
 import * as THREE from "three";
 import { Game3DFallback } from "@/components/Game3DFallback";
 import { webglDetector } from "@/utils/webglDetector";
 import { usePerformanceMonitor } from "@/hooks/usePerformanceMonitor";
+import { globalWebGLManager, withWebGLContext } from "@/utils/webglContextManager";
+import { use3DDefensive } from "@/hooks/use3DDefensive";
 
 interface Game3DEngineProps {
   children: ReactNode;
@@ -35,9 +37,12 @@ const Game3DEngine = ({
   const [retryCount, setRetryCount] = useState(0);
   const [shouldUse3D, setShouldUse3D] = useState(false);
   const [performanceSettings, setPerformanceSettings] = useState(webglDetector.getRecommendedSettings());
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   
   // Monitor performance
   const performanceMetrics = usePerformanceMonitor(gameId);
+  const { safeDispose } = use3DDefensive();
 
   // Progressive Enhancement: Check WebGL support and capabilities
   useEffect(() => {
@@ -47,6 +52,15 @@ const Game3DEngine = ({
         
         const capabilities = webglDetector.detect();
         const canUse3D = webglDetector.shouldUse3D();
+        
+        // Attach WebGL context manager
+        if (canvasRef.current) {
+          try {
+            globalWebGLManager.attachToCanvas(canvasRef.current);
+          } catch (error) {
+            console.warn('Failed to attach WebGL context manager:', error);
+          }
+        }
         
         // DEBUG: Enhanced logging for WebGL detection
         console.log(`🔍 DETAILED WebGL capabilities for ${gameId}:`, {
@@ -96,8 +110,16 @@ const Game3DEngine = ({
     };
 
     const timer = setTimeout(initializeEngine, 100);
-    return () => clearTimeout(timer);
-  }, [retryCount, gameId]);
+    return () => {
+      clearTimeout(timer);
+      // Cleanup WebGL context manager and renderer
+      globalWebGLManager.detachFromCanvas();
+      if (rendererRef.current) {
+        safeDispose(rendererRef.current as any);
+        rendererRef.current = null;
+      }
+    };
+  }, [retryCount, gameId, safeDispose]);
 
   const handleRetry = useCallback(() => {
     if (retryCount < 3) {
@@ -195,6 +217,7 @@ const Game3DEngine = ({
   return (
     <div className="h-[600px] bg-black rounded-lg overflow-hidden border-2 border-neon-green shadow-lg shadow-neon-green/20">
       <Canvas
+        ref={canvasRef}
         key={`${gameId}-3d-canvas-${retryCount}`}
         camera={{ 
           position: camera.position, 
@@ -206,15 +229,26 @@ const Game3DEngine = ({
           try {
             console.log(`🎯 3D Canvas created for ${gameId} with settings:`, performanceSettings);
             
+            // Store renderer reference for cleanup
+            rendererRef.current = gl;
+            
             // Apply performance-based settings
             gl.setPixelRatio(Math.min(window.devicePixelRatio, performanceSettings.renderScale));
             gl.shadowMap.enabled = performanceSettings.shadows;
             gl.toneMapping = THREE.NoToneMapping;
             
-            // Antialias is set in canvas properties, not renderer
-            // The gl.antialias property is read-only
+            // Enhanced memory management
+            gl.info.autoReset = false;
+            gl.debug.checkShaderErrors = false;
             
             scene.background = new THREE.Color('#000814');
+            
+            // Attach WebGL context manager after renderer creation
+            withWebGLContext(() => {
+              if (canvasRef.current) {
+                globalWebGLManager.attachToCanvas(canvasRef.current);
+              }
+            });
             
             console.log(`✅ 3D Engine initialized for ${gameId} - Performance level: ${webglDetector.detect().performanceLevel}`);
             console.log(`📊 FPS: ${performanceMetrics.fps}, Memory: ${performanceMetrics.memoryUsage}MB`);
@@ -234,7 +268,8 @@ const Game3DEngine = ({
           failIfMajorPerformanceCaveat: false,
           preserveDrawingBuffer: false,
           depth: true,
-          stencil: false
+          stencil: false,
+          precision: "mediump"
         }}
         dpr={1} // Fixed DPR instead of array
         fallback={<Game3DFallback loading={true} />}

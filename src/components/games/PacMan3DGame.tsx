@@ -10,6 +10,8 @@ import {
 } from "./engine/EnhancedPacMan3DComponents";
 import { usePacManGameLogic, MAZE } from "./pacman/PacManGameLogic";
 import { PacManGameUI } from "./pacman/PacManGameUI";
+import { use3DDefensive } from "@/hooks/use3DDefensive";
+import { globalWebGLManager, withWebGLContext } from "@/utils/webglContextManager";
 
 const CELL_SIZE = 1;
 
@@ -22,6 +24,7 @@ interface PacMan3DGameProps {
 export const PacMan3DGame = ({ onScoreChange, onGameEnd, onGameStart }: PacMan3DGameProps = {}) => {
   console.log("PacMan3DGame loaded - 3D version active!");
   const { handleGameStart } = useGameManager();
+  const { safeDispose } = use3DDefensive();
 
   const { gameState, startGame, pauseGame, handleGhostCollision } = usePacManGameLogic({
     onScoreChange,

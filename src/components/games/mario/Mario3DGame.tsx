@@ -9,6 +9,8 @@ import { EnhancedEnemy3D, EnhancedCoin3D } from "../engine/EnhancedMario3DCompon
 import { Mario3DCharacter } from "./Mario3DCharacter";
 import { useMarioGameLogic } from "./useMarioGameLogic";
 import { Mario3DGameProps } from "./types";
+import { use3DDefensive } from "@/hooks/use3DDefensive";
+import { globalWebGLManager, withWebGLContext } from "@/utils/webglContextManager";
 
 const WORLD_SIZE = 50;
 
@@ -20,6 +22,7 @@ export const Mario3DGame = ({ onScoreChange, onGameEnd, onGameStart }: Mario3DGa
   const [level, setLevel] = useState(1);
   
   const { handleGameStart } = useGameManager();
+  const { safeDispose } = use3DDefensive();
   
   const {
     player,
