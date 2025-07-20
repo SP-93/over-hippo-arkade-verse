@@ -1032,6 +1032,10 @@ export type Database = {
         Args: { wallet_addr: string; amount: number }
         Returns: number
       }
+      increment_wover_balance: {
+        Args: { p_user_id: string; p_amount: number }
+        Returns: number
+      }
       is_account_locked: {
         Args: { p_email: string }
         Returns: boolean
