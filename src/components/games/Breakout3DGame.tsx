@@ -3,6 +3,8 @@ import { useFrame } from "@react-three/fiber";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useGameManager } from "@/hooks/useGameManager";
+import { use3DDefensive } from "@/hooks/use3DDefensive";
+import { useMemoryOptimizer } from "@/hooks/useMemoryOptimizer";
 import { toast } from "sonner";
 import Game3DEngine from "./engine/Game3DEngine";
 import { GameFloor3D, ParticleSystem3D } from "./engine/Game3DComponents";
@@ -55,12 +57,17 @@ interface PowerUp3D {
 // 3D Ball Component
 const Ball3D = ({ ball }: { ball: Ball3D }) => {
   const ballRef = useRef<THREE.Mesh>(null);
+  const defensive = use3DDefensive();
   
   useFrame((state) => {
-    if (ballRef.current) {
-      ballRef.current.position.copy(ball.position);
-      ballRef.current.rotation.x = state.clock.elapsedTime * 4;
-      ballRef.current.rotation.y = state.clock.elapsedTime * 3;
+    try {
+      if (defensive.isValidObject3D(ballRef.current)) {
+        defensive.safeSetPosition(ballRef.current, ball.position.x, ball.position.y, ball.position.z);
+        ballRef.current.rotation.x = state.clock.elapsedTime * 4;
+        ballRef.current.rotation.y = state.clock.elapsedTime * 3;
+      }
+    } catch (error) {
+      console.warn('[Breakout3D] Ball animation error:', error);
     }
   });
 
@@ -210,6 +217,13 @@ export const Breakout3DGame = ({ onScoreChange, onGameEnd, onGameStart }: Breako
   const [particleEffects, setParticleEffects] = useState<Array<{ position: THREE.Vector3, color: string }>>([]);
   
   const { handleGameStart } = useGameManager();
+  const defensive = use3DDefensive();
+  const memoryOptimizer = useMemoryOptimizer({
+    gameId: 'breakout-3d',
+    autoCleanupInterval: 30000,
+    maxMemoryUsage: 150,
+    enableProfiling: true
+  });
   
   // Game objects
   const [balls, setBalls] = useState<Ball3D[]>([{

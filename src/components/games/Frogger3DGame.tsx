@@ -3,6 +3,8 @@ import { useFrame } from "@react-three/fiber";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useGameManager } from "@/hooks/useGameManager";
+import { use3DDefensive } from "@/hooks/use3DDefensive";
+import { useMemoryOptimizer } from "@/hooks/useMemoryOptimizer";
 import { toast } from "sonner";
 import Game3DEngine from "./engine/Game3DEngine";
 import { Player3D, Platform3D, GameFloor3D } from "./engine/Game3DComponents";
@@ -42,10 +44,15 @@ interface Log3D {
 // 3D Car Component
 const Car3D = ({ car }: { car: Car3D }) => {
   const carRef = useRef<THREE.Group>(null);
+  const defensive = use3DDefensive();
   
   useFrame(() => {
-    if (carRef.current) {
-      carRef.current.position.copy(car.position);
+    try {
+      if (defensive.isValidObject3D(carRef.current)) {
+        defensive.safeSetPosition(carRef.current, car.position.x, car.position.y, car.position.z);
+      }
+    } catch (error) {
+      console.warn('[Frogger3D] Car animation error:', error);
     }
   });
 
@@ -218,6 +225,13 @@ export const Frogger3DGame = ({ onScoreChange, onGameEnd, onGameStart }: Frogger
   const [keys, setKeys] = useState<{ [key: string]: boolean }>({});
   
   const { handleGameStart } = useGameManager();
+  const defensive = use3DDefensive();
+  const memoryOptimizer = useMemoryOptimizer({
+    gameId: 'frogger-3d',
+    autoCleanupInterval: 30000,
+    maxMemoryUsage: 150,
+    enableProfiling: true
+  });
   
   // Game objects
   const [frog, setFrog] = useState<Frog3D>({

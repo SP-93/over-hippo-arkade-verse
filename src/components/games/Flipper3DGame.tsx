@@ -3,6 +3,8 @@ import { useFrame } from "@react-three/fiber";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { useGameManager } from "@/hooks/useGameManager";
+import { use3DDefensive } from "@/hooks/use3DDefensive";
+import { useMemoryOptimizer } from "@/hooks/useMemoryOptimizer";
 import { toast } from "sonner";
 import Game3DEngine from "./engine/Game3DEngine";
 import { GameFloor3D, ParticleSystem3D } from "./engine/Game3DComponents";
@@ -54,6 +56,13 @@ export const Flipper3DGame = ({ onScoreChange, onGameEnd, onGameStart }: Flipper
   const [plungerPower, setPlungerPower] = useState(0);
   
   const { handleGameStart } = useGameManager();
+  const defensive = use3DDefensive();
+  const memoryOptimizer = useMemoryOptimizer({
+    gameId: 'flipper-3d',
+    autoCleanupInterval: 30000,
+    maxMemoryUsage: 150,
+    enableProfiling: true
+  });
   
   // Game objects
   const [ball, setBall] = useState<Ball3D>({
