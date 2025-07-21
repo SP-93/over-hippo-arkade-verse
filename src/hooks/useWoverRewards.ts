@@ -95,8 +95,8 @@ export const useWoverRewards = (options: WoverRewardOptions) => {
       // Update profile WOVER balance - note this should ideally be done via edge function
       // but for now we'll update directly
       const { error: updateError } = await supabase.rpc('increment_wover_balance', {
-        user_id: user.id,
-        amount: reward.amount
+        p_user_id: user.id,
+        p_amount: reward.amount
       });
 
       if (updateError) {

@@ -7,7 +7,6 @@ export interface BalanceInfo {
   has_wallet: boolean;
   wallet_address?: string;
   game_chips: number;
-  over_balance: number;
   wover_balance: number;
   total_earnings: number;
   last_updated?: string;
@@ -18,8 +17,6 @@ export interface BalanceOperationResult {
   success: boolean;
   previous_chips?: number;
   new_chips?: number;
-  previous_over?: number;
-  new_over?: number;
   previous_wover?: number;
   new_wover?: number;
   operation_type?: string;
@@ -43,7 +40,6 @@ export class SecureBalanceService {
           success: false,
           has_wallet: false,
           game_chips: 0,
-          over_balance: 0,
           wover_balance: 0,
           total_earnings: 0,
           error: error.message || 'Failed to fetch balance'
@@ -55,7 +51,6 @@ export class SecureBalanceService {
         has_wallet: data.has_wallet || false,
         wallet_address: data.wallet_address,
         game_chips: data.game_chips || 0,
-        over_balance: data.over_balance || 0,
         wover_balance: data.wover_balance || 0,
         total_earnings: data.total_earnings || 0,
         last_updated: data.last_updated,
@@ -67,7 +62,6 @@ export class SecureBalanceService {
         success: false,
         has_wallet: false,
         game_chips: 0,
-        over_balance: 0,
         wover_balance: 0,
         total_earnings: 0,
         error: 'Network error'
@@ -80,7 +74,6 @@ export class SecureBalanceService {
     try {
       // Rate limiting check
       if (!checkRateLimit('spend_chip', 10, 60000)) {
-        // Trigger security escalation for rate limiting
         const currentUser = await this.getCurrentUserWallet();
         if (currentUser) {
           await securityEscalationService.checkRateLimitEscalation(currentUser, 'spend_chip', 10);
@@ -92,7 +85,6 @@ export class SecureBalanceService {
         };
       }
 
-      // Input sanitization
       const sanitized = sanitizeOperationInput({ amount, gameType });
       console.log(`🎯 Spending ${sanitized.amount} chip(s) for game:`, sanitized.gameType);
       
@@ -119,15 +111,14 @@ export class SecureBalanceService {
         success: data.success || false,
         previous_chips: data.previous_chips,
         new_chips: data.new_chips,
-        previous_over: data.previous_over,
-        new_over: data.new_over,
+        previous_wover: data.previous_wover,
+        new_wover: data.new_wover,
         operation_type: data.operation_type,
         wallet_address: data.wallet_address
       };
     } catch (error) {
       console.error('💥 Chip spend error:', error);
       
-      // Check for failed attempts escalation and suspicious patterns
       const currentUser = await this.getCurrentUserWallet();
       if (currentUser) {
         await securityEscalationService.checkFailedAttemptsEscalation(currentUser, 'spend_chip');
@@ -150,9 +141,7 @@ export class SecureBalanceService {
   // Add chips securely (for purchases)
   async addChips(amount: number, transactionRef?: string): Promise<BalanceOperationResult> {
     try {
-      // Rate limiting check
       if (!checkRateLimit('add_chips', 5, 60000)) {
-        // Trigger security escalation for rate limiting
         const currentUser = await this.getCurrentUserWallet();
         if (currentUser) {
           await securityEscalationService.checkRateLimitEscalation(currentUser, 'add_chips', 5);
@@ -164,7 +153,6 @@ export class SecureBalanceService {
         };
       }
 
-      // Input sanitization
       const sanitized = sanitizeOperationInput({ amount, transactionRef });
       console.log(`🎯 Adding ${sanitized.amount} chip(s)`);
       
@@ -190,15 +178,14 @@ export class SecureBalanceService {
         success: data.success || false,
         previous_chips: data.previous_chips,
         new_chips: data.new_chips,
-        previous_over: data.previous_over,
-        new_over: data.new_over,
+        previous_wover: data.previous_wover,
+        new_wover: data.new_wover,
         operation_type: data.operation_type,
         wallet_address: data.wallet_address
       };
     } catch (error) {
       console.error('💥 Chip add error:', error);
       
-      // Check for failed attempts escalation and suspicious patterns
       const currentUser = await this.getCurrentUserWallet();
       if (currentUser) {
         await securityEscalationService.checkFailedAttemptsEscalation(currentUser, 'add_chips');
@@ -218,15 +205,13 @@ export class SecureBalanceService {
     }
   }
 
-  // Spend OVER tokens securely
-  async spendOver(amount: number, purpose?: string): Promise<BalanceOperationResult> {
+  // Buy chips with WOVER tokens
+  async buyChipsWithWover(chipAmount: number, woverCost: number, isVip: boolean = false): Promise<BalanceOperationResult> {
     try {
-      // Rate limiting check
-      if (!checkRateLimit('spend_over', 10, 60000)) {
-        // Trigger security escalation for rate limiting
+      if (!checkRateLimit('buy_chips_wover', 5, 60000)) {
         const currentUser = await this.getCurrentUserWallet();
         if (currentUser) {
-          await securityEscalationService.checkRateLimitEscalation(currentUser, 'spend_over', 10);
+          await securityEscalationService.checkRateLimitEscalation(currentUser, 'buy_chips_wover', 5);
         }
         return {
           success: false,
@@ -235,119 +220,51 @@ export class SecureBalanceService {
         };
       }
 
-      // Input sanitization
-      const sanitized = sanitizeOperationInput({ overAmount: amount });
-      console.log(`🎯 Spending ${sanitized.overAmount} OVER for:`, purpose);
+      const sanitized = sanitizeOperationInput({ amount: chipAmount, overAmount: woverCost });
+      console.log(`🎯 Buying ${sanitized.amount} chips with ${sanitized.overAmount} WOVER`);
       
       const { data, error } = await supabase.functions.invoke('balance-operations', {
         body: { 
-          action: 'spend_over',
-          over_amount: sanitized.overAmount,
-          transaction_ref: `over_spend_${Date.now()}`
+          action: 'buy_chips_with_wover',
+          chip_amount: sanitized.amount,
+          wover_cost: sanitized.overAmount,
+          is_vip: isVip
         }
+      });
+        p_chip_amount: sanitized.amount,
+        p_wover_cost: sanitized.overAmount,
+        p_is_vip: isVip
       });
 
       if (error) {
-        console.error('❌ OVER spend failed:', error);
+        console.error('❌ WOVER chip purchase failed:', error);
         return {
           success: false,
-          error: error.message || 'Failed to spend OVER',
+          error: error.message || 'Failed to buy chips with WOVER',
           error_type: this.getErrorType(error.message || '')
         };
       }
 
-      console.log('✅ OVER spent successfully:', data);
+      console.log('✅ Chips purchased with WOVER successfully:', data);
       return {
-        success: data.success || false,
-        previous_chips: data.previous_chips,
-        new_chips: data.new_chips,
-        previous_over: data.previous_over,
-        new_over: data.new_over,
-        operation_type: data.operation_type,
-        wallet_address: data.wallet_address
+        success: (data as any)?.success || false,
+        previous_chips: (data as any)?.previous_chips,
+        new_chips: (data as any)?.new_chips,
+        previous_wover: (data as any)?.previous_wover,
+        new_wover: (data as any)?.new_wover,
+        operation_type: (data as any)?.operation_type,
+        wallet_address: (data as any)?.wallet_address
       };
     } catch (error) {
-      console.error('💥 OVER spend error:', error);
+      console.error('💥 WOVER chip purchase error:', error);
       
-      // Check for failed attempts escalation and suspicious patterns
       const currentUser = await this.getCurrentUserWallet();
       if (currentUser) {
-        await securityEscalationService.checkFailedAttemptsEscalation(currentUser, 'spend_over');
+        await securityEscalationService.checkFailedAttemptsEscalation(currentUser, 'buy_chips_wover');
         await securityEscalationService.detectSuspiciousPatterns(currentUser, {
-          operationType: 'spend_over',
-          overAmount: amount,
-          purpose,
-          error: error instanceof Error ? error.message : String(error)
-        });
-      }
-      
-      return {
-        success: false,
-        error: 'Network error',
-        error_type: 'other'
-      };
-    }
-  }
-
-  // Add OVER tokens securely  
-  async addOver(amount: number, transactionRef?: string): Promise<BalanceOperationResult> {
-    try {
-      // Rate limiting check
-      if (!checkRateLimit('add_over', 5, 60000)) {
-        // Trigger security escalation for rate limiting
-        const currentUser = await this.getCurrentUserWallet();
-        if (currentUser) {
-          await securityEscalationService.checkRateLimitEscalation(currentUser, 'add_over', 5);
-        }
-        return {
-          success: false,
-          error: 'Too many requests. Please wait before trying again.',
-          error_type: 'operation_locked'
-        };
-      }
-
-      // Input sanitization
-      const sanitized = sanitizeOperationInput({ overAmount: amount, transactionRef });
-      console.log(`🎯 Adding ${sanitized.overAmount} OVER`);
-      
-      const { data, error } = await supabase.functions.invoke('balance-operations', {
-        body: { 
-          action: 'add_over',
-          over_amount: sanitized.overAmount,
-          transaction_ref: sanitized.transactionRef || `over_add_${Date.now()}`
-        }
-      });
-
-      if (error) {
-        console.error('❌ OVER add failed:', error);
-        return {
-          success: false,
-          error: error.message || 'Failed to add OVER',
-          error_type: this.getErrorType(error.message || '')
-        };
-      }
-
-      console.log('✅ OVER added successfully:', data);
-      return {
-        success: data.success || false,
-        previous_chips: data.previous_chips,
-        new_chips: data.new_chips,
-        previous_over: data.previous_over,
-        new_over: data.new_over,
-        operation_type: data.operation_type,
-        wallet_address: data.wallet_address
-      };
-    } catch (error) {
-      console.error('💥 OVER add error:', error);
-      
-      // Check for failed attempts escalation and suspicious patterns
-      const currentUser = await this.getCurrentUserWallet();
-      if (currentUser) {
-        await securityEscalationService.checkFailedAttemptsEscalation(currentUser, 'add_over');
-        await securityEscalationService.detectSuspiciousPatterns(currentUser, {
-          operationType: 'add_over',
-          overAmount: amount,
-          transactionRef,
+          operationType: 'buy_chips_wover',
+          amount: chipAmount,
+          overAmount: woverCost,
           error: error instanceof Error ? error.message : String(error)
         });
       }
@@ -372,7 +289,7 @@ export class SecureBalanceService {
   }
 
   // Check if user has sufficient balance for an operation
-  async canAfford(chips?: number, overAmount?: number): Promise<boolean> {
+  async canAfford(chips?: number, woverAmount?: number): Promise<boolean> {
     const balance = await this.getBalance();
     
     if (!balance.success || !balance.has_wallet) {
@@ -383,7 +300,7 @@ export class SecureBalanceService {
       return false;
     }
 
-    if (overAmount && balance.over_balance < overAmount) {
+    if (woverAmount && balance.wover_balance < woverAmount) {
       return false;
     }
 

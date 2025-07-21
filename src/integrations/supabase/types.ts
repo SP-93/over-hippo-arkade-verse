@@ -955,7 +955,7 @@ export type Database = {
           | {
               p_operation_type: string
               p_amount: number
-              p_over_amount?: number
+              p_wover_amount?: number
               p_game_type?: string
               p_transaction_ref?: string
               p_user_id?: string
