@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.3'
 
@@ -20,9 +21,12 @@ const DEBOUNCE_DELAY = 200; // 200ms debounce
 const pendingRequests = new Map<string, Promise<any>>();
 
 interface BalanceRequest {
-  action: 'get_balance' | 'spend_chip' | 'add_chips' | 'spend_over' | 'add_over';
+  action: 'get_balance' | 'spend_chip' | 'add_chips' | 'spend_wover' | 'add_wover' | 'buy_chips_with_wover';
   amount?: number;
-  over_amount?: number;
+  chip_amount?: number;
+  wover_cost?: number;
+  wover_amount?: number;
+  is_vip?: boolean;
   game_type?: string;
   transaction_ref?: string;
 }
@@ -97,7 +101,7 @@ serve(async (req) => {
     }
 
     const requestBody = await req.json() as BalanceRequest
-    const { action, amount, over_amount, game_type, transaction_ref } = requestBody
+    const { action, amount, chip_amount, wover_cost, is_vip, game_type, transaction_ref } = requestBody
 
     console.log(`🎯 Balance operation: ${action} for user ${user.id}`)
 
@@ -143,7 +147,7 @@ serve(async (req) => {
             error: 'Failed to fetch balance',
             has_wallet: false,
             game_chips: 0,
-            over_balance: 0,
+            wover_balance: 0,
             total_earnings: 0
           }), {
             status: 500,
@@ -163,9 +167,9 @@ serve(async (req) => {
 
       case 'spend_chip':
       case 'add_chips':
-      case 'spend_over':
-      case 'add_over':
-        if (!amount && !over_amount) {
+      case 'spend_wover':
+      case 'add_wover':
+        if (!amount && !wover_cost) {
           return new Response(JSON.stringify({ 
             error: 'Amount required for balance operations' 
           }), {
@@ -180,7 +184,7 @@ serve(async (req) => {
           .rpc('atomic_balance_operation', {
             p_operation_type: action,
             p_amount: amount || 0,
-            p_over_amount: over_amount,
+            p_wover_amount: wover_cost,
             p_game_type: game_type,
             p_transaction_ref: transaction_ref,
             p_user_id: user.id
@@ -225,6 +229,69 @@ serve(async (req) => {
         console.log(`✅ Operation ${action} completed successfully:`, operationData)
 
         return new Response(JSON.stringify(operationData), {
+          status: 200,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        })
+
+      case 'buy_chips_with_wover':
+        if (!chip_amount || !wover_cost) {
+          return new Response(JSON.stringify({ 
+            error: 'Chip amount and WOVER cost required for purchase' 
+          }), {
+            status: 400,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          })
+        }
+
+        console.log(`🔧 Performing WOVER chip purchase for user ${user.id}: ${chip_amount} chips for ${wover_cost} WOVER (VIP: ${is_vip ? 'Yes' : 'No'})`)
+
+        const { data: purchaseData, error: purchaseError } = await supabaseClient
+          .rpc('atomic_balance_operation', {
+            p_operation_type: 'buy_chips_with_wover',
+            p_amount: chip_amount,
+            p_wover_amount: wover_cost,
+            p_game_type: 'chip_purchase',
+            p_transaction_ref: transaction_ref || `wover_purchase_${Date.now()}`,
+            p_user_id: user.id
+          })
+
+        console.log('⚙️ Purchase result:', { purchaseData, purchaseError })
+
+        if (purchaseError) {
+          console.error('WOVER chip purchase failed:', purchaseError)
+          
+          if (purchaseError.message.includes('Insufficient')) {
+            return new Response(JSON.stringify({ 
+              error: purchaseError.message,
+              error_type: 'insufficient_funds'
+            }), {
+              status: 400,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            })
+          }
+
+          if (purchaseError.message.includes('already in progress')) {
+            return new Response(JSON.stringify({ 
+              error: 'Operation already in progress, please wait',
+              error_type: 'operation_locked'
+            }), {
+              status: 409,
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            })
+          }
+
+          return new Response(JSON.stringify({ 
+            error: 'Purchase failed',
+            details: purchaseError.message
+          }), {
+            status: 500,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          })
+        }
+
+        console.log(`✅ WOVER chip purchase completed successfully:`, purchaseData)
+
+        return new Response(JSON.stringify(purchaseData), {
           status: 200,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         })

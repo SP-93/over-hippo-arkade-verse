@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { sanitizeOperationInput, checkRateLimit } from "@/utils/inputSanitization";
 import { securityEscalationService } from './security-escalation';
@@ -230,10 +231,6 @@ export class SecureBalanceService {
           wover_cost: sanitized.overAmount,
           is_vip: isVip
         }
-      });
-        p_chip_amount: sanitized.amount,
-        p_wover_cost: sanitized.overAmount,
-        p_is_vip: isVip
       });
 
       if (error) {
