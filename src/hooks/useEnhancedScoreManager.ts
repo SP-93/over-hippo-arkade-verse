@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -180,6 +181,14 @@ export const useEnhancedScoreManager = (sessionId?: string, gameType?: string) =
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
+      // Convert validation object to JSON-compatible format
+      const validationData = {
+        isValid: validation.isValid,
+        riskScore: validation.riskScore,
+        reason: validation.reason || null,
+        maxAllowed: validation.maxAllowed || null
+      };
+
       await supabase
         .from('security_incidents')
         .insert({
@@ -192,7 +201,7 @@ export const useEnhancedScoreManager = (sessionId?: string, gameType?: string) =
             score: scoreData.score,
             gameType,
             sessionId,
-            validation,
+            validation: validationData,
             timePlayed: (Date.now() - gameStartTime) / 1000
           }
         });

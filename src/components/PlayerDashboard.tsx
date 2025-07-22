@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -6,6 +7,7 @@ import { Progress } from "@/components/ui/progress";
 import { Coins, Timer, Zap, ShoppingCart, Crown, Star } from "lucide-react";
 import { toast } from "sonner";
 import { useSecureBalance } from "@/hooks/useSecureBalance";
+import { useWoverOperations } from "@/hooks/useWoverOperations";
 import { WatchVideoButton } from "@/components/WatchVideoButton";
 import { usePremiumFeatures } from "@/hooks/usePremiumFeatures";
 import { BalanceErrorBoundary } from "@/components/BalanceErrorBoundary";
@@ -18,22 +20,22 @@ interface PlayerDashboardProps {
 export const PlayerDashboard = ({ playerAddress, playerChips }: PlayerDashboardProps) => {
   const [timeUntilReset, setTimeUntilReset] = useState(18 * 3600 + 45 * 60); // 18h 45m in seconds
   const { isVipActive, vipTimeRemaining, purchasePremiumChips, purchaseVipStatus } = usePremiumFeatures();
+  const { purchaseChips } = useWoverOperations();
   
   // Use secure balance hook
   const { 
     balance, 
     isLoading, 
     gameChips, 
-    overBalance, 
+    woverBalance, 
     totalEarnings,
     hasWallet,
     refreshBalance,
-    spendOver,
     addChips
   } = useSecureBalance();
 
   const chips = hasWallet ? gameChips : (playerChips || 3);
-  const displayOverBalance = hasWallet ? overBalance : 0;
+  const displayWoverBalance = hasWallet ? woverBalance : 0;
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -57,8 +59,8 @@ export const PlayerDashboard = ({ playerAddress, playerChips }: PlayerDashboardP
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  // Purchase chips using secure balance service
-  const purchaseChips = async (packageType: 'small' | 'medium' | 'large' | 'premium') => {
+  // Purchase chips using WOVER operations
+  const handleChipPurchase = async (packageType: 'small' | 'medium' | 'large' | 'premium') => {
     const packages = {
       small: { chips: 3, cost: 3, type: 'standard' as const },
       medium: { chips: 7, cost: 7, type: 'standard' as const },
@@ -68,38 +70,36 @@ export const PlayerDashboard = ({ playerAddress, playerChips }: PlayerDashboardP
 
     const selected = packages[packageType];
     
-    // Check sufficient OVER balance
-    if (displayOverBalance < selected.cost) {
-      toast.error(`Insufficient OVER balance. Need ${selected.cost} OVER.`);
+    // Check sufficient WOVER balance
+    if (displayWoverBalance < selected.cost) {
+      toast.error(`Insufficient WOVER balance. Need ${selected.cost} WOVER.`);
       return;
     }
     
     const livesInfo = selected.type === 'premium' ? ' (3 lives each!)' : ' (2 lives each)';
-    toast.info(`Purchasing ${selected.chips} ${selected.type} chips for ${selected.cost} OVER...${livesInfo}`);
+    toast.info(`Purchasing ${selected.chips} ${selected.type} chips for ${selected.cost} WOVER...${livesInfo}`);
     
     try {
       if (selected.type === 'premium') {
         // Use premium features for premium chips
         await purchasePremiumChips.mutateAsync({ 
           chipAmount: selected.chips, 
-          overCost: selected.cost, 
+          woverCost: selected.cost, 
           premiumType: 'premium' 
         });
       } else {
-        // Use secure balance service for standard chips
-        const spendResult = await spendOver(selected.cost, `chip_purchase_${packageType}`);
-        if (!spendResult.success) {
-          toast.error("Failed to spend OVER: " + spendResult.error);
+        // Use WOVER operations for standard chips
+        const result = await purchaseChips({ 
+          chipAmount: selected.chips,
+          vipDiscount: isVipActive
+        });
+        
+        if (!result.success) {
+          toast.error("Failed to purchase chips: " + result.error);
           return;
         }
         
-        const addResult = await addChips(selected.chips, `purchase_${packageType}_${Date.now()}`);
-        if (!addResult.success) {
-          toast.error("Failed to add chips: " + addResult.error);
-          return;
-        }
-        
-        toast.success(`Successfully purchased ${selected.chips} chips! New balance: ${addResult.new_chips}`);
+        toast.success(`Successfully purchased ${selected.chips} chips! WOVER spent: ${result.woverSpent}`);
       }
     } catch (error) {
       console.error('Purchase error:', error);
@@ -107,10 +107,9 @@ export const PlayerDashboard = ({ playerAddress, playerChips }: PlayerDashboardP
     }
   };
 
-
   const handleVipPurchase = () => {
-    if (displayOverBalance < 10) {
-      toast.error("Insufficient OVER balance. Need 10 OVER for VIP status.");
+    if (displayWoverBalance < 10) {
+      toast.error("Insufficient WOVER balance. Need 10 WOVER for VIP status.");
       return;
     }
     purchaseVipStatus.mutate(30);
@@ -143,8 +142,8 @@ export const PlayerDashboard = ({ playerAddress, playerChips }: PlayerDashboardP
             <div className="flex items-center gap-3">
               <Zap className="h-8 w-8 text-neon-green animate-neon-pulse" />
               <div>
-                <p className="text-sm text-muted-foreground">OVER Balance</p>
-                <p className="text-3xl font-black text-neon-green">{displayOverBalance.toFixed(3)}</p>
+                <p className="text-sm text-muted-foreground">WOVER Balance</p>
+                <p className="text-3xl font-black text-neon-green">{displayWoverBalance.toFixed(3)}</p>
               </div>
             </div>
           </Card>
@@ -218,13 +217,13 @@ export const PlayerDashboard = ({ playerAddress, playerChips }: PlayerDashboardP
             </div>
             
             <div className="text-center mb-4">
-              <p className="text-2xl font-black text-yellow-500">10 OVER</p>
+              <p className="text-2xl font-black text-yellow-500">10 WOVER</p>
               <p className="text-sm text-muted-foreground">30 days membership</p>
             </div>
             
             <Button 
               onClick={handleVipPurchase}
-              disabled={purchaseVipStatus.isPending || displayOverBalance < 10}
+              disabled={purchaseVipStatus.isPending || displayWoverBalance < 10}
               className="w-full bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700"
             >
               {purchaseVipStatus.isPending ? 'Processing...' : 'Become VIP'}
@@ -244,12 +243,12 @@ export const PlayerDashboard = ({ playerAddress, playerChips }: PlayerDashboardP
           <div className="p-4 border border-border rounded-lg text-center">
             <h4 className="font-bold text-lg">Basic Pack</h4>
             <p className="text-2xl font-black text-arcade-gold my-2">3 Chips</p>
-            <p className="text-sm text-muted-foreground mb-2">3 OVER</p>
+            <p className="text-sm text-muted-foreground mb-2">3 WOVER</p>
             <p className="text-xs text-muted-foreground mb-4">2 lives each</p>
             <Button 
               variant="arcade"
-              onClick={() => purchaseChips('small')}
-              disabled={isLoading || displayOverBalance < 3}
+              onClick={() => handleChipPurchase('small')}
+              disabled={isLoading || displayWoverBalance < 3}
               className="w-full"
             >
               {isLoading ? 'Loading...' : 'Purchase'}
@@ -259,12 +258,12 @@ export const PlayerDashboard = ({ playerAddress, playerChips }: PlayerDashboardP
           <div className="p-4 border border-neon-blue rounded-lg text-center">
             <h4 className="font-bold text-lg">Value Pack</h4>
             <p className="text-2xl font-black text-neon-blue my-2">7 Chips</p>
-            <p className="text-sm text-muted-foreground mb-2">7 OVER</p>
+            <p className="text-sm text-muted-foreground mb-2">7 WOVER</p>
             <p className="text-xs text-muted-foreground mb-4">2 lives each</p>
             <Button 
               variant="secondary"
-              onClick={() => purchaseChips('medium')}
-              disabled={isLoading || displayOverBalance < 7}
+              onClick={() => handleChipPurchase('medium')}
+              disabled={isLoading || displayWoverBalance < 7}
               className="w-full"
             >
               {isLoading ? 'Loading...' : 'Purchase'}
@@ -277,12 +276,12 @@ export const PlayerDashboard = ({ playerAddress, playerChips }: PlayerDashboardP
             </Badge>
             <h4 className="font-bold text-lg">Mega Pack</h4>
             <p className="text-2xl font-black text-neon-pink my-2">15 Chips</p>
-            <p className="text-sm text-muted-foreground mb-2">12 OVER</p>
+            <p className="text-sm text-muted-foreground mb-2">12 WOVER</p>
             <p className="text-xs text-muted-foreground mb-4">2 lives each</p>
             <Button 
               variant="neon"
-              onClick={() => purchaseChips('large')}
-              disabled={isLoading || displayOverBalance < 12}
+              onClick={() => handleChipPurchase('large')}
+              disabled={isLoading || displayWoverBalance < 12}
               className="w-full"
             >
               {isLoading ? 'Loading...' : 'Purchase'}
@@ -295,11 +294,11 @@ export const PlayerDashboard = ({ playerAddress, playerChips }: PlayerDashboardP
             </Badge>
             <h4 className="font-bold text-lg">Premium Pack</h4>
             <p className="text-2xl font-black text-yellow-500 my-2">5 Chips</p>
-            <p className="text-sm text-muted-foreground mb-2">8 OVER</p>
+            <p className="text-sm text-muted-foreground mb-2">8 WOVER</p>
             <p className="text-xs text-yellow-500 font-bold mb-4">3 lives each!</p>
             <Button 
-              onClick={() => purchaseChips('premium')}
-              disabled={purchasePremiumChips.isPending || displayOverBalance < 8}
+              onClick={() => handleChipPurchase('premium')}
+              disabled={purchasePremiumChips.isPending || displayWoverBalance < 8}
               className="w-full bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700"
             >
               {purchasePremiumChips.isPending ? 'Processing...' : 'Purchase'}
