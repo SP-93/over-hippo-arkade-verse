@@ -96,7 +96,7 @@ const Index = () => {
                 <Coins className="h-6 w-6 text-arcade-gold" />
                 <div className="text-left">
                   <p className="text-sm text-muted-foreground">Chips</p>
-                  <p className="text-2xl font-bold text-arcade-gold">{gameChips}</p>
+                  <p className="text-2xl font-bold text-arcade-gold">{gameChips || 0}</p>
                 </div>
               </div>
             </Card>
