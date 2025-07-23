@@ -1,12 +1,13 @@
 
 import { useState, useEffect } from "react";
-import { Coins, Zap, Trophy, Calendar, Timer, ShoppingCart, Crown } from "lucide-react";
+import { Coins, Zap, Trophy, Calendar, Timer, ShoppingCart, Crown, LogOut, User, Play, ArrowUpDown, Video, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 
+import { useAuth } from "@/contexts/AuthContext";
 import { HippoBackground } from "@/components/HippoBackground";
 import { ParticleCanvas } from "@/components/ParticleCanvas";
 import { GameGrid } from "@/components/GameGrid";
@@ -15,11 +16,15 @@ import { SwapButton } from "@/components/SwapButton";
 import { WatchVideoButton } from "@/components/WatchVideoButton";
 import { ChipPurchaseModal } from "@/components/ChipPurchaseModal";
 import { PlayerDashboard } from "@/components/PlayerDashboard";
+import { AuthPage } from "@/components/AuthPage";
+import { WalletConnection } from "@/components/WalletConnection";
 import { useSecureBalance } from "@/hooks/useSecureBalance";
 import { useWoverOperations } from "@/hooks/useWoverOperations";
+import { walletPersistence } from "@/utils/walletPersistence";
 
 const Index = () => {
   const navigate = useNavigate();
+  const { user, isLoading: authLoading, signOut } = useAuth();
   const [showChipPurchase, setShowChipPurchase] = useState(false);
   const [timeUntilReset, setTimeUntilReset] = useState(18 * 3600 + 45 * 60); // 18h 45m in seconds
   const [recentScores] = useState([
@@ -27,6 +32,11 @@ const Index = () => {
     { game: "Tetris 3D", score: 2800, time: "5 hours ago" },
     { game: "Asteroids 3D", score: 950, time: "1 day ago" },
   ]);
+
+  // Wallet connection state
+  const [isWalletConnected, setIsWalletConnected] = useState(false);
+  const [walletAddress, setWalletAddress] = useState<string>("");
+  const [walletType, setWalletType] = useState<string>("");
 
   const { purchaseChips } = useWoverOperations();
   const { 
@@ -37,6 +47,16 @@ const Index = () => {
     isLoading, 
     refreshBalance 
   } = useSecureBalance();
+
+  // Check for persisted wallet on load
+  useEffect(() => {
+    const persistedWallet = walletPersistence.loadWalletData();
+    if (persistedWallet && persistedWallet.isConnected) {
+      setIsWalletConnected(true);
+      setWalletAddress(persistedWallet.address);
+      setWalletType(persistedWallet.type);
+    }
+  }, []);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -74,6 +94,110 @@ const Index = () => {
     }
   };
 
+  // Wallet connection handlers
+  const handleWalletConnect = (walletType: string, address: string, verified: boolean) => {
+    setIsWalletConnected(true);
+    setWalletAddress(address);
+    setWalletType(walletType);
+    walletPersistence.saveWalletData({ isConnected: true, address, type: walletType, verified });
+    toast.success(`${walletType} wallet connected successfully!`);
+    refreshBalance();
+  };
+
+  const handleWalletDisconnect = () => {
+    setIsWalletConnected(false);
+    setWalletAddress("");
+    setWalletType("");
+    walletPersistence.clearWalletData();
+    toast.info("Wallet disconnected");
+  };
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      handleWalletDisconnect();
+      toast.success("Logged out successfully");
+    } catch (error) {
+      console.error('Logout error:', error);
+      toast.error("Failed to logout");
+    }
+  };
+
+  const handleAuthSuccess = () => {
+    toast.success("Welcome to Over Hippo Arkade!");
+  };
+
+  // Loading state
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-lg">Loading Over Hippo Arkade...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show auth page if user is not logged in
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-background relative overflow-hidden">
+        <HippoBackground />
+        <ParticleCanvas width={800} height={600} />
+        <div className="relative z-10 flex items-center justify-center min-h-screen">
+          <AuthPage 
+            onSuccess={handleAuthSuccess}
+            onBack={() => {}} 
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // Show wallet connection if user is logged in but wallet not connected
+  if (!isWalletConnected) {
+    return (
+      <div className="min-h-screen bg-background relative overflow-hidden">
+        <HippoBackground />
+        <ParticleCanvas width={800} height={600} />
+        <div className="relative z-10 container mx-auto px-4 py-8">
+          {/* Header with user info and logout */}
+          <div className="flex justify-between items-center mb-8">
+            <div className="flex items-center gap-3">
+              <User className="h-6 w-6 text-primary" />
+              <span className="text-lg font-medium">{user.email}</span>
+            </div>
+            <Button onClick={handleLogout} variant="outline" size="sm">
+              <LogOut className="h-4 w-4 mr-2" />
+              Logout
+            </Button>
+          </div>
+
+          <div className="text-center mb-8">
+            <h1 className="text-6xl font-black mb-4 bg-gradient-to-r from-neon-pink via-arcade-gold to-neon-blue bg-clip-text text-transparent animate-glow">
+              OVER HIPPO ARKADE
+            </h1>
+            <p className="text-xl text-muted-foreground mb-8">
+              Connect your wallet to start playing and earning OVER tokens!
+            </p>
+          </div>
+
+          <div className="max-w-2xl mx-auto">
+            <WalletConnection
+              isConnected={isWalletConnected}
+              walletType={walletType}
+              walletAddress={walletAddress}
+              isVerified={true}
+              onConnect={handleWalletConnect}
+              onDisconnect={handleWalletDisconnect}
+            />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background relative overflow-hidden">
       {/* Background Effects */}
@@ -81,9 +205,34 @@ const Index = () => {
       <ParticleCanvas width={800} height={600} />
       
       <div className="relative z-10 container mx-auto px-4 py-8">
+        {/* Header with user info and controls */}
+        <div className="flex justify-between items-center mb-8">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <User className="h-5 w-5 text-primary" />
+              <span className="text-sm font-medium">{user.email}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <Wallet className="h-5 w-5 text-neon-green" />
+              <span className="text-sm font-medium text-neon-green">
+                {walletType} ({walletAddress.slice(0, 6)}...{walletAddress.slice(-4)})
+              </span>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button onClick={handleWalletDisconnect} variant="outline" size="sm">
+              Disconnect Wallet
+            </Button>
+            <Button onClick={handleLogout} variant="outline" size="sm">
+              <LogOut className="h-4 w-4 mr-2" />
+              Logout
+            </Button>
+          </div>
+        </div>
+
         <div className="text-center mb-12">
           <h1 className="text-6xl font-black mb-4 bg-gradient-to-r from-neon-pink via-arcade-gold to-neon-blue bg-clip-text text-transparent animate-glow">
-            ARCADE LEGENDS
+            OVER HIPPO ARKADE
           </h1>
           <p className="text-xl text-muted-foreground mb-8">
             Play legendary arcade games in stunning 3D and earn OVER tokens!
