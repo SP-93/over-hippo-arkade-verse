@@ -78,7 +78,7 @@ const Index = () => {
     <div className="min-h-screen bg-background relative overflow-hidden">
       {/* Background Effects */}
       <HippoBackground />
-      <ParticleCanvas />
+      <ParticleCanvas width={800} height={600} />
       
       <div className="relative z-10 container mx-auto px-4 py-8">
         <div className="text-center mb-12">
@@ -163,7 +163,10 @@ const Index = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Game Grid - Takes up 2 columns */}
           <div className="lg:col-span-2">
-            <GameGrid />
+        <GameGrid 
+          playerChips={gameChips} 
+          onPlayGame={(gameId) => navigate(`/game?type=${gameId}`)} 
+        />
           </div>
           
           {/* Sidebar */}
@@ -190,7 +193,12 @@ const Index = () => {
             </Card>
 
             {/* OVER Protocol Integration */}
-            <OverProtocolIntegration />
+        <OverProtocolIntegration 
+          walletAddress={'player-wallet'} 
+          overBalance={woverBalance} 
+          onPurchaseChips={handleWoverPurchaseChips} 
+          onWithdrawTokens={(amount) => toast.info(`Withdraw ${amount} WOVER requested`)} 
+        />
 
             {/* Daily Challenge */}
             <Card className="p-6 bg-gradient-to-br from-purple-500/10 to-pink-500/10 border-purple-500/30">
@@ -238,12 +246,12 @@ const Index = () => {
       </div>
 
       {/* Chip Purchase Modal */}
-      <ChipPurchaseModal 
-        isOpen={showChipPurchase}
-        onClose={() => setShowChipPurchase(false)}
-        onPurchase={handleWoverPurchaseChips}
-        currentBalance={woverBalance}
-      />
+      {showChipPurchase && (
+        <ChipPurchaseModal 
+          isConnected={hasWallet}
+          onPurchase={handleWoverPurchaseChips}
+        />
+      )}
     </div>
   );
 };

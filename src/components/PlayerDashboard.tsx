@@ -84,7 +84,7 @@ export const PlayerDashboard = ({ playerAddress, playerChips }: PlayerDashboardP
         // Use premium features for premium chips
         await purchasePremiumChips.mutateAsync({ 
           chipAmount: selected.chips, 
-          woverCost: selected.cost, 
+          overCost: selected.cost, 
           premiumType: 'premium' 
         });
       } else {
