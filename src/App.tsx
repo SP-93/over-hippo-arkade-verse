@@ -12,22 +12,29 @@ import "./types/wallet";
 
 const queryClient = new QueryClient();
 
+import { AuthProvider } from "./contexts/AuthContext";
+import { GlobalBalanceProvider } from "./contexts/GlobalBalanceContext";
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/game/:gameId" element={<Game />} />
-          <Route path="/admin" element={<Admin />} />
-          <Route path="/swap" element={<Swap />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
+    <AuthProvider>
+      <GlobalBalanceProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/game/:gameId" element={<Game />} />
+              <Route path="/admin" element={<Admin />} />
+              <Route path="/swap" element={<Swap />} />
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </TooltipProvider>
+      </GlobalBalanceProvider>
+    </AuthProvider>
   </QueryClientProvider>
 );
 
