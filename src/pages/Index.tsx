@@ -78,24 +78,71 @@ const Index = () => {
         <div className="min-h-screen bg-background relative overflow-hidden">
           <HippoBackground />
           <ParticleCanvas width={800} height={600} />
-          <div className="relative z-10 flex items-center justify-center min-h-screen">
-            <div className="text-center animate-fade-in">
-              <h1 className="text-8xl font-black mb-8 bg-gradient-primary bg-clip-text text-transparent animate-scale-in">
+          <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-8">
+            {/* Main Title */}
+            <div className="text-center mb-16 animate-fade-in">
+              <h1 className="text-6xl md:text-7xl lg:text-8xl font-black mb-6 text-white font-orbitron tracking-wider animate-neon-pulse">
                 OVER HIPPO ARKADE
               </h1>
-              <p className="text-2xl text-muted-foreground mb-12 max-w-2xl mx-auto">
+              <p className="text-xl md:text-2xl text-primary-glow mb-8 max-w-3xl mx-auto font-exo2">
                 The ultimate Web3 gaming platform where retro meets blockchain
               </p>
-              <div className="space-y-4">
-                <button
-                  onClick={() => setShowAuth(true)}
-                  className="px-12 py-4 bg-gradient-primary text-primary-foreground text-xl font-bold rounded-lg hover:shadow-neon transform hover:scale-105 transition-all duration-300"
-                >
-                  START PLAYING
-                </button>
-                <p className="text-sm text-muted-foreground">
-                  Play classic arcade games • Earn OVER tokens • Join the future of gaming
-                </p>
+            </div>
+
+            {/* Central Hippo Character with Neon Circle */}
+            <div className="relative mb-16 animate-float">
+              <div className="relative w-32 h-32 md:w-40 md:h-40 mx-auto">
+                {/* Neon Circle Effect */}
+                <div className="absolute inset-0 rounded-full border-4 border-primary animate-neon-pulse opacity-80"></div>
+                <div className="absolute inset-2 rounded-full border-2 border-secondary animate-pulse opacity-60"></div>
+                
+                {/* Hippo Character */}
+                <img
+                  src="/src/assets/hippo-character.png"
+                  alt="Hippo Character"
+                  className="w-full h-full object-contain relative z-10 drop-shadow-lg"
+                  style={{
+                    filter: 'drop-shadow(0 0 20px hsl(var(--primary) / 0.6))',
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Call to Action */}
+            <div className="text-center space-y-6 animate-zoom-in">
+              <button
+                onClick={() => setShowAuth(true)}
+                className="px-12 py-4 bg-gradient-primary text-primary-foreground text-xl font-bold rounded-lg hover:shadow-neon transform hover:scale-105 transition-all duration-300 font-orbitron tracking-wide"
+              >
+                START PLAYING
+              </button>
+              <p className="text-sm text-muted-foreground max-w-lg mx-auto font-exo2">
+                Play classic arcade games • Earn OVER tokens • Join the future of gaming
+              </p>
+            </div>
+
+            {/* Feature Highlights */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-16 max-w-4xl mx-auto">
+              <div className="text-center group">
+                <div className="w-16 h-16 mx-auto mb-4 bg-gradient-primary rounded-full flex items-center justify-center group-hover:animate-neon-pulse">
+                  <span className="text-2xl">🎮</span>
+                </div>
+                <h3 className="text-lg font-bold text-primary mb-2 font-orbitron">Play & Earn</h3>
+                <p className="text-sm text-muted-foreground font-exo2">Classic arcade games with crypto rewards</p>
+              </div>
+              <div className="text-center group">
+                <div className="w-16 h-16 mx-auto mb-4 bg-gradient-secondary rounded-full flex items-center justify-center group-hover:animate-neon-pulse">
+                  <span className="text-2xl">⛓️</span>
+                </div>
+                <h3 className="text-lg font-bold text-secondary mb-2 font-orbitron">Web3 Gaming</h3>
+                <p className="text-sm text-muted-foreground font-exo2">Blockchain-powered gaming platform</p>
+              </div>
+              <div className="text-center group">
+                <div className="w-16 h-16 mx-auto mb-4 bg-gradient-neon rounded-full flex items-center justify-center group-hover:animate-neon-pulse">
+                  <span className="text-2xl">👾</span>
+                </div>
+                <h3 className="text-lg font-bold text-accent mb-2 font-orbitron">Retro Style</h3>
+                <p className="text-sm text-muted-foreground font-exo2">Nostalgic gaming with modern tech</p>
               </div>
             </div>
           </div>
