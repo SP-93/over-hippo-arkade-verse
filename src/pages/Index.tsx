@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { HippoBackground } from "@/components/HippoBackground";
 import { ParticleCanvas } from "@/components/ParticleCanvas";
+import { FuturisticHippo } from "@/components/FuturisticHippo";
 import { AuthPage } from "@/components/AuthPage";
 import { WalletConnection } from "@/components/WalletConnection";
 import { Navigation, NavigationTab } from "@/components/Navigation";
@@ -75,74 +76,85 @@ const Index = () => {
     if (!showAuth) {
       // Welcome screen
       return (
-        <div className="min-h-screen bg-background relative overflow-hidden">
+        <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 relative overflow-hidden">
           <HippoBackground />
           <ParticleCanvas width={800} height={600} />
+          
+          {/* Enhanced background effects */}
+          <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-black/30" />
+          <div className="absolute inset-0 bg-gradient-radial from-purple-500/10 via-transparent to-transparent" />
+          
           <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-8">
             {/* Main Title */}
-            <div className="text-center mb-16 animate-fade-in">
-              <h1 className="text-6xl md:text-7xl lg:text-8xl font-black mb-6 text-white font-orbitron tracking-wider animate-neon-pulse">
+            <div className="text-center mb-12 animate-fade-in">
+              <h1 className="text-5xl md:text-6xl lg:text-7xl font-black mb-6 text-white font-orbitron tracking-wider animate-neon-pulse"
+                  style={{ 
+                    textShadow: '0 0 20px #ec4899, 0 0 40px #ec4899, 0 0 60px #ec4899',
+                    filter: 'drop-shadow(0 0 10px #a855f7)'
+                  }}>
                 OVER HIPPO ARKADE
               </h1>
-              <p className="text-xl md:text-2xl text-primary-glow mb-8 max-w-3xl mx-auto font-exo2">
+              <p className="text-lg md:text-xl text-cyan-300 mb-8 max-w-3xl mx-auto font-exo2"
+                 style={{ textShadow: '0 0 10px #22d3ee' }}>
                 The ultimate Web3 gaming platform where retro meets blockchain
               </p>
             </div>
 
-            {/* Central Hippo Character with Neon Circle */}
-            <div className="relative mb-16 animate-float">
-              <div className="relative w-32 h-32 md:w-40 md:h-40 mx-auto">
-                {/* Neon Circle Effect */}
-                <div className="absolute inset-0 rounded-full border-4 border-primary animate-neon-pulse opacity-80"></div>
-                <div className="absolute inset-2 rounded-full border-2 border-secondary animate-pulse opacity-60"></div>
-                
-                {/* Hippo Character */}
-                <img
-                  src="/src/assets/hippo-character.png"
-                  alt="Hippo Character"
-                  className="w-full h-full object-contain relative z-10 drop-shadow-lg"
-                  style={{
-                    filter: 'drop-shadow(0 0 20px hsl(var(--primary) / 0.6))',
-                  }}
-                />
-              </div>
+            {/* Spectacular Futuristic Hippo */}
+            <div className="relative mb-12 animate-float">
+              <FuturisticHippo />
             </div>
 
             {/* Call to Action */}
             <div className="text-center space-y-6 animate-zoom-in">
               <button
                 onClick={() => setShowAuth(true)}
-                className="px-12 py-4 bg-gradient-primary text-primary-foreground text-xl font-bold rounded-lg hover:shadow-neon transform hover:scale-105 transition-all duration-300 font-orbitron tracking-wide"
+                className="px-12 py-4 bg-gradient-to-r from-pink-500 via-purple-500 to-cyan-500 text-white text-xl font-bold rounded-lg hover:shadow-2xl transform hover:scale-105 transition-all duration-300 font-orbitron tracking-wide relative overflow-hidden group"
+                style={{ 
+                  filter: 'drop-shadow(0 0 20px #ec4899)',
+                  boxShadow: '0 0 30px rgba(236, 72, 153, 0.5), inset 0 0 20px rgba(255, 255, 255, 0.1)'
+                }}
               >
-                START PLAYING
+                <span className="relative z-10">START PLAYING</span>
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
               </button>
-              <p className="text-sm text-muted-foreground max-w-lg mx-auto font-exo2">
+              <p className="text-sm text-cyan-200 max-w-lg mx-auto font-exo2"
+                 style={{ textShadow: '0 0 5px #22d3ee' }}>
                 Play classic arcade games • Earn OVER tokens • Join the future of gaming
               </p>
             </div>
 
-            {/* Feature Highlights */}
+            {/* Enhanced Feature Highlights */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-16 max-w-4xl mx-auto">
-              <div className="text-center group">
-                <div className="w-16 h-16 mx-auto mb-4 bg-gradient-primary rounded-full flex items-center justify-center group-hover:animate-neon-pulse">
-                  <span className="text-2xl">🎮</span>
+              <div className="text-center group relative">
+                <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-pink-500 to-purple-600 rounded-full flex items-center justify-center group-hover:animate-pulse relative overflow-hidden"
+                     style={{ filter: 'drop-shadow(0 0 15px #ec4899)' }}>
+                  <span className="text-3xl relative z-10">🎮</span>
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent transform rotate-45 translate-x-full group-hover:-translate-x-full transition-transform duration-1000" />
                 </div>
-                <h3 className="text-lg font-bold text-primary mb-2 font-orbitron">Play & Earn</h3>
-                <p className="text-sm text-muted-foreground font-exo2">Classic arcade games with crypto rewards</p>
+                <h3 className="text-lg font-bold text-pink-300 mb-2 font-orbitron"
+                    style={{ textShadow: '0 0 8px #f472b6' }}>Play & Earn</h3>
+                <p className="text-sm text-cyan-200 font-exo2">Classic arcade games with crypto rewards</p>
               </div>
-              <div className="text-center group">
-                <div className="w-16 h-16 mx-auto mb-4 bg-gradient-secondary rounded-full flex items-center justify-center group-hover:animate-neon-pulse">
-                  <span className="text-2xl">⛓️</span>
+              <div className="text-center group relative">
+                <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-purple-500 to-cyan-500 rounded-full flex items-center justify-center group-hover:animate-pulse relative overflow-hidden"
+                     style={{ filter: 'drop-shadow(0 0 15px #a855f7)' }}>
+                  <span className="text-3xl relative z-10">⛓️</span>
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent transform rotate-45 translate-x-full group-hover:-translate-x-full transition-transform duration-1000" />
                 </div>
-                <h3 className="text-lg font-bold text-secondary mb-2 font-orbitron">Web3 Gaming</h3>
-                <p className="text-sm text-muted-foreground font-exo2">Blockchain-powered gaming platform</p>
+                <h3 className="text-lg font-bold text-purple-300 mb-2 font-orbitron"
+                    style={{ textShadow: '0 0 8px #c084fc' }}>Web3 Gaming</h3>
+                <p className="text-sm text-cyan-200 font-exo2">Blockchain-powered gaming platform</p>
               </div>
-              <div className="text-center group">
-                <div className="w-16 h-16 mx-auto mb-4 bg-gradient-neon rounded-full flex items-center justify-center group-hover:animate-neon-pulse">
-                  <span className="text-2xl">👾</span>
+              <div className="text-center group relative">
+                <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-cyan-500 to-pink-500 rounded-full flex items-center justify-center group-hover:animate-pulse relative overflow-hidden"
+                     style={{ filter: 'drop-shadow(0 0 15px #22d3ee)' }}>
+                  <span className="text-3xl relative z-10">👾</span>
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent transform rotate-45 translate-x-full group-hover:-translate-x-full transition-transform duration-1000" />
                 </div>
-                <h3 className="text-lg font-bold text-accent mb-2 font-orbitron">Retro Style</h3>
-                <p className="text-sm text-muted-foreground font-exo2">Nostalgic gaming with modern tech</p>
+                <h3 className="text-lg font-bold text-cyan-300 mb-2 font-orbitron"
+                    style={{ textShadow: '0 0 8px #22d3ee' }}>Retro Style</h3>
+                <p className="text-sm text-cyan-200 font-exo2">Nostalgic gaming with modern tech</p>
               </div>
             </div>
           </div>
