@@ -17,6 +17,7 @@ const Index = () => {
   const { user, isLoading: authLoading } = useAuth();
   const { refreshBalance } = useGlobalBalance();
   const [activeTab, setActiveTab] = useState<NavigationTab>('home');
+  const [showAuth, setShowAuth] = useState(false);
   
   // Wallet connection state
   const [isWalletConnected, setIsWalletConnected] = useState(false);
@@ -69,20 +70,52 @@ const Index = () => {
     );
   }
 
-  // Show auth page if user is not logged in
+  // Show welcome screen first, then auth
   if (!user) {
-    return (
-      <div className="min-h-screen bg-background relative overflow-hidden">
-        <HippoBackground />
-        <ParticleCanvas width={800} height={600} />
-        <div className="relative z-10 flex items-center justify-center min-h-screen">
-          <AuthPage 
-            onSuccess={handleAuthSuccess}
-            onBack={() => {}} 
-          />
+    if (!showAuth) {
+      // Welcome screen
+      return (
+        <div className="min-h-screen bg-background relative overflow-hidden">
+          <HippoBackground />
+          <ParticleCanvas width={800} height={600} />
+          <div className="relative z-10 flex items-center justify-center min-h-screen">
+            <div className="text-center animate-fade-in">
+              <h1 className="text-8xl font-black mb-8 bg-gradient-primary bg-clip-text text-transparent animate-scale-in">
+                OVER HIPPO ARKADE
+              </h1>
+              <p className="text-2xl text-muted-foreground mb-12 max-w-2xl mx-auto">
+                The ultimate Web3 gaming platform where retro meets blockchain
+              </p>
+              <div className="space-y-4">
+                <button
+                  onClick={() => setShowAuth(true)}
+                  className="px-12 py-4 bg-gradient-primary text-primary-foreground text-xl font-bold rounded-lg hover:shadow-neon transform hover:scale-105 transition-all duration-300"
+                >
+                  START PLAYING
+                </button>
+                <p className="text-sm text-muted-foreground">
+                  Play classic arcade games • Earn OVER tokens • Join the future of gaming
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
-    );
+      );
+    } else {
+      // Auth page
+      return (
+        <div className="min-h-screen bg-background relative overflow-hidden">
+          <HippoBackground />
+          <ParticleCanvas width={800} height={600} />
+          <div className="relative z-10 flex items-center justify-center min-h-screen">
+            <AuthPage 
+              onSuccess={handleAuthSuccess}
+              onBack={() => setShowAuth(false)} 
+            />
+          </div>
+        </div>
+      );
+    }
   }
 
   // Show wallet connection if user is logged in but wallet not connected
