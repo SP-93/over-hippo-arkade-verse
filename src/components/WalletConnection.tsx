@@ -246,61 +246,90 @@ export const WalletConnection = ({
   }
 
   return (
-    <div className="space-y-4">
-      <h3 className="text-xl font-bold text-center text-foreground mb-4">
-        Connect Your Wallet
-      </h3>
+    <div className="space-y-6">
+      <div className="text-center space-y-4">
+        <h3 className="text-2xl font-bold text-white"
+            style={{ textShadow: '0 0 10px #ec4899' }}>
+          Connect Your Wallet
+        </h3>
+        <p className="text-cyan-300"
+           style={{ textShadow: '0 0 5px #22d3ee' }}>
+          Choose your preferred wallet to continue
+        </p>
+      </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Button
-          variant="neon"
-          onClick={connectMetaMask}
-          disabled={isConnecting}
-          className="h-16 flex-col gap-2"
-        >
-          <Wallet className="h-6 w-6" />
-          MetaMask
-          <span className="text-xs opacity-80">Sign to verify</span>
-        </Button>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-2xl mx-auto">
+        <div className="group">
+          <Button
+            onClick={connectMetaMask}
+            disabled={isConnecting}
+            className="w-full h-20 flex-col gap-2 bg-gradient-to-br from-pink-500/20 to-purple-500/20 border border-pink-500/30 text-white hover:from-pink-500/30 hover:to-purple-500/30 transition-all duration-300 relative overflow-hidden"
+            style={{ 
+              filter: 'drop-shadow(0 0 10px #ec4899)',
+              boxShadow: '0 0 20px rgba(236, 72, 153, 0.3)'
+            }}
+          >
+            <Wallet className="h-6 w-6" />
+            <span className="font-bold">MetaMask</span>
+            <span className="text-xs opacity-80">Sign to verify</span>
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+          </Button>
+        </div>
         
-        <Button
-          variant="secondary"
-          onClick={connectOKX}
-          disabled={isConnecting}
-          className="h-16 flex-col gap-2"
-        >
-          <Wallet className="h-6 w-6" />
-          OKX Web3
-          <span className="text-xs opacity-80">Sign to verify</span>
-        </Button>
+        <div className="group">
+          <Button
+            onClick={connectOKX}
+            disabled={isConnecting}
+            className="w-full h-20 flex-col gap-2 bg-gradient-to-br from-purple-500/20 to-cyan-500/20 border border-purple-500/30 text-white hover:from-purple-500/30 hover:to-cyan-500/30 transition-all duration-300 relative overflow-hidden"
+            style={{ 
+              filter: 'drop-shadow(0 0 10px #a855f7)',
+              boxShadow: '0 0 20px rgba(168, 85, 247, 0.3)'
+            }}
+          >
+            <Wallet className="h-6 w-6" />
+            <span className="font-bold">OKX Web3</span>
+            <span className="text-xs opacity-80">Sign to verify</span>
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+          </Button>
+        </div>
         
-        <Dialog open={showQR} onOpenChange={setShowQR}>
-          <DialogTrigger asChild>
-            <Button
-              variant="outline"
-              onClick={connectWalletCode}
-              disabled={isConnecting}
-              className="h-16 flex-col gap-2"
-            >
-              <QrCode className="h-6 w-6" />
-              WalletConnect
-              <span className="text-xs opacity-80">QR code scan</span>
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="bg-card border-primary">
-            <DialogHeader>
-              <DialogTitle className="text-center">Scan QR Code</DialogTitle>
-            </DialogHeader>
-            <div className="flex justify-center p-8">
-              <div className="w-48 h-48 bg-muted rounded-lg flex items-center justify-center animate-neon-pulse">
-                <QrCode className="h-24 w-24 text-primary" />
+        <div className="group">
+          <Dialog open={showQR} onOpenChange={setShowQR}>
+            <DialogTrigger asChild>
+              <Button
+                onClick={connectWalletCode}
+                disabled={isConnecting}
+                className="w-full h-20 flex-col gap-2 bg-gradient-to-br from-cyan-500/20 to-pink-500/20 border border-cyan-500/30 text-white hover:from-cyan-500/30 hover:to-pink-500/30 transition-all duration-300 relative overflow-hidden"
+                style={{ 
+                  filter: 'drop-shadow(0 0 10px #22d3ee)',
+                  boxShadow: '0 0 20px rgba(34, 211, 238, 0.3)'
+                }}
+              >
+                <QrCode className="h-6 w-6" />
+                <span className="font-bold">WalletConnect</span>
+                <span className="text-xs opacity-80">QR code scan</span>
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="bg-gradient-to-br from-black/90 to-purple-900/90 border border-purple-500/30 backdrop-blur-sm">
+              <DialogHeader>
+                <DialogTitle className="text-center text-white"
+                           style={{ textShadow: '0 0 10px #ec4899' }}>
+                  Scan QR Code
+                </DialogTitle>
+              </DialogHeader>
+              <div className="flex justify-center p-8">
+                <div className="w-48 h-48 bg-gradient-to-br from-purple-500/20 to-cyan-500/20 border border-purple-500/30 rounded-lg flex items-center justify-center animate-pulse">
+                  <QrCode className="h-24 w-24 text-cyan-300" />
+                </div>
               </div>
-            </div>
-            <p className="text-center text-muted-foreground">
-              WalletConnect integration coming soon. Use browser extensions for now.
-            </p>
-          </DialogContent>
-        </Dialog>
+              <p className="text-center text-cyan-200"
+                 style={{ textShadow: '0 0 5px #22d3ee' }}>
+                WalletConnect integration coming soon. Use browser extensions for now.
+              </p>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
     </div>
   );
