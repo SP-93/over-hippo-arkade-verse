@@ -74,87 +74,45 @@ const Index = () => {
   // Show welcome screen first, then auth
   if (!user) {
     if (!showAuth) {
-      // Welcome screen
+      // Welcome screen - exact match to image
       return (
-        <div className="min-h-screen bg-gradient-to-br from-black via-purple-900 to-black relative overflow-hidden">
-          <ParticleCanvas width={800} height={600} />
-          
-          {/* Dark cyberpunk background effects */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-black/50" />
-          <div className="absolute inset-0 bg-gradient-radial from-purple-500/20 via-transparent to-transparent" />
-          
-          <div className="relative z-10 flex flex-col items-center justify-center min-h-screen px-8">
-            {/* Main Title */}
-            <div className="text-center mb-12 animate-fade-in">
-              <h1 className="text-5xl md:text-6xl lg:text-7xl font-black mb-6 text-white tracking-wider animate-neon-pulse"
-                  style={{ 
-                    textShadow: '0 0 20px #ec4899, 0 0 40px #ec4899, 0 0 60px #ec4899',
-                    filter: 'drop-shadow(0 0 10px #a855f7)'
-                  }}>
-                OVER HIPPO ARKADE
-              </h1>
-              <p className="text-lg md:text-xl text-cyan-300 mb-8 max-w-3xl mx-auto"
-                 style={{ textShadow: '0 0 10px #22d3ee' }}>
-                The ultimate Web3 gaming platform where retro meets blockchain
-              </p>
-            </div>
-
-            {/* Spectacular Futuristic Hippo */}
-            <div className="relative mb-12 animate-float">
+        <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 flex flex-col items-center justify-center relative">
+          {/* Content */}
+          <div className="relative z-10 text-center space-y-12 px-4">
+            {/* Futuristic Hippo - centered */}
+            <div className="relative">
               <FuturisticHippo />
             </div>
 
-            {/* Call to Action */}
-            <div className="text-center space-y-6 animate-zoom-in">
-              <button
-                onClick={() => setShowAuth(true)}
-                className="px-12 py-4 bg-gradient-to-r from-pink-500 via-purple-500 to-cyan-500 text-white text-xl font-bold rounded-lg hover:shadow-2xl transform hover:scale-105 transition-all duration-300 tracking-wide relative overflow-hidden group"
-                style={{ 
-                  filter: 'drop-shadow(0 0 20px #ec4899)',
-                  boxShadow: '0 0 30px rgba(236, 72, 153, 0.5), inset 0 0 20px rgba(255, 255, 255, 0.1)'
-                }}
-              >
-                <span className="relative z-10">START PLAYING</span>
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-700" />
-              </button>
-              <p className="text-sm text-cyan-200 max-w-lg mx-auto"
-                 style={{ textShadow: '0 0 5px #22d3ee' }}>
-                Play classic arcade games • Earn OVER tokens • Join the future of gaming
+            {/* Title BELOW hippo - as shown in image */}
+            <div className="space-y-4">
+              <h1 className="text-5xl md:text-7xl font-black text-white"
+                  style={{ 
+                    filter: 'drop-shadow(0 0 20px #ec4899)',
+                    textShadow: '0 0 30px #ec4899, 0 0 60px #ec4899'
+                  }}>
+                OVER HIPPO ARKADE
+              </h1>
+              <p className="text-xl md:text-2xl text-cyan-400 font-bold">
+                The ultimate Web3 gaming platform
               </p>
             </div>
 
-            {/* Enhanced Feature Highlights */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-16 max-w-4xl mx-auto">
-              <div className="text-center group relative">
-                <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-pink-500 to-purple-600 rounded-full flex items-center justify-center group-hover:animate-pulse relative overflow-hidden"
-                     style={{ filter: 'drop-shadow(0 0 15px #ec4899)' }}>
-                  <span className="text-3xl relative z-10">🎮</span>
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent transform rotate-45 translate-x-full group-hover:-translate-x-full transition-transform duration-1000" />
-                </div>
-                <h3 className="text-lg font-bold text-pink-300 mb-2"
-                    style={{ textShadow: '0 0 8px #f472b6' }}>Play & Earn</h3>
-                <p className="text-sm text-cyan-200">Classic arcade games with crypto rewards</p>
-              </div>
-              <div className="text-center group relative">
-                <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-purple-500 to-cyan-500 rounded-full flex items-center justify-center group-hover:animate-pulse relative overflow-hidden"
-                     style={{ filter: 'drop-shadow(0 0 15px #a855f7)' }}>
-                  <span className="text-3xl relative z-10">⛓️</span>
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent transform rotate-45 translate-x-full group-hover:-translate-x-full transition-transform duration-1000" />
-                </div>
-                <h3 className="text-lg font-bold text-purple-300 mb-2"
-                    style={{ textShadow: '0 0 8px #c084fc' }}>Web3 Gaming</h3>
-                <p className="text-sm text-cyan-200">Blockchain-powered gaming platform</p>
-              </div>
-              <div className="text-center group relative">
-                <div className="w-20 h-20 mx-auto mb-4 bg-gradient-to-br from-cyan-500 to-pink-500 rounded-full flex items-center justify-center group-hover:animate-pulse relative overflow-hidden"
-                     style={{ filter: 'drop-shadow(0 0 15px #22d3ee)' }}>
-                  <span className="text-3xl relative z-10">👾</span>
-                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent transform rotate-45 translate-x-full group-hover:-translate-x-full transition-transform duration-1000" />
-                </div>
-                <h3 className="text-lg font-bold text-cyan-300 mb-2"
-                    style={{ textShadow: '0 0 8px #22d3ee' }}>Retro Style</h3>
-                <p className="text-sm text-cyan-200">Nostalgic gaming with modern tech</p>
-              </div>
+            {/* Call to Action */}
+            <div className="space-y-6">
+              <button
+                onClick={() => setShowAuth(true)}
+                className="text-xl px-8 py-4 font-black bg-gradient-to-r from-pink-500 to-cyan-500 hover:from-pink-600 hover:to-cyan-600 text-white border-0 transform hover:scale-105 transition-all duration-300 rounded-lg"
+                style={{ 
+                  boxShadow: '0 0 30px rgba(236, 72, 153, 0.6)',
+                  filter: 'drop-shadow(0 0 10px #ec4899)'
+                }}
+              >
+                START PLAYING
+              </button>
+              <p className="text-cyan-300 text-lg font-medium">
+                Play retro games and earn WOVER tokens!
+              </p>
             </div>
           </div>
         </div>
