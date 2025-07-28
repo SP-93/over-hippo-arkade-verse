@@ -120,14 +120,9 @@ const Index = () => {
                        }} />
                 </div>
                 
-                {/* Original Hippo Character Image */}
+                {/* Futuristic Hippo Component */}
                 <div className="relative z-10 flex items-center justify-center">
-                  <img 
-                    src="/src/assets/hippo-character.png" 
-                    alt="Hippo Character" 
-                    className="w-48 h-48 object-contain"
-                    style={{ filter: 'drop-shadow(0 0 20px rgba(139, 69, 19, 0.5))' }}
-                  />
+                  <FuturisticHippo />
                 </div>
               </div>
             </div>
