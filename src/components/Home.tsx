@@ -1,12 +1,65 @@
 import React from 'react';
-import { FuturisticHippo } from '@/components/FuturisticHippo';
+import hippoCharacter from '@/assets/hippo-character.png';
 
 export const Home: React.FC = () => {
   return (
     <div className="relative min-h-[80vh] flex items-center justify-center">
       {/* Main Content */}
       <div className="relative z-10 text-center space-y-8">
-        {/* Title */}
+        {/* Spectacular Hippo with original image */}
+        <div className="relative flex justify-center animate-scale-in">
+          <div className="relative animate-float">
+            {/* Golden Coin Stacks around hippo */}
+            <div className="absolute top-8 left-8 w-8 h-12 bg-gradient-to-b from-yellow-400 to-yellow-600 rounded-lg transform rotate-12"
+                 style={{ filter: 'drop-shadow(0 0 10px gold)' }}>
+              <div className="absolute inset-x-0 top-0 h-2 bg-yellow-300 rounded-full"></div>
+              <div className="absolute inset-x-0 top-2 h-2 bg-yellow-300 rounded-full"></div>
+              <div className="absolute inset-x-0 top-4 h-2 bg-yellow-300 rounded-full"></div>
+            </div>
+
+            <div className="absolute top-12 right-8 w-8 h-16 bg-gradient-to-b from-yellow-400 to-yellow-600 rounded-lg transform -rotate-12"
+                 style={{ filter: 'drop-shadow(0 0 10px gold)' }}>
+              <div className="absolute inset-x-0 top-0 h-2 bg-yellow-300 rounded-full"></div>
+              <div className="absolute inset-x-0 top-2 h-2 bg-yellow-300 rounded-full"></div>
+              <div className="absolute inset-x-0 top-4 h-2 bg-yellow-300 rounded-full"></div>
+              <div className="absolute inset-x-0 top-6 h-2 bg-yellow-300 rounded-full"></div>
+            </div>
+
+            <div className="absolute bottom-8 left-12 w-8 h-14 bg-gradient-to-b from-yellow-400 to-yellow-600 rounded-lg transform rotate-6"
+                 style={{ filter: 'drop-shadow(0 0 10px gold)' }}>
+              <div className="absolute inset-x-0 top-0 h-2 bg-yellow-300 rounded-full"></div>
+              <div className="absolute inset-x-0 top-2 h-2 bg-yellow-300 rounded-full"></div>
+              <div className="absolute inset-x-0 top-4 h-2 bg-yellow-300 rounded-full"></div>
+            </div>
+
+            <div className="absolute bottom-12 right-12 w-8 h-10 bg-gradient-to-b from-yellow-400 to-yellow-600 rounded-lg transform -rotate-6"
+                 style={{ filter: 'drop-shadow(0 0 10px gold)' }}>
+              <div className="absolute inset-x-0 top-0 h-2 bg-yellow-300 rounded-full"></div>
+              <div className="absolute inset-x-0 top-2 h-2 bg-yellow-300 rounded-full"></div>
+            </div>
+
+            {/* Pink Neon Circle */}
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="w-64 h-64 rounded-full border-4 border-pink-500"
+                   style={{ 
+                     filter: 'drop-shadow(0 0 20px #ec4899)',
+                     boxShadow: 'inset 0 0 20px rgba(236, 72, 153, 0.3)'
+                   }} />
+            </div>
+            
+            {/* Original Hippo Character Image */}
+            <div className="relative z-10 flex items-center justify-center">
+              <img 
+                src={hippoCharacter} 
+                alt="Hippo Character" 
+                className="w-48 h-48 object-contain"
+                style={{ filter: 'drop-shadow(0 0 20px rgba(139, 69, 19, 0.5))' }}
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Title below hippo */}
         <div className="space-y-4">
           <h1 className="text-5xl md:text-6xl lg:text-7xl font-black text-white tracking-wider animate-neon-pulse animate-fade-in"
               style={{ 
@@ -19,21 +72,6 @@ export const Home: React.FC = () => {
              style={{ textShadow: '0 0 10px #22d3ee' }}>
             The ultimate Web3 gaming platform
           </p>
-        </div>
-
-        {/* Spectacular Futuristic Hippo */}
-        <div className="relative flex justify-center animate-scale-in">
-          <div className="relative animate-float">
-            {/* Multiple layered neon circles */}
-            <div className="absolute inset-0 w-64 h-64 rounded-full bg-gradient-to-r from-pink-500/30 via-purple-500/30 to-cyan-500/30 blur-xl animate-pulse"></div>
-            <div className="absolute inset-4 w-56 h-56 rounded-full bg-gradient-to-r from-pink-500/20 via-purple-500/20 to-cyan-500/20 blur-lg animate-pulse delay-500"></div>
-            <div className="absolute inset-8 w-48 h-48 rounded-full bg-gradient-to-r from-pink-500/10 via-purple-500/10 to-cyan-500/10 blur-md animate-pulse delay-1000"></div>
-            
-            {/* Hippo Character */}
-            <div className="relative z-10">
-              <FuturisticHippo />
-            </div>
-          </div>
         </div>
 
         {/* Feature Text */}
