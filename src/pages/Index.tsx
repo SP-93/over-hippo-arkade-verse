@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { HippoBackground } from "@/components/HippoBackground";
 import { ParticleCanvas } from "@/components/ParticleCanvas";
-import hippoCharacter from "@/assets/hippo-character.png";
+import { FuturisticHippo } from "@/components/FuturisticHippo";
 import { AuthPage } from "@/components/AuthPage";
 import { WalletConnection } from "@/components/WalletConnection";
 import { Navigation, NavigationTab } from "@/components/Navigation";
@@ -120,14 +120,9 @@ const Index = () => {
                        }} />
                 </div>
                 
-                {/* Original Hippo Character Image */}
+                {/* Futuristic Hippo Component */}
                 <div className="relative z-10 flex items-center justify-center">
-                  <img 
-                    src={hippoCharacter} 
-                    alt="Hippo Character" 
-                    className="w-48 h-48 object-contain"
-                    style={{ filter: 'drop-shadow(0 0 20px rgba(139, 69, 19, 0.5))' }}
-                  />
+                  <FuturisticHippo />
                 </div>
               </div>
             </div>
@@ -207,14 +202,9 @@ const Index = () => {
             </p>
           </div>
 
-          {/* Original Hippo Character */}
+          {/* Spectacular Futuristic Hippo */}
           <div className="relative mb-12 animate-float">
-            <img 
-              src={hippoCharacter} 
-              alt="Hippo Character" 
-              className="w-48 h-48 object-contain"
-              style={{ filter: 'drop-shadow(0 0 20px rgba(139, 69, 19, 0.5))' }}
-            />
+            <FuturisticHippo />
           </div>
 
           <div className="max-w-2xl mx-auto">
