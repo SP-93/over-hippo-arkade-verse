@@ -1,4 +1,4 @@
-import hippoCharacter from '/lovable-uploads/63209d94-f496-4657-a0c3-09577a7a27a1.png';
+import hippoCharacter from '@/assets/futuristic-hippo.png';
 
 export const FuturisticHippo = () => {
   return (
