@@ -1,4 +1,4 @@
-import hippoCharacter from '@/assets/hippo-character.png';
+import hippoCharacter from '/lovable-uploads/63209d94-f496-4657-a0c3-09577a7a27a1.png';
 
 export const FuturisticHippo = () => {
   return (
@@ -32,22 +32,22 @@ export const FuturisticHippo = () => {
         <div className="absolute inset-x-0 top-2 h-2 bg-yellow-300 rounded-full"></div>
       </div>
 
-      {/* Pink Neon Circle */}
+      {/* Enhanced Pink Neon Halo */}
       <div className="absolute inset-0 flex items-center justify-center">
-        <div className="w-64 h-64 rounded-full border-4 border-pink-500"
+        <div className="w-72 h-72 rounded-full border-8 border-pink-500"
              style={{ 
-               filter: 'drop-shadow(0 0 20px #ec4899)',
-               boxShadow: 'inset 0 0 20px rgba(236, 72, 153, 0.3)'
+               filter: 'drop-shadow(0 0 30px #ec4899) drop-shadow(0 0 60px #ec4899)',
+               boxShadow: 'inset 0 0 40px rgba(236, 72, 153, 0.5), 0 0 80px rgba(236, 72, 153, 0.3)'
              }} />
       </div>
       
-      {/* Original Hippo Character Image */}
+      {/* Futuristic Hippo Character */}
       <div className="relative z-10 flex items-center justify-center">
         <img 
           src={hippoCharacter} 
-          alt="Hippo Character" 
-          className="w-48 h-48 object-contain"
-          style={{ filter: 'drop-shadow(0 0 20px rgba(139, 69, 19, 0.5))' }}
+          alt="Futuristic Hippo Character" 
+          className="w-56 h-56 object-contain"
+          style={{ filter: 'drop-shadow(0 0 25px rgba(147, 51, 234, 0.6)) drop-shadow(0 0 50px rgba(59, 130, 246, 0.4))' }}
         />
       </div>
     </div>
