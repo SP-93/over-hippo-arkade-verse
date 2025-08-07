@@ -1,5 +1,5 @@
 import React from 'react';
-import hippoCharacter from '@/assets/hippo-character.png';
+import { FuturisticHippo } from '@/components/FuturisticHippo';
 
 export const Home: React.FC = () => {
   return (
@@ -48,14 +48,9 @@ export const Home: React.FC = () => {
             </div>
             
             {/* Original Hippo Character Image */}
-            <div className="relative z-10 flex items-center justify-center">
-              <img 
-                src={hippoCharacter} 
-                alt="Hippo Character" 
-                className="w-48 h-48 object-contain"
-                style={{ filter: 'drop-shadow(0 0 20px rgba(139, 69, 19, 0.5))' }}
-              />
-            </div>
+              <div className="relative z-10 flex items-center justify-center">
+                <FuturisticHippo />
+              </div>
           </div>
         </div>
 
