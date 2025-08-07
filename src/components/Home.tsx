@@ -1,5 +1,5 @@
 import React from 'react';
-import { FuturisticHippo } from '@/components/FuturisticHippo';
+import { HeroHippo } from '@/components/HeroHippo';
 
 export const Home: React.FC = () => {
   return (
@@ -7,52 +7,9 @@ export const Home: React.FC = () => {
       {/* Main Content */}
       <div className="relative z-10 text-center space-y-8">
         {/* Spectacular Hippo with original image */}
-        <div className="relative flex justify-center animate-scale-in">
-          <div className="relative animate-float">
-            {/* Golden Coin Stacks around hippo */}
-            <div className="absolute top-8 left-8 w-8 h-12 bg-gradient-to-b from-yellow-400 to-yellow-600 rounded-lg transform rotate-12"
-                 style={{ filter: 'drop-shadow(0 0 10px gold)' }}>
-              <div className="absolute inset-x-0 top-0 h-2 bg-yellow-300 rounded-full"></div>
-              <div className="absolute inset-x-0 top-2 h-2 bg-yellow-300 rounded-full"></div>
-              <div className="absolute inset-x-0 top-4 h-2 bg-yellow-300 rounded-full"></div>
-            </div>
-
-            <div className="absolute top-12 right-8 w-8 h-16 bg-gradient-to-b from-yellow-400 to-yellow-600 rounded-lg transform -rotate-12"
-                 style={{ filter: 'drop-shadow(0 0 10px gold)' }}>
-              <div className="absolute inset-x-0 top-0 h-2 bg-yellow-300 rounded-full"></div>
-              <div className="absolute inset-x-0 top-2 h-2 bg-yellow-300 rounded-full"></div>
-              <div className="absolute inset-x-0 top-4 h-2 bg-yellow-300 rounded-full"></div>
-              <div className="absolute inset-x-0 top-6 h-2 bg-yellow-300 rounded-full"></div>
-            </div>
-
-            <div className="absolute bottom-8 left-12 w-8 h-14 bg-gradient-to-b from-yellow-400 to-yellow-600 rounded-lg transform rotate-6"
-                 style={{ filter: 'drop-shadow(0 0 10px gold)' }}>
-              <div className="absolute inset-x-0 top-0 h-2 bg-yellow-300 rounded-full"></div>
-              <div className="absolute inset-x-0 top-2 h-2 bg-yellow-300 rounded-full"></div>
-              <div className="absolute inset-x-0 top-4 h-2 bg-yellow-300 rounded-full"></div>
-            </div>
-
-            <div className="absolute bottom-12 right-12 w-8 h-10 bg-gradient-to-b from-yellow-400 to-yellow-600 rounded-lg transform -rotate-6"
-                 style={{ filter: 'drop-shadow(0 0 10px gold)' }}>
-              <div className="absolute inset-x-0 top-0 h-2 bg-yellow-300 rounded-full"></div>
-              <div className="absolute inset-x-0 top-2 h-2 bg-yellow-300 rounded-full"></div>
-            </div>
-
-            {/* Pink Neon Circle */}
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="w-64 h-64 rounded-full border-4 border-pink-500"
-                   style={{ 
-                     filter: 'drop-shadow(0 0 20px #ec4899)',
-                     boxShadow: 'inset 0 0 20px rgba(236, 72, 153, 0.3)'
-                   }} />
-            </div>
-            
-            {/* Original Hippo Character Image */}
-              <div className="relative z-10 flex items-center justify-center">
-                <FuturisticHippo />
-              </div>
+          <div className="relative flex justify-center animate-scale-in">
+            <HeroHippo />
           </div>
-        </div>
 
         {/* Title below hippo */}
         <div className="space-y-4">
